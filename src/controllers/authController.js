@@ -5,12 +5,20 @@ const authService = require('../services/authService');
 
 // Register a new user
 exports.registerUser = async (req, res) => {
+
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
   try {
     // Hash the password
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     // Create a new user
     const user = new User({
+      name: req.body.name,
       email: req.body.email,
       password: hashedPassword,
     });
