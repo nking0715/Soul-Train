@@ -60,14 +60,3 @@ exports.loginUser = async (req, res) => {
     res.status(401).json({ error: 'Failed to login user' });
   }
 };
-
-// Logout the current user
-exports.logoutUser = async (req, res) => {
-  try {
-    // TODO: Implement logout logic
-    res.json({ message: 'User logged out' });
-  } catch (err) {
-    console.error('Failed to logout user', err);
-    res.status(500).json({ error: 'Failed to logout user' });
-  }
-};
