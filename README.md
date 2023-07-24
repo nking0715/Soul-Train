@@ -29,7 +29,7 @@ POST /auth/register
 Content-Type: application/json
 
 {
-    "name": "example"
+    "name": "example",
     "email": "example@example.com",
     "password": "password123"
 }
