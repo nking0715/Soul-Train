@@ -30,7 +30,7 @@ exports.registerUser = async (req, res) => {
     const token = authService.generateToken(user);
 
     // Return the token to the client
-    res.json({ token });
+    res.status(200).json({ 'success': true, 'message': 'User registered successfully', 'token': token });
   } catch (err) {
     console.error('Failed to register user', err);
     res.status(500).json({ error: 'Failed to register user' });
@@ -54,7 +54,7 @@ exports.loginUser = async (req, res) => {
     const token = authService.generateToken(user);
 
     // Return the token to the client
-    res.json({ token });
+    res.status(200).json({ 'success': true, 'message': 'User logged in successfully', 'token': token });
   } catch (err) {
     console.error('Failed to login user', err);
     res.status(401).json({ error: 'Failed to login user' });
