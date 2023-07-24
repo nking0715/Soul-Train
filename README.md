@@ -11,8 +11,12 @@ The server is built using the following technologies:
 - bcrypt: a password hashing library that ensures user passwords are securely stored
 
 The server is designed to be easily deployable on a variety of platforms, including cloud services like AWS or Google Cloud. To get started, simply clone the repository, install the dependencies, and run the server using Node.js.
+- To install the dependencies, run the following command:
 ```bash
 npm install
+```
+- To run the server, run the following command:
+```bash
 npm run dev
 ```
 Once the server is up and running, users can register for an account by providing their email address and a secure password. They will then be able to log in to the application using their email address and password. The server will handle all authentication and authorization, ensuring that only authorized users can access protected resources.
