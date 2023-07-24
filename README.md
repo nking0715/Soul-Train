@@ -5,10 +5,10 @@ This backend server is a Node.js application that provides registration and logi
 
 The server is built using the following technologies:
 
-* Node.js: a JavaScript runtime environment that allows us to run server-side code
-* Express: a web application framework for Node.js that simplifies the process of building web servers
-* MongoDB: a NoSQL database that stores user information securely
-* bcrypt: a password hashing library that ensures user passwords are securely stored
+- Node.js: a JavaScript runtime environment that allows us to run server-side code
+- Express: a web application framework for Node.js that simplifies the process of building web servers
+- MongoDB: a NoSQL database that stores user information securely
+- bcrypt: a password hashing library that ensures user passwords are securely stored
 
 The server is designed to be easily deployable on a variety of platforms, including cloud services like AWS or Google Cloud. To get started, simply clone the repository, install the dependencies, and run the server using Node.js.
 ```bash
@@ -23,10 +23,9 @@ The following APIs are available:
 #### API Endpoint: /auth/register
 This API allows users to register for a new account by providing their name, email address and a secure password.
 ##### Request
-```
-POST /auth/register
-Content-Type: application/json
-
+- HTTP Method: POST /auth/register
+- Content-Type: application/json
+```JSON
 {
     "name": "example",
     "email": "example@example.com",
@@ -34,10 +33,9 @@ Content-Type: application/json
 }
 ```
 ##### Response
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-
+- HTTP/1.1 200 OK
+- Content-Type: application/json
+```JSON
 {
   "success": true,
   "message": "User registered successfully",
@@ -48,20 +46,18 @@ Content-Type: application/json
 #### API Endpoint: /auth/login
 This API allows users to log in to their account using their email address and password.
 ##### Request
-```
-POST /auth/login
-Content-Type: application/json
-
+- HTTP Method: POST /auth/login
+- Content-Type: application/json
+```JSON
 {
   "email": "example@example.com",
   "password": "password123"
 }
 ```
 ##### Response
-```
-HTTP/1.1 200 OK
-Content-Type: application/json
-
+- HTTP/1.1 200 OK
+- Content-Type: application/json
+```JSON
 {
   "success": true,
   "message": "User logged in successfully",
