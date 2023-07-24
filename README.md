@@ -23,7 +23,7 @@ The following APIs are available:
 #### API Endpoint: /auth/register
 This API allows users to register for a new account by providing their name, email address and a secure password.
 ##### Request
-```JSON
+```
 POST /auth/register
 Content-Type: application/json
 
@@ -34,7 +34,7 @@ Content-Type: application/json
 }
 ```
 ##### Response
-```JSON
+```
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -48,7 +48,7 @@ Content-Type: application/json
 #### API Endpoint: /auth/login
 This API allows users to log in to their account using their email address and password.
 ##### Request
-```JSON
+```
 POST /auth/login
 Content-Type: application/json
 
@@ -58,7 +58,7 @@ Content-Type: application/json
 }
 ```
 ##### Response
-```JSON
+```
 HTTP/1.1 200 OK
 Content-Type: application/json
 
