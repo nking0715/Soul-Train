@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/SOULTRAIN-SOLUTIONS-OU/Soul-Train-Backend#readme",
   "dependencies": {
+    "agora-access-token": "^2.0.4",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
