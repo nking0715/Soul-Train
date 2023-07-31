@@ -1,4 +1,5 @@
 const {RtcTokenBuilder, RtcRole} = require('agora-access-token');
+const Channel = require('../models/channel');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
@@ -30,6 +31,11 @@ exports.generateAccessToken = async (req, res) => {
     // calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expireTime;
+    const channel = new Channel({
+        channelID: channelName,
+        creatorID: uid
+    });
+    await channel.save();
     const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
     return res.json({ 'token': token });
 };

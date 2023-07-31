@@ -4,6 +4,6 @@ const agoraController = require('../controllers/agoraController');
 
 const router = express.Router();
 
-router.get('/access_token', nocache, agoraController.generateAccessToken);
+router.post('/access_token', nocache, agoraController.generateAccessToken);
 
 module.exports = router;
