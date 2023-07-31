@@ -1,4 +1,4 @@
-const {RtcTokenBuilder, RtcRole} = require('agora-token');
+const { RtcTokenBuilder, RtcRole } = require('agora-token');
 const Channel = require('../models/channel');
 require('dotenv').config();
 
@@ -17,9 +17,19 @@ exports.generateAccessToken = async (req, res) => {
         uid = 0;
     }
     // get role
-    let role = RtcRole.SUBSCRIBER;
-    if (req.body.role == 'publisher') {
+    let role;
+    if (req.body.role === 'publisher') {
         role = RtcRole.PUBLISHER;
+        const channel = new Channel({
+            channelID: channelName,
+            creatorID: uid
+        });
+        await channel.save();
+    } else if (req.body.role === 'audience') {
+        role = RtcRole.SUBSCRIBER
+        await Channel.updateOne({ channelID: channelName }, { $push: { participantID: uid } });
+    } else {
+        return res.status(500).json({ 'error': 'role is incorrect' });
     }
     // get the expire time
     let expireTime = req.body.expireTime;
@@ -31,11 +41,6 @@ exports.generateAccessToken = async (req, res) => {
     // calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expireTime;
-    const channel = new Channel({
-        channelID: channelName,
-        creatorID: uid
-    });
-    await channel.save();
     const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
     return res.json({ 'token': token });
 };
