@@ -1,4 +1,4 @@
-const {RtcTokenBuilder, RtcRole} = require('agora-access-token');
+const {RtcTokenBuilder, RtcRole} = require('agora-token');
 const Channel = require('../models/channel');
 require('dotenv').config();
 
