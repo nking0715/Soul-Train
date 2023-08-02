@@ -5,42 +5,54 @@ require('dotenv').config();
 const APP_ID = process.env.APP_ID;
 const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 
+// Generate access token for Agora
 exports.generateAccessToken = async (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
+
     const channelName = req.body.channelName;
     if (!channelName) {
-        return res.status(500).json({ 'error': 'channel is required' });
+        return res.status(500).json({ error: 'channel is required' });
     }
-    // get uid 
+
+    // Get uid
     let uid = req.body.uid;
     if (!uid || uid == '') {
         uid = 0;
     }
-    // get role
+
+    // Get role
     let role;
     if (req.body.role === 'publisher') {
         role = RtcRole.PUBLISHER;
+
+        // Create a new Channel document for the publisher
         const channel = new Channel({
             channelID: channelName,
             creatorID: uid
         });
         await channel.save();
     } else if (req.body.role === 'audience') {
-        role = RtcRole.SUBSCRIBER
+        role = RtcRole.SUBSCRIBER;
+
+        // Add participant ID to the existing Channel document for the audience
         await Channel.updateOne({ channelID: channelName }, { $push: { participantID: uid } });
     } else {
-        return res.status(500).json({ 'error': 'role is incorrect' });
+        return res.status(500).json({ error: 'role is incorrect' });
     }
-    // get the expire time
+
+    // Get the expire time
     let expireTime = req.body.expireTime;
     if (!expireTime || expireTime == '') {
         expireTime = 3600;
     } else {
         expireTime = parseInt(expireTime, 10);
     }
-    // calculate privilege expire time
+
+    // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expireTime;
+
+    // Build and return the token
     const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
-    return res.json({ 'token': token });
+    return res.json({ token });
 };

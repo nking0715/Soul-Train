@@ -5,32 +5,34 @@ const authService = require('../services/authService');
 
 // Register a new user
 exports.registerUser = async (req, res) => {
-
-  const { name, email, password } = req.body;
-
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
   try {
+    // Check if the user already exists
+    let user = await User.findOne({ email: req.body.email });
+    if (user) {
+      return res.status(400).json({
+        errors: [{ msg: 'User already exists' }],
+      });
+    }
+
     // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
-    // Create a new user
-    const user = new User({
+    // Create a new user object
+    const newUser = new User({
       name: req.body.name,
       email: req.body.email,
       password: hashedPassword,
     });
 
     // Save the user to the database
-    await user.save();
+    await newUser.save();
 
     // Generate a JWT token
-    const token = authService.generateToken(user);
+    const token = authService.generateToken(newUser);
 
     // Return the token to the client
-    res.status(200).json({ 'success': true, 'message': 'User registered successfully', 'token': token });
+    res.status(200).json({ success: true, message: 'User registered successfully', token: token });
   } catch (err) {
     console.error('Failed to register user', err);
     res.status(500).json({ error: 'Failed to register user' });
@@ -54,7 +56,7 @@ exports.loginUser = async (req, res) => {
     const token = authService.generateToken(user);
 
     // Return the token to the client
-    res.status(200).json({ 'success': true, 'message': 'User logged in successfully', 'token': token });
+    res.status(200).json({ success: true, message: 'User logged in successfully', token: token });
   } catch (err) {
     console.error('Failed to login user', err);
     res.status(401).json({ error: 'Failed to login user' });
