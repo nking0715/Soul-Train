@@ -9,9 +9,11 @@ const router = express.Router();
 router.post(
     '/register',
     [
-        check('username', 'Name is required').not().isEmpty(),
+        check('name', 'Name is required').not().isEmpty(),
         check('email', 'Please include a valid email').isEmail(),
-        check('password', 'Please enter a password with a minimum of 6 characters').isLength({ min: 6 }),
+        check('password', 'Please enter a password with a minimum of 6 characters, including a special character, a digit, and a capital letter')
+            .isLength({ min: 6 })
+            .matches(/^(?=.*[!@#$%^&*])(?=.*\d)(?=.*[A-Z]).*$/),
     ],
     validateSchema,
     authController.registerUser
