@@ -10,7 +10,9 @@ exports.registerUser = async (req, res) => {
     let user = await User.findOne({ email: req.body.email });
     if (user) {
       return res.status(400).json({
-        errors: [{ msg: 'User already exists' }],
+        success: false,
+        message: 'User already exists',
+        token: "",
       });
     }
 
@@ -35,7 +37,11 @@ exports.registerUser = async (req, res) => {
     res.status(200).json({ success: true, message: 'User registered successfully', token: token });
   } catch (err) {
     console.error('Failed to register user', err);
-    res.status(500).json({ error: 'Failed to register user' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to register user',
+      token: "",
+    });
   }
 };
 
@@ -45,11 +51,23 @@ exports.loginUser = async (req, res) => {
     // Find the user by email
     const user = await User.findOne({ email: req.body.email });
 
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User doesn't exist.",
+        token: "",
+      });
+    }
+
     // Verify the password
     const passwordMatch = await bcrypt.compare(req.body.password, user.password);
 
     if (!passwordMatch) {
-      throw new Error('Invalid password');
+      return res.status(400).json({
+        success: false,
+        message: "Password incorrect.",
+        token: "",
+      });
     }
 
     // Generate a JWT token
@@ -59,6 +77,6 @@ exports.loginUser = async (req, res) => {
     res.status(200).json({ success: true, message: 'User logged in successfully', token: token });
   } catch (err) {
     console.error('Failed to login user', err);
-    res.status(401).json({ error: 'Failed to login user' });
+    res.status(401).json({ success: true, message: 'Unknow error', token: ''});
   }
 };
