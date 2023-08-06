@@ -1,29 +1,63 @@
-const User = require('../models/user');
+const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+const authService = require('../services/authService');
 
-// Get the current user's profile
-exports.getCurrentUser = async (req, res) => {
+exports.register = async (req, res) => {
   try {
-    // Find the user by ID
-    const user = await User.findById(req.user.id);
+    const { email, password } = req.body;
 
-    // Return the user's profile to the client
-    res.json({ user });
-  } catch (err) {
-    console.error('Failed to get user profile', err);
-    res.status(500).json({ error: 'Failed to get user profile' });
+    // Validate email
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format.' });
+    }
+
+    // Validate password
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialCharacter = /[!@#$%^&*]/.test(password);
+    const hasMinLength = validator.isLength(password, { min: 7 });
+
+    if (!hasUppercase || !hasNumber || !hasSpecialCharacter || !hasMinLength) {
+      return res.status(400).json({
+        message: 'Password must contain at least one uppercase letter, one number, one special character, and be longer than 6 characters.'
+      });
+    }
+
+    let user = await User.findOne({ email: req.body.email });
+    if (user) {
+      return res.status(400).json({
+        message: 'User already exists'
+      });
+    } else {
+      user = new User(req.body);
+      await user.save();
+
+      // Generate a JWT token
+      const token = authService.generateToken(user);
+      // Return the token to the client
+      res.status(200).json({ token });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update the current user's profile
-exports.updateCurrentUser = async (req, res) => {
+exports.login = async (req, res) => {
   try {
-    // Find the user by ID and update the profile
-    const user = await User.findByIdAndUpdate(req.user.id, req.body, { new: true });
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).json({ message: 'Invalid email or password.' });
 
-    // Return the updated user's profile to the client
-    res.json({ user });
-  } catch (err) {
-    console.error('Failed to update user profile', err);
-    res.status(500).json({ error: 'Failed to update user profile' });
+    const validPassword = await bcrypt.compare(req.body.password, user.password);
+    if (!validPassword) return res.status(400).json({ message: 'Invalid email or password.' });
+
+    // Generate a JWT token
+    const token = authService.generateToken(user);
+    // Return the token to the client
+    res.status(200).json({ token });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

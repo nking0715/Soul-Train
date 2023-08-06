@@ -1,5 +1,5 @@
 const express = require('express');
-const nocache = require('../middleware/nocache');
+const nocache = require('../middlewares/nocache');
 const agoraController = require('../controllers/agoraController');
 
 const router = express.Router();

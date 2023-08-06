@@ -1,9 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const authMiddleware = require('./middlewares/authMiddleware');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
+const profileRoutes = require('./routes/profileRoutes');
 
 // Import database connection function
 const connectDB = require('./db');
@@ -25,7 +27,16 @@ app.use(express.json());
 // Routes
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
+
+// Secure the profile routes
+app.use(authMiddleware.authenticate);
+app.use(profileRoutes);
+
 app.use('/agora', agoraRoutes);
+
+app.use((err, req, res, next) => {
+  res.status(500).json({ message: err.message });
+});
 
 // Start the server
 const PORT = process.env.PORT || 3000;
