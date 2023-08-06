@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const authMiddleware = require('./middlewares/authMiddleware');
-const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -25,7 +24,6 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 // Routes
-app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 
 // Secure the profile routes
