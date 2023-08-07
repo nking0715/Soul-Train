@@ -1,28 +1,14 @@
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const validator = require('validator');
 const authService = require('../services/authService');
+const { validationResult } = require('express-validator');
 
 exports.register = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const errors = validationResult(req);
 
-    // Validate email
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({ message: 'Invalid email format.' });
-    }
-
-    // Validate password
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecialCharacter = /[!@#$%^&*]/.test(password);
-    const hasMinLength = validator.isLength(password, { min: 7 });
-
-    if (!hasUppercase || !hasNumber || !hasSpecialCharacter || !hasMinLength) {
-      return res.status(400).json({
-        message: 'Password must contain at least one uppercase letter, one number, one special character, and be longer than 6 characters.'
-      });
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
     let user = await User.findOne({ email: req.body.email });
