@@ -12,6 +12,14 @@ const profileSchema = new mongoose.Schema({
     },
     dateOfBirth: Date,
     profilePicture: String,
+    location: {
+        type: String,
+        trim: true
+    },
+    website: {
+        type: String,
+        trim: true
+    },
     // ... other fields
 });
 
