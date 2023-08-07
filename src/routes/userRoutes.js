@@ -4,6 +4,7 @@ const { register, login } = require('../controllers/userController');
 const { check } = require('express-validator');
 
 router.post('/register', [
+    check('username').notEmpty().withMessage('Username is required.'),
     check('email').isEmail().withMessage('Invalid email format.'),
     check('password')
         .isLength({ min: 7 }).withMessage('Password must be longer than 6 characters.')
