@@ -1,4 +1,5 @@
 const express = require('express');
+const passport = require('passport');
 const router = express.Router();
 const { register, login } = require('../controllers/userController');
 const { check } = require('express-validator');
