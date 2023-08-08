@@ -20,6 +20,14 @@ const profileSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    followers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
     // ... other fields
 });
 

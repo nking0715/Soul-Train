@@ -3,7 +3,7 @@ const { check } = require('express-validator');
 
 const router = express.Router();
 
-const { getProfile, updateProfile } = require('../controllers/profileController');
+const { getProfile, updateProfile, followUser } = require('../controllers/profileController');
 
 router.get('/profile', getProfile);
 router.put('/profile', [
@@ -14,5 +14,6 @@ router.put('/profile', [
     check('location').isLength({ max: 100 }).withMessage('Location should not exceed 100 characters.'),
     check('website').optional().isURL().withMessage('Invalid website URL.'),
 ], updateProfile);
+router.put('/follow/:id', followUser);
 
 module.exports = router;
