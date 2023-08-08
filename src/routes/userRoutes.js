@@ -1,4 +1,5 @@
 const express = require('express');
+const passport = require('passport');
 const router = express.Router();
 const { register, login } = require('../controllers/userController');
 const { check } = require('express-validator');
@@ -12,6 +13,16 @@ router.post('/register', [
         .matches(/[0-9]/).withMessage('Password must contain at least one number.')
         .matches(/[!@#$%^&*]/).withMessage('Password must contain at least one special character.')
 ], register);
+
 router.post('/login', login);
+
+router.get('/auth/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
+router.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/users/login' }), (req, res) => {
+    // Successful authentication, redirect to profile or dashboard.
+    res.redirect('/profile');  // Modify this based on your app's needs.
+});
 
 module.exports = router;

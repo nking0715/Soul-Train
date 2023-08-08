@@ -6,3 +6,6 @@ node_modules/
 
 # key generator
 key.js
+
+# ssl key and certificate
+src/ssl/
