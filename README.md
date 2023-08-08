@@ -24,16 +24,16 @@ Once the server is up and running, users can register for an account by providin
 This backend server provides a set of RESTful APIs for integrating with the frontend mobile application.
 The following APIs are available:
 ### User Registration
-#### API Endpoint: /auth/register
+#### API Endpoint: /users/register
 This API allows users to register for a new account by providing their name, email address and a secure password.
 ##### Request
-- HTTP Method: POST /auth/register
+- HTTP Method: POST /users/register
 - Content-Type: application/json
 ```JSON
 {
-    "name": "example",
+    "username": "example",
     "email": "example@example.com",
-    "password": "password123"
+    "password": "Password@123"
 }
 ```
 ##### Response
@@ -41,21 +41,19 @@ This API allows users to register for a new account by providing their name, ema
 - Content-Type: application/json
 ```JSON
 {
-  "success": true,
-  "message": "User registered successfully",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 ### User Login
-#### API Endpoint: /auth/login
+#### API Endpoint: /users/login
 This API allows users to log in to their account using their email address and password.
 ##### Request
-- HTTP Method: POST /auth/login
+- HTTP Method: POST /users/login
 - Content-Type: application/json
 ```JSON
 {
   "email": "example@example.com",
-  "password": "password123"
+  "password": "Password@123"
 }
 ```
 ##### Response
@@ -63,8 +61,6 @@ This API allows users to log in to their account using their email address and p
 - Content-Type: application/json
 ```JSON
 {
-  "success": true,
-  "message": "User logged in successfully",
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
