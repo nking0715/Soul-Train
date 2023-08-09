@@ -6,17 +6,17 @@ const profileSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    bio: {
+    aboutMe: {
         type: String,
         trim: true
     },
     dateOfBirth: Date,
     profilePicture: String,
-    location: {
+    country: {
         type: String,
         trim: true
     },
-    website: {
+    city: {
         type: String,
         trim: true
     },

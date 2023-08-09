@@ -20,13 +20,13 @@ exports.updateProfile = async (req, res) => {
 
     // If validations pass, continue with the update logic
     try {
-        const { bio, dateOfBirth, profilePicture, location, website } = req.body;
+        const { aboutMe, dateOfBirth, profilePicture, country, city } = req.body;
 
         // Here, we assume that req.userId contains the ID of the currently logged-in user
         // This would typically be set in a middleware after verifying the user's token
         const profile = await Profile.findOneAndUpdate(
             { userId: req.userId },
-            { bio, dateOfBirth, profilePicture, location, website },
+            { aboutMe, dateOfBirth, profilePicture, country, city },
             { new: true, upsert: true }
         );
 

@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // ... other fields like email, etc.
+    joindate: {
+        type: Date,
+        default: Date.now()
+    }
 });
 
 userSchema.pre('save', async function(next) {

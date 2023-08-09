@@ -1,5 +1,4 @@
 const express = require('express');
-const passport = require('passport');
 const router = express.Router();
 const { register, login } = require('../controllers/userController');
 const { check } = require('express-validator');
@@ -29,6 +28,7 @@ router.post('/verify-google-token', async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
         });
         const payload = ticket.getPayload();
+        console.log(payload);
         const userId = payload['sub'];
 
         // Use the `userId` (or other payload fields) to identify the user in your system.
