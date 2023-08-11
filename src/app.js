@@ -1,6 +1,5 @@
-const session = require('express-session');
-const User = require('./models/user');
 const express = require('express');
+const session = require('express-session');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const authMiddleware = require('./middlewares/authMiddleware');
@@ -18,17 +17,25 @@ connectDB();
 // Create the Express app
 const app = express();
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false
-}));
-
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.json());
+
+app.use(session({
+  secret: 'yourSecretKey',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: false,
+    maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
+  }
+}));
+
+app.use((req, res, next) => {
+  req.session.lastAccess = Date.now(); // Refresh the session on every request
+  next();
+});
 
 // Routes
 app.use('/users', userRoutes);

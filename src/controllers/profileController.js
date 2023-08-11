@@ -30,7 +30,7 @@ exports.updateProfile = async (req, res) => {
             { new: true, upsert: true }
         );
 
-        res.json(profile);
+        res.status(200).json(profile);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
