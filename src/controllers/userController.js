@@ -65,8 +65,12 @@ exports.googleLogin = async (req, res) => {
           audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
       });
       const payload = ticket.getPayload();
-      console.log(payload);
-      const userId = payload['sub'];
+      const { email, name } = payload;
+      let user = await User.findOne({ email: email });
+      if (!user) {
+          user = new User({ email, name });  // Assuming your User model has fields for email and name
+          await user.save();
+      }
 
       req.session.userId = userId;
 
