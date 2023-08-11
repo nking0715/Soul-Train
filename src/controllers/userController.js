@@ -79,3 +79,27 @@ exports.googleLogin = async (req, res) => {
       res.status(400).send({ status: 'error', message: 'Token verification failed.' });
   }
 };
+
+exports.facebookLogin = async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) {
+    return res.status(400).json({ message: 'Facebook access token is required.' });
+  }
+  try {
+    const axios = require('axios');
+    const response = await axios.get(`https://graph.facebook.com/v11.0/me?access_token=${accessToken}&fields=id,name,email`);
+    const { id, name, email } = response.data;
+    if (!id || !email) {
+      return res.status(400).json({ message: 'Failed to fetch user details from Facebook.' });
+    }
+    let user = await User.findOne({ email: email });
+    if (!user) {
+      user = new User({ email, name });  // Assuming your User model has fields for email and name
+      await user.save();
+    }
+    req.session.userId = user._id;
+    res.status(200).json({ message: 'Login successful.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

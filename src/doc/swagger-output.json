@@ -102,6 +102,36 @@
         }
       }
     },
+    "/users/facebookLogin": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accessToken": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/profile": {
       "get": {
         "description": "",
@@ -166,7 +196,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "bio": {
+                  "aboutMe": {
                     "example": "any"
                   },
                   "dateOfBirth": {
@@ -175,10 +205,10 @@
                   "profilePicture": {
                     "example": "any"
                   },
-                  "location": {
+                  "country": {
                     "example": "any"
                   },
-                  "website": {
+                  "city": {
                     "example": "any"
                   }
                 }

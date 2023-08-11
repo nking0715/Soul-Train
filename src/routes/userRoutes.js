@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, googleLogin } = require('../controllers/userController');
+const { register, login, googleLogin, facebookLogin } = require('../controllers/userController');
 const { check } = require('express-validator');
 
 router.post('/register', [
@@ -16,5 +16,7 @@ router.post('/register', [
 router.post('/login', login);
 
 router.post('/verify-google-token', googleLogin);
+
+router.post('/facebookLogin', facebookLogin);
 
 module.exports = router;
