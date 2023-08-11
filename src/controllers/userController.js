@@ -107,3 +107,13 @@ exports.facebookLogin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.logout = (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to logout.' });
+    }
+    res.clearCookie('sid');  // Assuming the session cookie name is 'sid', adjust if different
+    res.status(200).json({ message: 'Logged out successfully.' });
+  });
+};

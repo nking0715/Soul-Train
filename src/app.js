@@ -23,10 +23,11 @@ app.use(bodyParser.json());
 app.use(express.json());
 
 app.use(session({
-  secret: 'yourSecretKey',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
   cookie: {
+    name: 'sid',
     secure: false,
     maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
   }
