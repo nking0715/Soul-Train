@@ -42,6 +42,7 @@ app.use((req, res, next) => {
 app.use('/users', userRoutes);
 
 // Secure the profile routes
+app.use(authMiddleware.isAuthenticated);
 app.use(authMiddleware.authenticate);
 app.use(profileRoutes);
 
