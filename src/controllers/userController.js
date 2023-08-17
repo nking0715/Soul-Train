@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const authService = require('../services/authService');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
+const Profile = require('../models/profile');
 require('dotenv').config();
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -23,6 +24,13 @@ exports.register = async (req, res) => {
     } else {
       user = new User(req.body);
       await user.save();
+
+      // Create a default profile for the user
+      const defaultProfile = new Profile({
+        userId: user._id,
+        artistName: user.name || 'Unknown Artist'
+      });
+      await defaultProfile.save();
 
       req.session.userId = user._id;
 
@@ -60,27 +68,34 @@ exports.googleLogin = async (req, res) => {
   const idToken = req.body.idToken;
 
   try {
-      const ticket = await client.verifyIdToken({
-          idToken: idToken,
-          audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
+    });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+    let user = await User.findOne({ email: email });
+    if (!user) {
+      user = new User({ email, name });  // Assuming your User model has fields for email and name
+      await user.save();
+
+      // Create a default profile for the user
+      const defaultProfile = new Profile({
+        userId: user._id,
+        artistName: user.name || 'Unknown Artist'
       });
-      const payload = ticket.getPayload();
-      const { email, name } = payload;
-      let user = await User.findOne({ email: email });
-      if (!user) {
-          user = new User({ email, name });  // Assuming your User model has fields for email and name
-          await user.save();
-      }
+      await defaultProfile.save();
+    }
 
-      req.session.userId = userId;
+    req.session.userId = userId;
 
-      // Use the `userId` (or other payload fields) to identify the user in your system.
-      // Maybe fetch their profile from MongoDB, or create a new profile if it's their first time logging in.
+    // Use the `userId` (or other payload fields) to identify the user in your system.
+    // Maybe fetch their profile from MongoDB, or create a new profile if it's their first time logging in.
 
-      res.status(200).send({ status: 'success', user: payload });
+    res.status(200).send({ status: 'success', user: payload });
 
   } catch (error) {
-      res.status(400).send({ status: 'error', message: 'Token verification failed.' });
+    res.status(400).send({ status: 'error', message: 'Token verification failed.' });
   }
 };
 
@@ -100,6 +115,12 @@ exports.facebookLogin = async (req, res) => {
     if (!user) {
       user = new User({ email, name });  // Assuming your User model has fields for email and name
       await user.save();
+      // Create a default profile for the user
+      const defaultProfile = new Profile({
+        userId: user._id,
+        artistName: user.name || 'Unknown Artist'
+      });
+      await defaultProfile.save();
     }
     req.session.userId = user._id;
     res.status(200).json({ message: 'Login successful.' });

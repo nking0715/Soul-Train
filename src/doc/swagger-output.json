@@ -199,6 +199,9 @@
           "403": {
             "description": "Forbidden"
           },
+          "404": {
+            "description": "Not Found"
+          },
           "500": {
             "description": "Internal Server Error"
           }
@@ -209,19 +212,28 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "aboutMe": {
+                  "artistName": {
                     "example": "any"
                   },
-                  "dateOfBirth": {
+                  "bio": {
                     "example": "any"
                   },
                   "profilePicture": {
                     "example": "any"
                   },
-                  "country": {
+                  "coverPicture": {
                     "example": "any"
                   },
-                  "city": {
+                  "crew": {
+                    "example": "any"
+                  },
+                  "homeLocation": {
+                    "example": "any"
+                  },
+                  "email": {
+                    "example": "any"
+                  },
+                  "phoneNumber": {
                     "example": "any"
                   }
                 }
@@ -231,12 +243,12 @@
         }
       }
     },
-    "/follow/{id}": {
-      "put": {
+    "/profile/{userId}": {
+      "get": {
         "description": "",
         "parameters": [
           {
-            "name": "id",
+            "name": "userId",
             "in": "path",
             "required": true,
             "schema": {
@@ -254,9 +266,6 @@
         "responses": {
           "200": {
             "description": "OK"
-          },
-          "400": {
-            "description": "Bad Request"
           },
           "401": {
             "description": "Unauthorized"

@@ -6,29 +6,41 @@ const profileSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    aboutMe: {
+    artistName: {
         type: String,
-        trim: true
+        trim: true,
+        required: true
     },
-    dateOfBirth: Date,
+    hasChangedArtistName: {
+        type: Boolean,
+        default: false
+    },
     profilePicture: String,
-    country: {
+    coverPicture: String,
+    bio: {
         type: String,
         trim: true
     },
-    city: {
+    crew: {
         type: String,
         trim: true
     },
-    following: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
-    followers: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }]
-    // ... other fields
+    homeLocation: {
+        type: String,
+        trim: true
+    },
+    // Private Information
+    email: {
+        type: String,
+        trim: true,
+        private: true
+    },
+    phoneNumber: {
+        type: String,
+        trim: true,
+        private: true
+    },
+    // ... other existing fields
 });
 
 module.exports = mongoose.model('Profile', profileSchema);

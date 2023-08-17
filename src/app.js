@@ -1,3 +1,4 @@
+// Import necessary modules
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
@@ -10,18 +11,21 @@ const profileRoutes = require('./routes/profileRoutes');
 // Load environment variables
 dotenv.config();
 
-// Connect to database
+// Connect to the database
 const connectDB = require('./db');
 connectDB();
 
 // Create the Express app
 const app = express();
 
-// Middleware
+// Set up middlewares
+
+// Body parsers
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.json());
 
+// Session setup
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -33,19 +37,22 @@ app.use(session({
   }
 }));
 
+// Custom middleware to refresh the session's last access timestamp
 app.use((req, res, next) => {
-  req.session.lastAccess = Date.now(); // Refresh the session on every request
+  req.session.lastAccess = Date.now();
   next();
 });
 
-// Routes
+// Set up routes
+
+// User routes
 app.use('/users', userRoutes);
 
-// Secure the profile routes
-app.use(authMiddleware.isAuthenticated);
+// Profile routes with authentication and authorization
 app.use(authMiddleware.authenticate);
 app.use(profileRoutes);
 
+// Agora routes
 app.use('/agora', agoraRoutes);
 
 // Error handling middleware
@@ -53,9 +60,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-// Start the server
+// Start the Express server
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
