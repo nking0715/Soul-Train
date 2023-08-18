@@ -24,30 +24,30 @@ exports.register = async (req, res) => {
     } else {
       user = new User(req.body);
 
-/*       // Generate a random four-digit validation code
-      const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
-      user.validationCode = validationCode;
-      user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
-
-      // Send the validation code to the user's email
-      // Setting up nodemailer and the email sending logic would be necessary.
-      // Here's a simplified version:
-      const transporter = nodemailer.createTransport({
-        service: 'smtp.ethereal.email', // or another email service
-        auth: {
-          user: 'troy.boyer@ethereal.email', // your email address
-          pass: 'rkKnvvjrYm5de4W8yd' // your email password
-        }
-      });
-      const mailOptions = {
-        from: 'talentedblu@gmail.com',
-        to: user.email,
-        subject: 'Validation Code',
-        text: `Your validation code is: ${validationCode}`
-      };
-      await transporter.sendMail(mailOptions);
-
-      res.status(200).json({ message: 'Validation email sent' }); */
+      /*       // Generate a random four-digit validation code
+            const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
+            user.validationCode = validationCode;
+            user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
+      
+            // Send the validation code to the user's email
+            // Setting up nodemailer and the email sending logic would be necessary.
+            // Here's a simplified version:
+            const transporter = nodemailer.createTransport({
+              service: 'smtp.ethereal.email', // or another email service
+              auth: {
+                user: 'troy.boyer@ethereal.email', // your email address
+                pass: 'rkKnvvjrYm5de4W8yd' // your email password
+              }
+            });
+            const mailOptions = {
+              from: 'talentedblu@gmail.com',
+              to: user.email,
+              subject: 'Validation Code',
+              text: `Your validation code is: ${validationCode}`
+            };
+            await transporter.sendMail(mailOptions);
+      
+            res.status(200).json({ message: 'Validation email sent' }); */
 
       await user.save();
 
@@ -129,10 +129,32 @@ exports.googleLogin = async (req, res) => {
       // Create a default profile for the user
       const defaultProfile = new Profile({
         userId: user._id,
-        artistName: user.username || 'Unknown Artist'
       });
       await defaultProfile.save();
+
+      res.status(201).json({ username: user.username, email: user.email, id: user._id });
+    } else {
+      req.session.userId = user._id;
+
+      // Generate a JWT token
+      const token = authService.generateToken(user);
+      // Return the token to the client
+      res.status(200).json({ token });
     }
+  } catch (error) {
+    res.status(400).send({ status: 'error', message: 'Token verification failed.' });
+  }
+};
+
+exports.addArtistName = async (req, res) => {
+  const artistName = req.body.artistName;
+  try {
+    let user = await User.findOne({ _id: req.params.userId });
+    user.artistName = artistName;
+    await user.save();
+    let profile = await Profile.findOne({ userId: req.params.userId });
+    profile.artistName = artistName;
+    await profile.save();
 
     req.session.userId = user._id;
 
@@ -141,9 +163,7 @@ exports.googleLogin = async (req, res) => {
     // Return the token to the client
     res.status(200).json({ token });
 
-  } catch (error) {
-    res.status(400).send({ status: 'error', message: 'Token verification failed.' });
-  }
+  } catch (err) { res.status(400).send({ status: 'error', message: err.message }) }
 };
 
 exports.facebookLogin = async (req, res) => {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, googleLogin, facebookLogin, logout } = require('../controllers/userController');
+const { register, login, googleLogin, addArtistName, facebookLogin, logout } = require('../controllers/userController');
 const { check } = require('express-validator');
 
 router.post('/register', [
@@ -17,6 +17,8 @@ router.post('/register', [
 router.post('/login', login);
 
 router.post('/verify-google-token', googleLogin);
+
+router.post('/add-artist-name/:userId', addArtistName);
 
 router.post('/facebookLogin', facebookLogin);
 

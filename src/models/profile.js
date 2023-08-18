@@ -9,7 +9,6 @@ const profileSchema = new mongoose.Schema({
     artistName: {
         type: String,
         trim: true,
-        required: true
     },
     hasChangedArtistName: {
         type: Boolean,
