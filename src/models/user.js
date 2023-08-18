@@ -9,7 +9,6 @@ const userSchema = new mongoose.Schema({
     artistName: {
         type: String,
         trim: true,
-        required: true
     },
     email: {
         type: String,
@@ -18,7 +17,6 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
     },
     validationCode: {
         type: String,

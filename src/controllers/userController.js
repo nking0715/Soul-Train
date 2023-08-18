@@ -2,12 +2,11 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
+const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
 const Profile = require('../models/profile');
 const authService = require('../services/authService');
 require('dotenv').config();
-
-const client = new OAuth2Client();
 
 exports.register = async (req, res) => {
   try {
@@ -24,33 +23,32 @@ exports.register = async (req, res) => {
       });
     } else {
       user = new User(req.body);
-/* 
-      // Generate a random four-digit validation code
+
+/*       // Generate a random four-digit validation code
       const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
       user.validationCode = validationCode;
       user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
-      await user.save();
 
       // Send the validation code to the user's email
       // Setting up nodemailer and the email sending logic would be necessary.
       // Here's a simplified version:
       const transporter = nodemailer.createTransport({
-        service: 'gmail', // or another email service
+        service: 'smtp.ethereal.email', // or another email service
         auth: {
-          user: 'talentedblu@gmail.com', // your email address
-          pass: 'TalentedBlu123' // your email password
+          user: 'troy.boyer@ethereal.email', // your email address
+          pass: 'rkKnvvjrYm5de4W8yd' // your email password
         }
       });
       const mailOptions = {
-          from: 'talentedblu@gmail.com',
-          to: user.email,
-          subject: 'Validation Code',
-          text: `Your validation code is: ${validationCode}`
+        from: 'talentedblu@gmail.com',
+        to: user.email,
+        subject: 'Validation Code',
+        text: `Your validation code is: ${validationCode}`
       };
       await transporter.sendMail(mailOptions);
 
-      res.status(200).json({ message: 'Validation email sent' });
-       */
+      res.status(200).json({ message: 'Validation email sent' }); */
+
       await user.save();
 
       // Create a default profile for the user
@@ -74,25 +72,25 @@ exports.register = async (req, res) => {
 
 exports.verifyValidationCode = async (req, res) => {
   try {
-      const { validationCode } = req.body;
-      const userId = req.session.userId;
-      const user = await User.findById(userId);
-      
-      if (!user) {
-          return res.status(404).json({ message: 'User not found' });
-      }
-      
-      if (user.validationCode !== validationCode || user.codeExpiry < Date.now()) {
-          return res.status(400).json({ message: 'Invalid or expired validation code' });
-      }
-      
-      user.emailVerified = true;
-      await user.save();
+    const { validationCode } = req.body;
+    const userId = req.session.userId;
+    const user = await User.findById(userId);
 
-      res.status(200).json({ message: 'Email verified successfully' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.validationCode !== validationCode || user.codeExpiry < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired validation code' });
+    }
+
+    user.emailVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully' });
 
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -120,31 +118,28 @@ exports.googleLogin = async (req, res) => {
   const idToken = req.body.idToken;
 
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,  // Specify the CLIENT_ID of the app that accesses the backend
-    });
-    const payload = ticket.getPayload();
-    const { email, name } = payload;
+    const decodedToken = jwt_decode(idToken);
+    const email = decodedToken.email;
+    const name = decodedToken.name;
     let user = await User.findOne({ email: email });
     if (!user) {
-      user = new User({ email, name });  // Assuming your User model has fields for email and name
+      user = new User({ email: email, username: name });  // Assuming your User model has fields for email and name
       await user.save();
 
       // Create a default profile for the user
       const defaultProfile = new Profile({
         userId: user._id,
-        artistName: user.name || 'Unknown Artist'
+        artistName: user.username || 'Unknown Artist'
       });
       await defaultProfile.save();
     }
 
-    req.session.userId = userId;
+    req.session.userId = user._id;
 
-    // Use the `userId` (or other payload fields) to identify the user in your system.
-    // Maybe fetch their profile from MongoDB, or create a new profile if it's their first time logging in.
-
-    res.status(200).send({ status: 'success', user: payload });
+    // Generate a JWT token
+    const token = authService.generateToken(user);
+    // Return the token to the client
+    res.status(200).json({ token });
 
   } catch (error) {
     res.status(400).send({ status: 'error', message: 'Token verification failed.' });
