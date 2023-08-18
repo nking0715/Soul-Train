@@ -6,6 +6,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    artistName: {
+        type: String,
+        trim: true,
+        required: true
+    },
     email: {
         type: String,
         required: true,
@@ -14,6 +19,15 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    validationCode: {
+        type: String,
+    },
+    codeExpiry: {
+        type: Date,
+    },
+    emailVerified: {
+        type: Boolean,
     },
     joindate: {
         type: Date,
