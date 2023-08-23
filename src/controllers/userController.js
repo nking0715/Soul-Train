@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const sendMail = require('./sendMail/gmail');
+require('events').EventEmitter.prototype._maxListeners = 0;
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
 const Profile = require('../models/profile');
