@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
+const sendMail = require('./sendMail/gmail');
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
 const Profile = require('../models/profile');
@@ -24,46 +25,24 @@ exports.register = async (req, res) => {
     } else {
       user = new User(req.body);
 
-      /*       // Generate a random four-digit validation code
-            const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
-            user.validationCode = validationCode;
-            user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
-      
-            // Send the validation code to the user's email
-            // Setting up nodemailer and the email sending logic would be necessary.
-            // Here's a simplified version:
-            const transporter = nodemailer.createTransport({
-              service: 'smtp.ethereal.email', // or another email service
-              auth: {
-                user: 'troy.boyer@ethereal.email', // your email address
-                pass: 'rkKnvvjrYm5de4W8yd' // your email password
-              }
-            });
-            const mailOptions = {
-              from: 'talentedblu@gmail.com',
-              to: user.email,
-              subject: 'Validation Code',
-              text: `Your validation code is: ${validationCode}`
-            };
-            await transporter.sendMail(mailOptions);
-      
-            res.status(200).json({ message: 'Validation email sent' }); */
+      const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
+      user.validationCode = validationCode;
+      user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
+
+      const options = {
+        to: user.email,
+        from: 'noreply@soultrain.app',
+        subject: 'Validation Code',
+        text: `Your validation code is: ${validationCode}`,
+      };
+
+      const messageId = await sendMail(options);
+      console.log('Message sent successfully:', messageId);
 
       await user.save();
-
-      // Create a default profile for the user
-      const defaultProfile = new Profile({
-        userId: user._id,
-        artistName: user.artistName
-      });
-      await defaultProfile.save();
-
       req.session.userId = user._id;
-
-      // Generate a JWT token
-      const token = authService.generateToken(user);
-      // Return the token to the client
-      res.status(200).json({ token });
+      
+      res.status(200).json({ message: 'Validation code successfully sent to the user' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -87,7 +66,17 @@ exports.verifyValidationCode = async (req, res) => {
     user.emailVerified = true;
     await user.save();
 
-    res.status(200).json({ message: 'Email verified successfully' });
+    // Create a default profile for the user
+    const defaultProfile = new Profile({
+      userId: user._id,
+      artistName: user.artistName
+    });
+    await defaultProfile.save();
+
+    // Generate a JWT token
+    const token = authService.generateToken(user);
+    // Return the token to the client
+    res.status(200).json({ token });
 
   } catch (error) {
     res.status(500).json({ message: error.message });

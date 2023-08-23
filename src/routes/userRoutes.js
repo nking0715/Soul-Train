@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, googleLogin, addArtistName, facebookLogin, logout } = require('../controllers/userController');
+const { register, verifyValidationCode, login, googleLogin, addArtistName, facebookLogin, logout } = require('../controllers/userController');
 const { check } = require('express-validator');
 
 router.post('/register', [
@@ -13,6 +13,8 @@ router.post('/register', [
         .matches(/[0-9]/).withMessage('Password must contain at least one number.')
         .matches(/[!@#$%^&*]/).withMessage('Password must contain at least one special character.')
 ], register);
+
+router.post('/verifyValidationCode', verifyValidationCode);
 
 router.post('/login', login);
 
