@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
+const axios = require('axios');
 const { validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const sendMail = require('./sendMail/gmail');
@@ -162,7 +163,6 @@ exports.facebookLogin = async (req, res) => {
     return res.status(400).json({ message: 'Facebook access token is required.' });
   }
   try {
-    const axios = require('axios');
     const response = await axios.get(`https://graph.facebook.com/v11.0/me?access_token=${accessToken}&fields=id,name,email`);
     const { id, name, email } = response.data;
     if (!id || !email) {

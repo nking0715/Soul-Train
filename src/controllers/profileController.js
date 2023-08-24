@@ -60,3 +60,12 @@ exports.updateProfile = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+/* 
+exports.uploadVideo = async (req, res) => {
+    const file = req.file;
+    const userId = req.user.id;
+
+    // Generate a unique filename
+    const uniqueFileName = `${userId}-${Date.now()}.mp4`;
+}
+ */
