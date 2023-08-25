@@ -16,6 +16,10 @@ const profileSchema = new mongoose.Schema({
     },
     profilePicture: String,
     coverPicture: String,
+    videos: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Video'
+    }],    
     bio: {
         type: String,
         trim: true

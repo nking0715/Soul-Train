@@ -1,9 +1,33 @@
 const express = require('express');
 const { check } = require('express-validator');
+const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadVideo } = require('../controllers/profileController');
+
+
+const mimeToExt = {
+    'video/mp4': '.mp4',
+    'video/avi': '.avi',
+    'video/mpeg': '.mpeg',
+    'video/quicktime': '.mov',
+    'video/x-matroska': '.mkv',
+    // ... add other types as needed
+};
+
+
+const upload = multer({
+    dest: 'uploads/',
+    limits: { fileSize: 100 * 1024 * 1024 },  // 100 MB limit
+    fileFilter: (req, file, cb) => {
+        if (!mimeToExt[file.mimetype]) {
+            return cb(new Error('Invalid file type'), false);
+        }
+        cb(null, true);
+    }
+});
+
 
 router.get('/profile', getProfile);
 router.get('/profile/:userId', getProfile);
@@ -19,5 +43,7 @@ router.put('/profile', [
     check('email').optional().isEmail().withMessage('Invalid email address.'),
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
+
+router.post('/profile/upload', upload.single('video'), uploadVideo);
 
 module.exports = router;

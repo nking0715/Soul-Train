@@ -163,11 +163,18 @@ exports.facebookLogin = async (req, res) => {
     return res.status(400).json({ message: 'Facebook access token is required.' });
   }
   try {
-    const response = await axios.get(`https://graph.facebook.com/v11.0/me?access_token=${accessToken}&fields=id,name,email`);
-    const { id, name, email } = response.data;
-    if (!id || !email) {
+    const { data } = await axios({
+      url: 'https://graph.facebook.com/me',
+      method: 'get',
+      params: {
+        fields: ['id', 'email', 'first_name', 'last_name'].join(','),
+        access_token: accessToken,
+      },
+    });
+    if (!data) {
       return res.status(400).json({ message: 'Failed to fetch user details from Facebook.' });
     }
+    
     let user = await User.findOne({ email: email });
     if (!user) {
       user = new User({ email, name });  // Assuming your User model has fields for email and name

@@ -43,8 +43,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Set up routes
-
 // User routes
 app.use('/users', userRoutes);
 
