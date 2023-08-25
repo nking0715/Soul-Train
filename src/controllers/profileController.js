@@ -1,5 +1,6 @@
 const Profile = require('../models/profile');
 const Video = require('../models/video');
+const Photo = require('../models/photo');
 const { validationResult } = require('express-validator');
 
 const AWS = require('aws-sdk');
@@ -11,7 +12,7 @@ AWS.config.update({
     region: 'eu-north-1' // your desired region
 });
 
-const mimeToExt = {
+const videoMimeToExt = {
     'video/mp4': '.mp4',
     'video/avi': '.avi',
     'video/mpeg': '.mpeg',
@@ -20,6 +21,14 @@ const mimeToExt = {
     // ... add other types as needed
 };
 
+const imageMimeToExt = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/tiff': '.tiff',
+    // ... add other types as needed
+};
 
 const s3 = new AWS.S3();
 
@@ -93,7 +102,15 @@ exports.uploadVideo = async (req, res) => {
         const description = req.description;
 
         // Get file extension
-        const fileExtension = mimeToExt[file.mimetype];
+        const fileExtension = videoMimeToExt[file.mimetype];
+
+        // Check if the file type is supported
+        if (!fileExtension) {
+            fs.unlink(file.path, (unlinkErr) => {
+                if (unlinkErr) console.error(unlinkErr);
+            });
+            return res.status(400).json({ message: 'Unsupported file type' });
+        }
 
         // Generate a unique filename with the correct extension
         const uniqueFileName = `${userId}-${Date.now()}${fileExtension}`;
@@ -138,5 +155,74 @@ exports.uploadVideo = async (req, res) => {
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
+}
 
+exports.uploadPhoto = async (req, res) => {
+    const startTime = Date.now();
+
+    try {
+        const file = req.file;
+        const userId = req.user.id;
+        const tags = req.tags;
+        const description = req.description;
+        const profile = await Profile.findOne({ userId: userId });
+
+        if (!profile) {
+            return res.status(404).json({ message: 'Profile not found' });
+        }
+
+        // Get file extension
+        const fileExtension = imageMimeToExt[file.mimetype];
+
+        // Check if the file type is supported
+        if (!fileExtension) {
+            fs.unlink(file.path, (unlinkErr) => {
+                if (unlinkErr) console.error(unlinkErr);
+            });
+            return res.status(400).json({ message: 'Unsupported file type' });
+        }
+
+        // Generate a unique filename with the correct extension
+        const uniqueFileName = `${userId}-${Date.now()}${fileExtension}`;
+
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `photos/${uniqueFileName}`, // Store photos in a 'photos' folder for organization
+            Body: fs.createReadStream(file.path),
+            ContentType: file.mimetype,
+            ACL: 'public-read'
+        };
+
+        s3.upload(params, async (err, data) => {
+            if (err) {
+                fs.unlink(file.path, (unlinkErr) => {
+                    if (unlinkErr) console.error(unlinkErr);
+                });
+                return res.status(500).json({ error: true, message: err });
+            }
+
+            const s3FileURL = data.Location;
+            res.status(200).json({ photoUrl: s3FileURL });
+            fs.unlink(file.path, (unlinkErr) => {
+                if (unlinkErr) console.error(unlinkErr);
+            });
+
+            const newPhoto = new Photo({
+                profile: profile,
+                url: s3FileURL,
+                tags: tags,
+                description: description
+            })
+            await newPhoto.save();
+            profile.photos.push(newPhoto._id);
+            await profile.save();
+
+            const endTime = Date.now();
+            const uploadTime = endTime - startTime;
+            console.log(`Photo upload successful! It took ${uploadTime} milliseconds.`);
+        });
+
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
 }

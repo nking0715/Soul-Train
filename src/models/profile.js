@@ -19,7 +19,11 @@ const profileSchema = new mongoose.Schema({
     videos: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Video'
-    }],    
+    }],
+    photos: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Photo'
+    }],
     bio: {
         type: String,
         trim: true

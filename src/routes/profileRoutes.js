@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, uploadVideo } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadVideo, uploadPhoto } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -13,6 +13,11 @@ const mimeToExt = {
     'video/mpeg': '.mpeg',
     'video/quicktime': '.mov',
     'video/x-matroska': '.mkv',
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/tiff': '.tiff',
     // ... add other types as needed
 };
 
@@ -44,6 +49,8 @@ router.put('/profile', [
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
 
-router.post('/profile/upload', upload.single('video'), uploadVideo);
+router.post('/profile/uploadVideo', upload.single('video'), uploadVideo);
+
+router.post('/profile/uploadPhoto', upload.single('photo'), uploadPhoto);
 
 module.exports = router;
