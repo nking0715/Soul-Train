@@ -167,27 +167,38 @@ exports.facebookLogin = async (req, res) => {
       url: 'https://graph.facebook.com/me',
       method: 'get',
       params: {
-        fields: ['id', 'email', 'first_name', 'last_name'].join(','),
+        fields: ['id', 'first_name', 'last_name'].join(','),
         access_token: accessToken,
       },
     });
+
     if (!data) {
-      return res.status(400).json({ message: 'Failed to fetch user details from Facebook.' });
+      return res.status(404).json({ message: 'Failed to fetch user details from Facebook.' });
     }
-    
-    let user = await User.findOne({ email: email });
+
+    const facebookId = data.id;
+    const name = data.first_name + " " + data.last_name;
+  
+    let user = await User.findOne({ facebookID: facebookId });
     if (!user) {
-      user = new User({ email, name });  // Assuming your User model has fields for email and name
+      user = new User({ facebookID: facebookId, username: name });  // Assuming your User model has fields for email and name
       await user.save();
+
       // Create a default profile for the user
       const defaultProfile = new Profile({
         userId: user._id,
-        artistName: user.name || 'Unknown Artist'
       });
       await defaultProfile.save();
+
+      res.status(201).json({ username: user.username, id: user._id });
+    } else {
+      req.session.userId = user._id;
+
+      // Generate a JWT token
+      const token = authService.generateToken(user);
+      // Return the token to the client
+      res.status(200).json({ token });
     }
-    req.session.userId = user._id;
-    res.status(200).json({ message: 'Login successful.' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
