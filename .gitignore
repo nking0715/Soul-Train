@@ -10,7 +10,6 @@ key.js
 # ssl key and certificate
 src/ssl/
 
-
 # Gitignore files for Jetbrains IDE platform and MacOs 
 
 ### JetBrains ###
