@@ -39,7 +39,7 @@ exports.getProfile = async (req, res) => {
 
         profile = profile.toObject();
         // Remove private fields if the requester isn't the profile owner
-        if (req.userId !== profile.userId.toString()) {
+        if (req.user.id !== profile.userId.toString()) {
             delete profile.email;
             delete profile.phoneNumber;
         }
