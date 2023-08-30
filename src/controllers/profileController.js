@@ -1,5 +1,5 @@
 const Profile = require('../models/profile');
-const Asset = require('../models/asset')
+const Asset = require('../models/asset');
 const { validationResult } = require('express-validator');
 
 const AWS = require('aws-sdk');
