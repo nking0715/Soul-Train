@@ -1,6 +1,5 @@
 const Profile = require('../models/profile');
-const Video = require('../models/video');
-const Photo = require('../models/photo');
+const Asset = require('../models/asset')
 const { validationResult } = require('express-validator');
 
 const AWS = require('aws-sdk');
@@ -135,9 +134,10 @@ exports.uploadVideo = async (req, res) => {
                 fs.unlink(file.path, (unlinkErr) => {
                     if (unlinkErr) console.error(unlinkErr);
                 });
-                const newVideo = new Video({
+                const newVideo = new Asset({
                     profile: profile,
                     url: s3FileURL,
+                    type: "video",
                     tags: tags,
                     description: description
                 })
@@ -207,9 +207,10 @@ exports.uploadPhoto = async (req, res) => {
                 if (unlinkErr) console.error(unlinkErr);
             });
 
-            const newPhoto = new Photo({
+            const newPhoto = new Asset({
                 profile: profile,
                 url: s3FileURL,
+                type: "photo",
                 tags: tags,
                 description: description
             })

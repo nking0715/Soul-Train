@@ -22,7 +22,7 @@ const profileSchema = new mongoose.Schema({
     }],
     photos: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Photo'
+        ref: 'Asset'
     }],
     bio: {
         type: String,
