@@ -53,9 +53,8 @@ exports.register = async (req, res) => {
 
 exports.verifyValidationCode = async (req, res) => {
   try {
-    const { validationCode } = req.body;
-    const userId = req.session.userId;
-    const user = await User.findById(userId);
+    const { validationCode, email } = req.body;
+    const user = await User.find({email: email});
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });

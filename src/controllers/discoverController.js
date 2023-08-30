@@ -4,7 +4,7 @@ const { validationResult } = require('express-validator');
 
 exports.discoverContents = async (req, res) => {
     try {
-        let profile = await Profile.findOne({ userId: req.params.userId || req.user.id });
+        let photos = await Photo.find({ userId: req.params.userId || req.user.id });
         if (!profile) return res.status(404).json({ message: 'Profile not found' });
 
         profile = profile.toObject();

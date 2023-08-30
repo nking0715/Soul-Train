@@ -59,7 +59,7 @@ app.use(authMiddleware.authenticate);
 app.use(profileRoutes);
 
 // Api Router
-// app.use('/api', api);
+app.use('/api', api);
 
 // Agora routes
 app.use('/agora', agoraRoutes);
