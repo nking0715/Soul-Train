@@ -54,13 +54,13 @@ exports.register = async (req, res) => {
 exports.verifyValidationCode = async (req, res) => {
   try {
     const { validationCode, email } = req.body;
-    const user = await User.find({email: email});
-
+    const user = await User.findOne({email: email});
+    console.log("user ", user)
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    if (user.validationCode !== validationCode || user.codeExpiry < Date.now()) {
+    console.log("user validation code ", user.validationCode)
+    if (user.validationCode != validationCode || user.codeExpiry < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired validation code' });
     }
 
