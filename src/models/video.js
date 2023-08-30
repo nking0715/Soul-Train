@@ -23,6 +23,6 @@ const videoSchema = new mongoose.Schema({
         default: Date.now()
     }
     // ... any other video-related fields
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Video', videoSchema);

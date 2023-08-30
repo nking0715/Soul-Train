@@ -48,6 +48,6 @@ const profileSchema = new mongoose.Schema({
         private: true
     },
     // ... other existing fields
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Profile', profileSchema);
