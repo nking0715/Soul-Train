@@ -5,6 +5,8 @@ node_modules/
 # dotenv environment variable files
 .env
 
+.env.*
+
 # key generator
 key.js
 

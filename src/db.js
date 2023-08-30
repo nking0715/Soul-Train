@@ -3,8 +3,14 @@ require('dotenv').config();
 
 const connectDB = async () => {
   try {
+    var db_url;
+    if(process.env.NODE_ENV == "development") {
+      db_url = process.env.MONGODB_DEV_URI
+    } else {
+      db_url = process.env.MONGODB_URI
+    }
     // Connect to the database
-    mongoose.connect(process.env.MONGODB_URI, {
+    mongoose.connect(db_url, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });

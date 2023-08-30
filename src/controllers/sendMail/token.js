@@ -6,7 +6,7 @@ const fs = require('fs');
 const credentials = require('./credentials.json');
 
 // Replace with the code you received from Google
-const code = '4/0Adeu5BUdIfCZ8iiJuFQu4c9RPKCyKyd8LbehfnbhDQRtkjgpqtGwcmu5QqYSdV6nV0SP6w';
+const code = '4/0Adeu5BXNMyFQQ5eBCXiw3w3ulVhgBIwxo07VYoyoIZANcwQQ9pPX8P6I5tjz9JQrigWIVw';
 const { client_secret, client_id, redirect_uris } = credentials.installed;
 const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 

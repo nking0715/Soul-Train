@@ -7,6 +7,8 @@ const authMiddleware = require('./middlewares/authMiddleware');
 const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const api = require('./routes/api-router');
+const cors = require('cors');
 
 // Load environment variables
 dotenv.config();
@@ -15,10 +17,10 @@ dotenv.config();
 const connectDB = require('./db');
 connectDB();
 
-// Create the Express app
 const app = express();
+const server = require('http').createServer(app);
 
-// Set up middlewares
+app.use(cors('*'));
 
 // Body parsers
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -43,12 +45,21 @@ app.use((req, res, next) => {
   next();
 });
 
+
+app.get("/", (req, res) => {
+  console.log("calling")
+  res.json({ message: "Welcome to SoulTrain App!" });
+});
+
 // User routes
 app.use('/users', userRoutes);
 
 // Profile routes with authentication and authorization
 app.use(authMiddleware.authenticate);
 app.use(profileRoutes);
+
+// Api Router
+// app.use('/api', api);
 
 // Agora routes
 app.use('/agora', agoraRoutes);
@@ -60,6 +71,6 @@ app.use((err, req, res, next) => {
 
 // Start the Express server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
