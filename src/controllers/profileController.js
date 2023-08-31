@@ -159,7 +159,6 @@ exports.uploadVideo = async (req, res) => {
 
 exports.uploadPhoto = async (req, res) => {
     const startTime = Date.now();
-
     try {
         const file = req.file;
         const userId = req.user.id;
@@ -167,7 +166,7 @@ exports.uploadPhoto = async (req, res) => {
         const description = req.description;
         const profile = await User.findOne({ _id: userId });
 
-        if (!profile) {
+        if (isEmpty(profile)) {
             return res.status(404).json({ message: 'Profile not found' });
         }
 
