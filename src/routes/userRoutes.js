@@ -15,15 +15,10 @@ router.post('/register', [
 ], register);
 
 router.post('/verifyValidationCode', verifyValidationCode);
-
 router.post('/login', login);
-
 router.post('/verify-google-token', googleLogin);
-
 router.post('/add-artist-name/:userId', addArtistName);
-
 router.post('/facebookLogin', facebookLogin);
-
 router.post('/logout', logout);
 
 module.exports = router;

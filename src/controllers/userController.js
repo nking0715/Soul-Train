@@ -43,8 +43,8 @@ exports.register = async (req, res) => {
 
       await user.save();
       req.session.userId = user._id;
-      
-      res.status(200).json({ message: 'Validation code successfully sent to the user' });
+
+      return res.status(200).json({ message: 'Validation code successfully sent to the user' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -54,12 +54,10 @@ exports.register = async (req, res) => {
 exports.verifyValidationCode = async (req, res) => {
   try {
     const { validationCode, email } = req.body;
-    const user = await User.findOne({email: email});
-    console.log("user ", user)
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    console.log("user validation code ", user.validationCode)
     if (user.validationCode != validationCode || user.codeExpiry < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired validation code' });
     }
@@ -69,12 +67,45 @@ exports.verifyValidationCode = async (req, res) => {
     // Generate a JWT token
     const token = authService.generateToken(user);
     // Return the token to the client
-    res.status(200).json({ token });
-
+    return res.status(200).json({ token });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
+
+exports.resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.emailVerified) {
+      return res.status(404).json({ success: false, message: 'Your email has already verified' });
+    }
+
+    const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
+    user.validationCode = validationCode;
+    user.codeExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
+
+    const options = {
+      to: user.email,
+      from: 'noreply@soultrain.app',
+      subject: 'Validation Code',
+      text: `Your validation code is: ${validationCode}`,
+    };
+
+    const messageId = await sendMail(options);
+    console.log('Message sent successfully:', messageId);
+
+    await user.save();
+    req.session.userId = user._id;
+    return res.status(200).json({ success: true, message: 'Validation code successfully sent to the user' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
 
 exports.login = async (req, res) => {
   try {
@@ -83,7 +114,7 @@ exports.login = async (req, res) => {
 
     const validPassword = await bcrypt.compare(req.body.password, user.password);
     if (!validPassword) return res.status(400).json({ message: 'Invalid email or password.' });
-
+    if (!user.emailVerified) return res.status(400).json({ message: 'Please verify your email' });
     req.session.userId = user._id;
 
     // Generate a JWT token
@@ -105,7 +136,7 @@ exports.googleLogin = async (req, res) => {
     const name = decodedToken.name;
     let user = await User.findOne({ email: email });
     if (!user) {
-      user = new User({ email: email, username: name });  // Assuming your User model has fields for email and name
+      user = new User({ email: email, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
       res.status(201).json({ username: user.username, email: user.email, id: user._id });
@@ -126,8 +157,8 @@ exports.addArtistName = async (req, res) => {
   const artistName = req.body.artistName;
   try {
     let user = await User.findOne({ _id: req.params.userId });
-    if(isEmpty(user)) {
-      return res.status(400).json({success: false, message: "User not found"})
+    if (isEmpty(user)) {
+      return res.status(400).json({ success: false, message: "User not found" })
     }
     user.artistName = artistName;
     await user.save();
@@ -162,10 +193,10 @@ exports.facebookLogin = async (req, res) => {
 
     const facebookId = data.id;
     const name = data.first_name + " " + data.last_name;
-  
+
     let user = await User.findOne({ facebookID: facebookId });
     if (!user) {
-      user = new User({ facebookID: facebookId, username: name });  // Assuming your User model has fields for email and name
+      user = new User({ facebookID: facebookId, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
       return res.status(201).json({ username: user.username, id: user._id });
@@ -191,3 +222,22 @@ exports.logout = (req, res) => {
     res.status(200).json({ message: 'Logged out successfully.' });
   });
 };
+
+exports.searchDancers = async (req, res) => {
+  const { user } = req.body;
+  if (isEmpty(user)) {
+    return res.status(400).json({ success: false, message: "Invalid Request" });
+  }
+  try {
+    const users = await User.find({
+      $or: [
+        { username: { $regex: user, $options: "i" } }, // Case-insensitive search
+        { artistName: { $regex: user, $options: "i" } } // Case-insensitive search
+      ]
+    }).select("username artistName"); // Select only the desired fields
+
+    return res.status(200).json({ success: true, users });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
