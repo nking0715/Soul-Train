@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const photoSchema = new mongoose.Schema({
-    profile: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Profile',
+        ref: 'User',
         required: true
     },
     url: {

@@ -1,6 +1,7 @@
-const Profile = require('../models/profile');
+const User = require('../models/user');
 const Asset = require('../models/asset');
 const { validationResult } = require('express-validator');
+const isEmpty = require('../utils/isEmpty')
 
 const AWS = require('aws-sdk');
 const fs = require('fs');
@@ -33,16 +34,15 @@ const s3 = new AWS.S3();
 
 exports.getProfile = async (req, res) => {
     try {
-        let profile = await Profile.findOne({ userId: req.params.userId || req.user.id });
-        if (!profile) return res.status(404).json({ message: 'Profile not found' });
+        let profile = await User.findOne({ _id: req.params.userId || req.user.id });
+        if (isEmpty(profile)) return res.status(404).json({ message: 'Profile not found' });
 
         profile = profile.toObject();
         // Remove private fields if the requester isn't the profile owner
-        if (req.user.id !== profile.userId.toString()) {
+        if (req.user.id !== profile._id.toString()) {
             delete profile.email;
             delete profile.phoneNumber;
         }
-
         res.status(200).json(profile);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -58,9 +58,9 @@ exports.updateProfile = async (req, res) => {
     try {
         const { artistName, bio, profilePicture, coverPicture, crew, homeLocation, email, phoneNumber } = req.body;
 
-        const profile = await Profile.findOne({ userId: req.user.id });
+        const profile = await User.findOne({ _id: req.user.id });
 
-        if (!profile) {
+        if (isEmpty(profile)) {
             return res.status(404).json({ message: 'Profile not found' });
         }
 
@@ -84,8 +84,11 @@ exports.updateProfile = async (req, res) => {
         profile.phoneNumber = phoneNumber || profile.phoneNumber;
 
         await profile.save();
-
-        res.status(200).json(profile);
+        
+        // Generate a JWT token
+        const token = authService.generateToken(profile);
+        
+        return res.status(200).json(profile, token);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -96,7 +99,6 @@ exports.uploadVideo = async (req, res) => {
     try {        
         const file = req.file;
         const userId = req.user.id;
-        const profile = await Profile.findOne({ userId: userId });
         const tags = req.tags;
         const description = req.description;
 
@@ -135,15 +137,13 @@ exports.uploadVideo = async (req, res) => {
                     if (unlinkErr) console.error(unlinkErr);
                 });
                 const newVideo = new Asset({
-                    profile: profile,
+                    userId: userId,
                     url: s3FileURL,
                     type: "video",
                     tags: tags,
                     description: description
                 })
                 await newVideo.save();
-                profile.videos.push(newVideo._id);
-                await profile.save();
                 // Record the end time and calculate the difference
                 const endTime = Date.now();
                 const uploadTime = endTime - startTime;
@@ -165,7 +165,7 @@ exports.uploadPhoto = async (req, res) => {
         const userId = req.user.id;
         const tags = req.tags;
         const description = req.description;
-        const profile = await Profile.findOne({ userId: userId });
+        const profile = await User.findOne({ _id: userId });
 
         if (!profile) {
             return res.status(404).json({ message: 'Profile not found' });
@@ -208,16 +208,13 @@ exports.uploadPhoto = async (req, res) => {
             });
 
             const newPhoto = new Asset({
-                profile: profile,
+                userId: userId,
                 url: s3FileURL,
                 type: "photo",
                 tags: tags,
                 description: description
             })
             await newPhoto.save();
-            profile.photos.push(newPhoto._id);
-            await profile.save();
-
             const endTime = Date.now();
             const uploadTime = endTime - startTime;
             console.log(`Photo upload successful! It took ${uploadTime} milliseconds.`);

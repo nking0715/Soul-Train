@@ -10,8 +10,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    hasChangedArtistName: {
+        type: Boolean,
+        default: false
+    },
     email: {
         type: String,
+        trim: true,
+        private: true,
         unique: true
     },
     password: {
@@ -29,10 +35,36 @@ const userSchema = new mongoose.Schema({
     },
     facebookID: {
         type: String
-    }
+    },
+
+    // Profile
+    profilePicture: {
+        type: String,
+    },
+    coverPicture: {
+        type: String,
+    },
+    bio: {
+        type: String,
+        trim: true
+    },
+    crew: {
+        type: String,
+        trim: true
+    },
+    homeLocation: {
+        type: String,
+        trim: true
+    },
+    // Private Information
+    phoneNumber: {
+        type: String,
+        trim: true,
+        private: true
+    },
 }, { timestamps: true });
 
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

@@ -7,8 +7,8 @@ const sendMail = require('./sendMail/gmail');
 require('events').EventEmitter.prototype._maxListeners = 0;
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
-const Profile = require('../models/profile');
 const authService = require('../services/authService');
+const isEmpty = require('../utils/isEmpty');
 require('dotenv').config();
 
 exports.register = async (req, res) => {
@@ -66,14 +66,6 @@ exports.verifyValidationCode = async (req, res) => {
 
     user.emailVerified = true;
     await user.save();
-
-    // Create a default profile for the user
-    const defaultProfile = new Profile({
-      userId: user._id,
-      artistName: user.artistName
-    });
-    await defaultProfile.save();
-
     // Generate a JWT token
     const token = authService.generateToken(user);
     // Return the token to the client
@@ -116,12 +108,6 @@ exports.googleLogin = async (req, res) => {
       user = new User({ email: email, username: name });  // Assuming your User model has fields for email and name
       await user.save();
 
-      // Create a default profile for the user
-      const defaultProfile = new Profile({
-        userId: user._id,
-      });
-      await defaultProfile.save();
-
       res.status(201).json({ username: user.username, email: user.email, id: user._id });
     } else {
       req.session.userId = user._id;
@@ -140,19 +126,18 @@ exports.addArtistName = async (req, res) => {
   const artistName = req.body.artistName;
   try {
     let user = await User.findOne({ _id: req.params.userId });
+    if(isEmpty(user)) {
+      return res.status(400).json({success: false, message: "User not found"})
+    }
     user.artistName = artistName;
     await user.save();
-    let profile = await Profile.findOne({ userId: req.params.userId });
-    profile.artistName = artistName;
-    await profile.save();
 
     req.session.userId = user._id;
 
     // Generate a JWT token
     const token = authService.generateToken(user);
     // Return the token to the client
-    res.status(200).json({ token });
-
+    return res.status(200).json({ token });
   } catch (err) { res.status(400).send({ status: 'error', message: err.message }) }
 };
 
@@ -183,23 +168,17 @@ exports.facebookLogin = async (req, res) => {
       user = new User({ facebookID: facebookId, username: name });  // Assuming your User model has fields for email and name
       await user.save();
 
-      // Create a default profile for the user
-      const defaultProfile = new Profile({
-        userId: user._id,
-      });
-      await defaultProfile.save();
-
-      res.status(201).json({ username: user.username, id: user._id });
+      return res.status(201).json({ username: user.username, id: user._id });
     } else {
       req.session.userId = user._id;
 
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
-      res.status(200).json({ token });
+      return res.status(200).json({ token });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
