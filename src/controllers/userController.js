@@ -136,17 +136,17 @@ exports.googleLogin = async (req, res) => {
     const name = decodedToken.name;
     let user = await User.findOne({ email: email });
     if (!user) {
-      user = new User({ email: email, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
-      res.status(201).json({ username: user.username, email: user.email, id: user._id });
+      return res.status(201).json({ username: user.username, artistName: name, email: user.email, id: user._id });
     } else {
       req.session.userId = user._id;
 
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
-      res.status(200).json({ token });
+      return res.status(200).json({ token });
     }
   } catch (error) {
     res.status(400).send({ status: 'error', message: 'Token verification failed.' });
