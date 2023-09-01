@@ -23,6 +23,12 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
     },
+    resetToken: {
+        type: String
+    },
+    resetPassExpiry: {
+        type: Date,
+    },
     validationCode: {
         type: String,
     },

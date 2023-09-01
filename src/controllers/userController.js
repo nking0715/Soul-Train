@@ -82,7 +82,7 @@ exports.resendVerificationCode = async (req, res) => {
     }
 
     if (user.emailVerified) {
-      return res.status(404).json({ success: false, message: 'Your email has already verified' });
+      return res.status(400).json({ success: false, message: 'Your email has already verified' });
     }
 
     const validationCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -245,3 +245,58 @@ exports.searchDancers = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+exports.resetReq = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if(isEmpty(user.email)) {
+      return res.status(400).json({ success: false, message: "You didn't register with email and password" });
+    }
+
+    const resetToken = Math.floor(1000 + Math.random() * 9000).toString();
+    user.resetToken = resetToken;
+    user.resetPassExpiry = Date.now() + 24 * 60 * 60 * 1000;  // 24 hours from now
+
+    const options = {
+      to: user.email,
+      from: 'noreply@soultrain.app',
+      subject: 'Reset Password Code',
+      text: `Your reset password code is: ${resetToken}`,
+    };
+
+    const messageId = await sendMail(options);
+    console.log('Message sent successfully:', messageId);
+
+    await user.save();
+    req.session.userId = user._id;
+    return res.status(200).json({ success: true, message: 'Reset token successfully sent to your email, please check' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { resetToken, email, password } = req.body;
+    const user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.resetToken != resetToken || user.resetPassExpiry < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset password token' });
+    }
+    user.password = password
+    await user.save();
+    // Generate a JWT token
+    const token = authService.generateToken(user);
+    // Return the token to the client
+    return res.status(200).json({ token });
+  } catch (error) {
+    return res.status(500).json({ success: false,message: error.message });
+  }
+};
