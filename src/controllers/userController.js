@@ -132,10 +132,14 @@ exports.googleLogin = async (req, res) => {
 
   try {
     const decodedToken = jwt_decode(idToken);
+    console.log("Decoded Token ", decodedToken)
     const email = decodedToken.email;
     const name = decodedToken.name;
+    if(isEmpty(email) || isEmpty(name)) {
+      return res.status(400).json({success: false, message: "Invalid Token"})
+    }
     let user = await User.findOne({ email: email });
-    if (!user) {
+    if (isEmpty(user)) {
       user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
