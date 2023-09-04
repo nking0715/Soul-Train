@@ -8,16 +8,18 @@ exports.authenticate = (req, res, next) => {
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.error('Failed to authenticate token', err);
-      return res.status(403).json({ error: 'Failed to authenticate token' });
-    }
-
-    req.user = user;
-    next();
-  });
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) {
+        console.error('Failed to authenticate token', err);
+        return res.status(403).json({ error: 'Failed to authenticate token' });
+      }
+      req.user = user;
+      next();
+    });
+  } catch (error) {
+    return res.status(403).json({ error: 'Failed to authenticate token' });
+  }
 };
 
 exports.isAuthenticated = (req, res, next) => {

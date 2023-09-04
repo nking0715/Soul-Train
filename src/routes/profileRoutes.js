@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, uploadVideo, uploadPhoto } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadVideo, uploadPhoto, uploadImage } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -34,10 +34,10 @@ const upload = multer({
 });
 
 
-router.get('/profile', getProfile);
-router.get('/profile/:userId', getProfile);
+router.get('/', getProfile);
+router.get('/:userId', getProfile);
 
-router.put('/profile', [
+router.put('/', [
     // Existing validations
     check('bio').isLength({ max: 500 }).withMessage('Bio should not exceed 500 characters.'),
     check('profilePicture').optional().isURL().withMessage('Invalid profile picture URL.'),
@@ -49,8 +49,9 @@ router.put('/profile', [
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
 
-router.post('/profile/uploadVideo', upload.single('video'), uploadVideo);
+router.post('/uploadVideo', upload.single('video'), uploadVideo);
 
-router.post('/profile/uploadPhoto', upload.single('photo'), uploadPhoto);
+router.post('/uploadPhoto', upload.single('photo'), uploadPhoto);
+router.post('/uploadImg', uploadImage)
 
 module.exports = router;
