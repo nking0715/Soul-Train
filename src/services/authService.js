@@ -9,7 +9,7 @@ exports.generateToken = (user) => {
 };
 
 // Authenticate a JWT token
-exports.authenticateToken = (req, res, next) => {
+exports.authenticateToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -17,15 +17,9 @@ exports.authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) {
-        console.error('Failed to authenticate token', err);
-        return res.status(403).json({ error: 'Failed to authenticate token' });
-      }
-  
-      req.user = user;
-      next();
-    });
+    const user = await jwt.verify(token, process.env.JWT_SECRET);
+    req.user = user;
+    next();
   } catch(error) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
