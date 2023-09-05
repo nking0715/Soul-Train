@@ -58,6 +58,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    style: {
+        type: String,
+    },
     homeLocation: {
         type: String,
         trim: true
@@ -68,6 +71,14 @@ const userSchema = new mongoose.Schema({
         trim: true,
         private: true
     },
+    follower: {
+        type: Array,
+        default: []
+    },
+    following: {
+        type: Array,
+        default: []
+    }
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

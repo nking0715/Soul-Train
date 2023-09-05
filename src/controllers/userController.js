@@ -7,6 +7,7 @@ const sendMail = require('./sendMail/gmail');
 require('events').EventEmitter.prototype._maxListeners = 0;
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
+const Waitlist = require('../models/waitlist')
 const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
 require('dotenv').config();
@@ -44,10 +45,10 @@ exports.register = async (req, res) => {
       await user.save();
       req.session.userId = user._id;
 
-      return res.status(200).json({ message: 'Validation code successfully sent to the user' });
+      return res.status(200).json({ success: true, message: 'Validation code successfully sent to the user' });
     }
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -135,8 +136,8 @@ exports.googleLogin = async (req, res) => {
     console.log("Decoded Token ", decodedToken)
     const email = decodedToken.email;
     const name = decodedToken.name;
-    if(isEmpty(email) || isEmpty(name)) {
-      return res.status(400).json({success: false, message: "Invalid Token"})
+    if (isEmpty(email) || isEmpty(name)) {
+      return res.status(400).json({ success: false, message: "Invalid Token" })
     }
     let user = await User.findOne({ email: email });
     if (isEmpty(user)) {
@@ -238,7 +239,7 @@ exports.searchDancers = async (req, res) => {
         { username: { $regex: user, $options: "i" } }, // Case-insensitive search
         { artistName: { $regex: user, $options: "i" } } // Case-insensitive search
       ]
-    }).select("username artistName"); // Select only the desired fields
+    }).select("profilePicture username artistName"); // Select only the desired fields
 
     return res.status(200).json({ success: true, users });
   } catch (error) {
@@ -254,7 +255,7 @@ exports.resetReq = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if(isEmpty(user.email)) {
+    if (isEmpty(user.email)) {
       return res.status(400).json({ success: false, message: "You didn't register with email and password" });
     }
 
@@ -297,6 +298,21 @@ exports.resetPassword = async (req, res) => {
     // Return the token to the client
     return res.status(200).json({ token });
   } catch (error) {
-    return res.status(500).json({ success: false,message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.addToWaitList = async (req, res) => {
+  const { username, email } = req.body;
+  if (isEmpty(username) || isEmpty(email)) {
+    return res.status(400).json({ success: false, message: "Invalid Request!" })
+  }
+  let user = await User.findOne({ email: email });
+  if (isEmpty(user)) {
+    user = new User(req.body);
+    await user.save();
+    return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+  } else {
+    return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+  }
+}
