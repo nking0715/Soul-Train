@@ -10,6 +10,7 @@ const User = require('../models/user');
 const Waitlist = require('../models/waitlist')
 const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
+const { isValidEmail } = require('../helper/validateEmail.helper');
 require('dotenv').config();
 
 exports.register = async (req, res) => {
@@ -133,7 +134,6 @@ exports.googleLogin = async (req, res) => {
 
   try {
     const decodedToken = jwt_decode(idToken);
-    console.log("Decoded Token ", decodedToken)
     const email = decodedToken.email;
     const name = decodedToken.name;
     if (isEmpty(email) || isEmpty(name)) {
@@ -307,12 +307,21 @@ exports.addToWaitList = async (req, res) => {
   if (isEmpty(username) || isEmpty(email)) {
     return res.status(400).json({ success: false, message: "Invalid Request!" })
   }
-  let user = await User.findOne({ email: email });
-  if (isEmpty(user)) {
-    user = new User(req.body);
-    await user.save();
-    return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+
+  const validateEmail = await isValidEmail(email)
+  if (validateEmail) {
+    let user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      let waitUser = await Waitlist.findOne({ email: email });
+      if (isEmpty(waitUser)) {
+        waitUser = new Waitlist(req.body);
+        await waitUser.save();
+      }
+      return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+    } else {
+      return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+    }
   } else {
-    return res.status(200).json({ success: true, message: 'Successfully submitted!' });
+    return res.status(400).json({ success: false, message: "Invalid Email type!" })
   }
 }
