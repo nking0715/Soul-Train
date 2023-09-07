@@ -78,7 +78,15 @@ const userSchema = new mongoose.Schema({
     following: {
         type: Array,
         default: []
-    }
+    },
+    pending: {
+        type: Array,
+        default: []
+    },
+    connect: {
+        type: Array,
+        default: []
+    },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

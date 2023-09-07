@@ -230,7 +230,7 @@ exports.uploadPhoto = async (req, res) => {
 exports.uploadImage = async (req, res) => {
     var imageLink = '';
     const files = req.files;
-    try{
+    try {
         if (req.files && Object.keys(req.files).length > 0) {
             let uploadImage = req.files.image;
             let allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
@@ -238,7 +238,7 @@ exports.uploadImage = async (req, res) => {
             let extdotname = path.extname(uploadImage.name);
             var ext = extdotname.slice(1);
             if (!allowedExtensions.exec(extdotname)) {
-                return res.status(400).json({success: false, message: "Please upload the exact image type (png, jpg, jpeg or gif)"});
+                return res.status(400).json({ success: false, message: "Please upload the exact image type (png, jpg, jpeg or gif)" });
             } else if (uploadImage.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 2MB" });
             } else {
@@ -253,7 +253,108 @@ exports.uploadImage = async (req, res) => {
             return res.status(400).json({ success: false, message: "You didn't upload image" });
         }
         return res.status(200).json({ success: true, message: "success", imageLink });
-    } catch(error) {
+    } catch (error) {
         return res.status(400).json({ success: false, message: error.message });
+    }
+}
+
+exports.connectDancer = async (req, res) => {
+    try {
+        const { dancerId } = req.body;
+        if (isEmpty(dancerId)) return res.status(400).json({ success: false, message: "Invalid Request!" });
+
+        let userId = req.user.id;
+        let dancer = await User.findOne({ _id: dancerId });
+        let user = await User.findOne({ _id: userId })
+        if (isEmpty(dancer)) return res.status(404).json({ success: false, message: 'Profile not found' });
+
+        if (dancer.pending.includes(userId)) return res.status(400).json({ success: false, message: "You already sent the connect request, please wait until accept" });
+        if (dancer.connect.includes(userId)) return res.status(400).json({ success: false, message: "You already connected with that user" });
+
+        if (!user.following.includes(dancerId)) {
+            user.following.push(dancerId)
+            await user.save();
+        }
+
+        if (!dancer.follower.includes(userId)) {
+            dancer.follower.push(userId)
+        }
+        dancer.pending.push(userId);
+
+        await dancer.save();
+
+        return res.status(200).json({ success: true, message: "Successfully sent the connect request" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.acceptDancer = async (req, res) => {
+    try {
+        const { dancerId } = req.body;
+
+        if (isEmpty(dancerId)) return res.status(400).json({ success: false, message: "Invalid Request!" });
+
+        let userId = req.user.id;
+
+        let dancer = await User.findOne({ _id: dancerId });
+        let user = await User.findOne({ _id: userId })
+
+        if (isEmpty(dancer)) return res.status(404).json({ success: false, message: 'Connect Requester not found' });
+        if (!user.pending.includes(dancerId)) return res.status(400).json({ success: false, message: "Invalid Request!" });
+
+        if (!user.following.includes(dancerId)) {
+            user.following.push(dancerId)
+        }
+
+        if (!dancer.follower.includes(userId)) {
+            dancer.follower.push(userId)
+        }
+
+        const index = user.pending.indexOf(dancerId);
+        user.pending.splice(index, 1);
+
+        user.connect.push(dancerId);
+        dancer.connect.push(userId)
+
+        await user.save();
+        await dancer.save();
+
+        return res.status(200).json({ success: true, message: "Successfully connected" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.followManage = async (req, res) => {
+    try {
+        const { dancerId } = req.body;
+
+        if (isEmpty(dancerId)) return res.status(400).json({ success: false, message: "Invalid Request!" });
+
+        let userId = req.user.id;
+
+        let dancer = await User.findOne({ _id: dancerId });
+        let user = await User.findOne({ _id: userId })
+
+        if (isEmpty(dancer) || isEmpty(user)) return res.status(404).json({ success: false, message: 'User Not found' });
+
+        if (user.following.includes(dancerId)) {
+            const userIndex = user.following.indexOf(dancerId);
+            user.following.splice(userIndex, 1);
+
+            const dancerIndex = dancer.follower.indexOf(userId)
+            dancer.follower.splice(dancerIndex, 1);
+        } else {
+            user.following.push(dancerId)
+            dancer.follower.push(userId)
+        }
+
+        await user.save();
+        await dancer.save();
+
+        return res.status(200).json({ success: true, message: "success" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
