@@ -4,6 +4,7 @@ const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const path = require('path');
+const authService = require('../services/authService');
 
 const AWS = require('aws-sdk');
 const fs = require('fs');
