@@ -55,7 +55,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        return res.status(400).json({ success: false, errors: errors.array() });
     }
 
     try {
@@ -64,12 +64,12 @@ exports.updateProfile = async (req, res) => {
         const profile = await User.findOne({ _id: req.user.id });
 
         if (isEmpty(profile)) {
-            return res.status(404).json({ message: 'Profile not found' });
+            return res.status(404).json({ success: false, message: 'Profile not found' });
         }
 
         // Check if artistName is being changed and if it has been changed before
         if (artistName && artistName !== profile.artistName && profile.hasChangedArtistName) {
-            return res.status(400).json({ message: 'You can only change your artist name once.' });
+            return res.status(400).json({ success: false, message: 'You can only change your artist name once.' });
         }
 
         if (artistName && artistName !== profile.artistName) {
@@ -93,7 +93,7 @@ exports.updateProfile = async (req, res) => {
         // Generate a JWT token
         const token = authService.generateToken(profile);
 
-        return res.status(200).json(profile, token);
+        return res.status(200).json({success: true, message: "success", token});
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
