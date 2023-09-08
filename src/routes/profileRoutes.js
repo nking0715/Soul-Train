@@ -39,6 +39,7 @@ router.get('/:userId', getProfile);
 
 router.put('/', [
     // Existing validations
+    check('username').optional().isLength({ max: 30 }).withMessage('User name should not exceed 30 characters.'),
     check('bio').isLength({ max: 500 }).withMessage('Bio should not exceed 500 characters.'),
     check('profilePicture').optional().isURL().withMessage('Invalid profile picture URL.'),
     check('artistName').notEmpty().withMessage('Artist name is required.'),

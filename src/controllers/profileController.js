@@ -58,7 +58,7 @@ exports.updateProfile = async (req, res) => {
     }
 
     try {
-        const { artistName, bio, profilePicture, coverPicture, crew, homeLocation, email, phoneNumber, style } = req.body;
+        const { username, artistName, bio, profilePicture, coverPicture, crew, homeLocation, email, phoneNumber, style } = req.body;
 
         const profile = await User.findOne({ _id: req.user.id });
 
@@ -77,6 +77,7 @@ exports.updateProfile = async (req, res) => {
         }
 
         // Update the other fields
+        profile.username = username || profile.username
         profile.bio = bio || profile.bio;
         profile.profilePicture = profilePicture || profile.profilePicture;
         profile.coverPicture = coverPicture || profile.coverPicture;
