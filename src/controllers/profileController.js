@@ -93,7 +93,7 @@ exports.updateProfile = async (req, res) => {
         // Generate a JWT token
         const token = authService.generateToken(profile);
 
-        return res.status(200).json({success: true, message: "success", token});
+        return res.status(200).json({ success: true, message: "success", token });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -163,68 +163,50 @@ exports.uploadVideo = async (req, res) => {
 }
 
 exports.uploadPhoto = async (req, res) => {
-    const startTime = Date.now();
+    var imageLink = '';
     try {
-        const file = req.file;
+        const files = req.files;
         const userId = req.user.id;
         const tags = req.tags;
         const description = req.description;
         const profile = await User.findOne({ _id: userId });
 
         if (isEmpty(profile)) {
-            return res.status(404).json({ message: 'Profile not found' });
+            return res.status(404).json({ message: 'User not found' });
         }
 
-        // Get file extension
-        const fileExtension = imageMimeToExt[file.mimetype];
-
-        // Check if the file type is supported
-        if (!fileExtension) {
-            fs.unlink(file.path, (unlinkErr) => {
-                if (unlinkErr) console.error(unlinkErr);
-            });
-            return res.status(400).json({ message: 'Unsupported file type' });
-        }
-
-        // Generate a unique filename with the correct extension
-        const uniqueFileName = `${userId}-${Date.now()}${fileExtension}`;
-
-        const params = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: `photos/${uniqueFileName}`, // Store photos in a 'photos' folder for organization
-            Body: fs.createReadStream(file.path),
-            ContentType: file.mimetype,
-            ACL: 'public-read'
-        };
-
-        s3.upload(params, async (err, data) => {
-            if (err) {
-                fs.unlink(file.path, (unlinkErr) => {
-                    if (unlinkErr) console.error(unlinkErr);
-                });
-                return res.status(500).json({ error: true, message: err });
+        if (req.files && Object.keys(req.files).length > 0) {
+            let uploadImage = req.files.photo;
+            let allowedExtensions = /(\.jpg|\.jpeg|\.png|\.gif)$/i;
+            let maxFileSizeBytes = 20000000; // At least 20MB
+            let extdotname = path.extname(uploadImage.name);
+            var ext = extdotname.slice(1);
+            if (!allowedExtensions.exec(extdotname)) {
+                return res.status(400).json({ success: false, message: "Please upload the exact image type (png, jpg, jpeg or gif)" });
+            } else if (uploadImage.size > maxFileSizeBytes) {
+                return res.status(400).json({ success: false, message: "File size should be less than 20MB" });
+            } else {
+                for (const key of Object.keys(files)) {
+                    const file = files[key];
+                    const file_on_s3 = await uploadFileToS3(file, "images");
+                    imageLink = file_on_s3;
+                    break;
+                }
             }
-
-            const s3FileURL = data.Location;
-            res.status(200).json({ photoUrl: s3FileURL });
-            fs.unlink(file.path, (unlinkErr) => {
-                if (unlinkErr) console.error(unlinkErr);
-            });
-
             const newPhoto = new Asset({
                 userId: userId,
-                url: s3FileURL,
+                url: imageLink,
                 type: "photo",
                 tags: tags,
                 description: description
             })
-            await newPhoto.save();
-            const endTime = Date.now();
-            const uploadTime = endTime - startTime;
-            console.log(`Photo upload successful! It took ${uploadTime} milliseconds.`);
-        });
-
+            await newPhoto.save();            
+            return res.status(400).json({success: true, message: "success"})
+        } else {
+            return res.status(400).json({success: false, message: "Invalid Request!"})
+        }
     } catch (err) {
+        console.log("error --- ", err)
         res.status(400).json({ message: err.message });
     }
 }

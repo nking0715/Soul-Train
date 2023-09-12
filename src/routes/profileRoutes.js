@@ -51,7 +51,7 @@ router.put('/', [
 ], updateProfile);
 
 router.post('/uploadVideo', upload.single('video'), uploadVideo);
-router.post('/uploadPhoto', upload.single('photo'), uploadPhoto);
+router.post('/uploadPhoto', uploadPhoto);
 router.post('/uploadImg', uploadImage);
 
 router.post('/connect_dancer', connectDancer);
