@@ -229,15 +229,15 @@ exports.logout = (req, res) => {
 };
 
 exports.searchDancers = async (req, res) => {
-  const { user } = req.body;
-  if (isEmpty(user)) {
+  const { key } = req.params;
+  if (isEmpty(key)) {
     return res.status(400).json({ success: false, message: "Invalid Request" });
   }
   try {
     const users = await User.find({
       $or: [
-        { username: { $regex: user, $options: "i" } }, // Case-insensitive search
-        { artistName: { $regex: user, $options: "i" } } // Case-insensitive search
+        { username: { $regex: key, $options: "i" } }, // Case-insensitive search
+        { artistName: { $regex: key, $options: "i" } } // Case-insensitive search
       ]
     }).select("profilePicture username artistName"); // Select only the desired fields
 

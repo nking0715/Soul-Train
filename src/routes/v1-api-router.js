@@ -5,6 +5,6 @@ const { searchDancers } = require('../controllers/userController');
 
 // App Backend Router
 router.post("/discover/contents", discoverContents);
-router.post('/search', searchDancers)
+router.get('/search/:key', searchDancers)
 
 module.exports = router;
