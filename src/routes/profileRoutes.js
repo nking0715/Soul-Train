@@ -50,7 +50,7 @@ router.put('/', [
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
 
-router.post('/uploadVideo', upload.single('video'), uploadVideo);
+router.post('/uploadVideo', uploadVideo);
 router.post('/uploadPhoto', uploadPhoto);
 router.post('/uploadImg', uploadImage);
 
