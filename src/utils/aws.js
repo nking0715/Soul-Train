@@ -29,26 +29,3 @@ exports.uploadFileToS3 = async (file, filepath) => {
 
     return uploadedFile.Location;
 }
-
-exports.exportCSVToS3 = async (csvData, fileName, path) => {
-    const uploadedFile = await s3.upload({
-        Bucket: `${process.env.BUCKET_NAME}/${path}`,
-        Key: fileName,
-        Body: csvData,
-    }).promise();
-
-    return uploadedFile.Location;
-}
-
-exports.getFileExisting = async (fileName, path) => {
-    try {
-        const result = await s3.headObject({ Bucket: `${process.env.BUCKET_NAME}/${path}`, Key: fileName }).promise();
-        return true;
-    } catch (error) {
-        if (error.statusCode === 404) {
-            return false;
-        } else {
-            throw error;
-        }
-    }
-}

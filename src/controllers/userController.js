@@ -196,6 +196,7 @@ exports.facebookLogin = async (req, res) => {
       return res.status(404).json({ message: 'Failed to fetch user details from Facebook.' });
     }
 
+    console.log("data ", data)
     const facebookId = data.id;
     const name = data.first_name + " " + data.last_name;
 

@@ -4,6 +4,7 @@ const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const authService = require('../services/authService');
+const { moderateImage } = require('../helper/moderation.helper')
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
@@ -207,6 +208,7 @@ exports.uploadImage = async (req, res) => {
             } else {
                 for (const key of Object.keys(files)) {
                     const file = files[key];
+                    // await moderateImage(file);
                     const file_on_s3 = await uploadFileToS3(file, "images");
                     imageLink = file_on_s3;
                     break;
