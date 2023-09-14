@@ -18,6 +18,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
         private: true,
+        unique: true
     },
     password: {
         type: String,
@@ -37,9 +38,6 @@ const userSchema = new mongoose.Schema({
     emailVerified: {
         type: Boolean,
         default: false
-    },
-    facebookID: {
-        type: String
     },
 
     // Profile

@@ -195,19 +195,18 @@ exports.facebookLogin = async (req, res) => {
     }
 
     console.log("data ", data)
-    const facebookId = data.id;
     const name = data.name;
+    const email = data.email;
 
-    let user = await User.findOne({ facebookID: facebookId });
-    if (!user) {
-      if(data.email) {
-        user = new User({ facebookID: facebookId, email: data.email, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
-      } else {
-        user = new User({ facebookID: facebookId, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
-      }
+    if (isEmpty(email) || isEmpty(name)) {
+      return res.status(400).json({ success: false, message: "Invalid Token" })
+    }
+    let user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
-      return res.status(201).json({ username: user.username, id: user._id });
+      return res.status(201).json({ username: name, artistName: name, email: user.email, id: user._id });
     } else {
       req.session.userId = user._id;
 
