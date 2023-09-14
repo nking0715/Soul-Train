@@ -200,7 +200,11 @@ exports.facebookLogin = async (req, res) => {
 
     let user = await User.findOne({ facebookID: facebookId });
     if (!user) {
-      user = new User({ facebookID: facebookId, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      if(data.email) {
+        user = new User({ facebookID: facebookId, email: data.email, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      } else {
+        user = new User({ facebookID: facebookId, username: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      }
       await user.save();
 
       return res.status(201).json({ username: user.username, id: user._id });
