@@ -146,7 +146,12 @@ exports.googleLogin = async (req, res) => {
       user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
-      return res.status(201).json({ username: user.username, artistName: name, email: user.email, id: user._id });
+      req.session.userId = user._id;
+
+      // Generate a JWT token
+      const token = authService.generateToken(user);
+
+      return res.status(201).json({ username: user.username, artistName: name, email: user.email, id: user._id, token });
     } else {
       req.session.userId = user._id;
 
@@ -206,7 +211,12 @@ exports.facebookLogin = async (req, res) => {
       user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
       await user.save();
 
-      return res.status(201).json({ username: name, artistName: name, email: user.email, id: user._id });
+      req.session.userId = user._id;
+
+      // Generate a JWT token
+      const token = authService.generateToken(user);
+
+      return res.status(201).json({ username: name, artistName: name, email: user.email, id: user._id, token });
     } else {
       req.session.userId = user._id;
 
