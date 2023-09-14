@@ -11,6 +11,8 @@ const Waitlist = require('../models/waitlist')
 const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
 const { isValidEmail } = require('../helper/validateEmail.helper');
+const nodeFbLogin = require('node-fb-login');
+
 require('dotenv').config();
 
 exports.register = async (req, res) => {
@@ -183,13 +185,9 @@ exports.facebookLogin = async (req, res) => {
     return res.status(400).json({ message: 'Facebook access token is required.' });
   }
   try {
-    const { data } = await axios({
-      url: 'https://graph.facebook.com/me',
-      method: 'get',
-      params: {
-        fields: ['id', 'first_name', 'last_name'].join(','),
-        access_token: accessToken,
-      },
+    const data = await nodeFbLogin.getUserProfile({
+      accessToken: accessToken,
+      fields: ["id", "name", "email"]
     });
 
     if (!data) {
@@ -198,7 +196,7 @@ exports.facebookLogin = async (req, res) => {
 
     console.log("data ", data)
     const facebookId = data.id;
-    const name = data.first_name + " " + data.last_name;
+    const name = data.name;
 
     let user = await User.findOne({ facebookID: facebookId });
     if (!user) {
