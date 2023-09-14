@@ -13,6 +13,7 @@ const s3 = new aws.S3({
 })
 
 exports.uploadFileToS3 = async (file, filepath) => {
+    console.log("File ---> ", file)
     let extdotname = path.extname(file.name);
     let ext = extdotname.slice(1);
     let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;

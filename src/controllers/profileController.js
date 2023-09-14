@@ -208,9 +208,9 @@ exports.uploadImage = async (req, res) => {
             } else {
                 for (const key of Object.keys(files)) {
                     const file = files[key];
-                    // await moderateImage(file);
                     const file_on_s3 = await uploadFileToS3(file, "images");
                     imageLink = file_on_s3;
+                    // await moderateImage(imageLink);
                     break;
                 }
             }

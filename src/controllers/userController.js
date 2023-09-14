@@ -114,10 +114,10 @@ exports.resendVerificationCode = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(400).json({ message: 'Invalid email or password.' });
+    if (!user) return res.status(400).json({ message: "User doesn't exist!" });
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password);
-    if (!validPassword) return res.status(400).json({ message: 'Invalid email or password.' });
+    const validPassword = await bcrypt.compare(req.body.password, user.password? user.password : "");
+    if (!validPassword) return res.status(400).json({ message: "Wrong password" });
     if (!user.emailVerified) return res.status(400).json({ message: 'Please verify your email' });
     req.session.userId = user._id;
 
@@ -127,6 +127,7 @@ exports.login = async (req, res) => {
     res.status(200).json({ token });
 
   } catch (error) {
+    console.log("Login Error ", error);
     res.status(500).json({ message: error.message });
   }
 };
