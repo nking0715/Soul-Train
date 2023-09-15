@@ -1,8 +1,5 @@
 const aws = require('aws-sdk');
-const fs = require('fs');
 const stream = require('stream');
-const dateFormat = require('date-and-time');
-const path = require('path');
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -12,17 +9,12 @@ const s3 = new aws.S3({
     httpOptions: { timeout: 1800000 }
 })
 
-exports.uploadFileToS3 = async (file, filepath) => {
-    console.log("File ---> ", file)
-    let extdotname = path.extname(file.name);
-    let ext = extdotname.slice(1);
-    let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;
-    
+exports.uploadFileToS3 = async (newFileName, file, filepath) => {    
     const fileStream = new stream.PassThrough();
     fileStream.end(file.data);
     const uploadedFile = await s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filepath}`,
-        Key: name,
+        Key: newFileName,
         ContentType: file.mimetype,
         Body: fileStream,
         ACL: 'public-read'

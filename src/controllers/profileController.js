@@ -4,7 +4,9 @@ const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const authService = require('../services/authService');
-const { moderateImage } = require('../helper/moderation.helper')
+const { moderateContent } = require('../helper/moderation.helper')
+const dateFormat = require('date-and-time');
+const path = require('path');
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
@@ -106,6 +108,9 @@ exports.uploadVideo = async (req, res) => {
             // Get file extension
             const fileExtension = videoMimeToExt[uploadVideo.mimetype];
 
+            let extdotname = path.extname(uploadVideo.name);
+            var ext = extdotname.slice(1);
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -115,9 +120,15 @@ exports.uploadVideo = async (req, res) => {
             } else {
                 for (const key of Object.keys(files)) {
                     const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(file, "videos");
+                    const file_on_s3 = await uploadFileToS3(name, file, "videos");
                     videoLink = file_on_s3;
-                    break;
+                    const rekognitionResult = await moderateContent(`videos/${name}`, 'video');
+                    console.log("video rekognitionResult ", rekognitionResult)
+                    if(rekognitionResult.success) {
+                        break;
+                    } else {
+                        return res.status(400).json({ success: false, message: 'Please upload appropriate video' });
+                    }
                 }
             }
 
@@ -158,6 +169,9 @@ exports.uploadPhoto = async (req, res) => {
             // Get file extension
             const fileExtension = imageMimeToExt[uploadImage.mimetype];
 
+            let extdotname = path.extname(uploadImage.name);
+            var ext = extdotname.slice(1);
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -167,9 +181,15 @@ exports.uploadPhoto = async (req, res) => {
             } else {
                 for (const key of Object.keys(files)) {
                     const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(file, "photos");
+                    const file_on_s3 = await uploadFileToS3(name, file, "photos");
                     imageLink = file_on_s3;
-                    break;
+                    const rekognitionResult = await moderateContent(`photos/${name}`, 'image');
+                    console.log("photo rekognitionResult ", rekognitionResult)
+                    if(rekognitionResult.success) {
+                        break;
+                    } else {
+                        return res.status(400).json({ success: false, message: 'Please upload appropriate photo' });
+                    }
                 }
             }
             const newPhoto = new Asset({
@@ -198,20 +218,29 @@ exports.uploadImage = async (req, res) => {
             let uploadImage = req.files.image;
             let maxFileSizeBytes = 10000000; // At least 10MB
             const fileExtension = imageMimeToExt[uploadImage.mimetype];
+
+            let extdotname = path.extname(uploadImage.name);
+            var ext = extdotname.slice(1);
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;            
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
             }
-            
+
             if (uploadImage.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
                 for (const key of Object.keys(files)) {
                     const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(file, "images");
+                    const file_on_s3 = await uploadFileToS3(name, file, "images");
                     imageLink = file_on_s3;
-                    // await moderateImage(imageLink);
-                    break;
+                    const rekognitionResult = await moderateContent(`images/${name}`, 'image');
+                    console.log("image rekognitionResult ", rekognitionResult)
+                    if(rekognitionResult.success) {
+                        break;
+                    } else {
+                        return res.status(400).json({ success: false, message: 'Please upload appropriate image' });
+                    }
                 }
             }
         } else {
