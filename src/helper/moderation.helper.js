@@ -14,7 +14,6 @@ const forbiddenLabels = [
   'Explicit Nudity',
   'Violence',
   'Visually Disturbing',
-  'Rude Gestures',
   'Tobacco',
   'Gambling',
   'Hate Symbols',
