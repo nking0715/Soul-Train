@@ -110,7 +110,7 @@ exports.uploadVideo = async (req, res) => {
 
             let extdotname = path.extname(uploadVideo.name);
             var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -124,11 +124,7 @@ exports.uploadVideo = async (req, res) => {
                     videoLink = file_on_s3;
                     const rekognitionResult = await moderateContent(`videos/${name}`, 'video');
                     console.log("video rekognitionResult ", rekognitionResult)
-                    if(rekognitionResult.success) {
-                        break;
-                    } else {
-                        return res.status(400).json({ success: false, message: 'Please upload appropriate video' });
-                    }
+                    break;
                 }
             }
 
@@ -137,7 +133,8 @@ exports.uploadVideo = async (req, res) => {
                 url: videoLink,
                 type: "video",
                 tags: tags,
-                description: description
+                description: description,
+                blocked: rekognitionResult.success ? false : true
             })
             await newVideo.save();
             return res.status(400).json({ success: true, message: "success" })
@@ -171,7 +168,7 @@ exports.uploadPhoto = async (req, res) => {
 
             let extdotname = path.extname(uploadImage.name);
             var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -185,11 +182,7 @@ exports.uploadPhoto = async (req, res) => {
                     imageLink = file_on_s3;
                     const rekognitionResult = await moderateContent(`photos/${name}`, 'image');
                     console.log("photo rekognitionResult ", rekognitionResult)
-                    if(rekognitionResult.success) {
-                        break;
-                    } else {
-                        return res.status(400).json({ success: false, message: 'Please upload appropriate photo' });
-                    }
+                    break;
                 }
             }
             const newPhoto = new Asset({
@@ -197,7 +190,8 @@ exports.uploadPhoto = async (req, res) => {
                 url: imageLink,
                 type: "photo",
                 tags: tags,
-                description: description
+                description: description,
+                blocked: rekognitionResult.success ? false : true
             })
             await newPhoto.save();
             return res.status(400).json({ success: true, message: "success" })
@@ -221,7 +215,7 @@ exports.uploadImage = async (req, res) => {
 
             let extdotname = path.extname(uploadImage.name);
             var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss")+ "." +ext;            
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -236,7 +230,7 @@ exports.uploadImage = async (req, res) => {
                     imageLink = file_on_s3;
                     const rekognitionResult = await moderateContent(`images/${name}`, 'image');
                     console.log("image rekognitionResult ", rekognitionResult)
-                    if(rekognitionResult.success) {
+                    if (rekognitionResult.success) {
                         break;
                     } else {
                         return res.status(400).json({ success: false, message: 'Please upload appropriate image' });

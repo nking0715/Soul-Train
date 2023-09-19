@@ -26,6 +26,10 @@ const assetSchema = new mongoose.Schema({
     uploadedTime: {
         type: Date,
         default: Date.now()
+    },
+    blocked: {
+        type: Boolean,
+        default: false
     }
     // ... any other video-related fields
 },
