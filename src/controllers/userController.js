@@ -116,7 +116,7 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
     if (!user) return res.status(400).json({ message: "User doesn't exist!" });
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password? user.password : "");
+    const validPassword = await bcrypt.compare(req.body.password, user.password ? user.password : "");
     if (!validPassword) return res.status(400).json({ message: "Wrong password" });
     if (!user.emailVerified) return res.status(400).json({ message: 'Please verify your email' });
     req.session.userId = user._id;
@@ -152,7 +152,7 @@ exports.googleLogin = async (req, res) => {
       // Generate a JWT token
       const token = authService.generateToken(user);
 
-      return res.status(201).json({ username: user.username, artistName: name, email: user.email, id: user._id, token });
+      return res.status(201).json({ success: true, username: user.username, artistName: name, email: user.email, id: user._id, token });
     } else {
       req.session.userId = user._id;
 
@@ -162,7 +162,7 @@ exports.googleLogin = async (req, res) => {
       return res.status(200).json({ token });
     }
   } catch (error) {
-    res.status(400).send({ status: 'error', message: 'Token verification failed.' });
+    res.status(400).send({ status: 'error', success: false, message: 'Token verification failed.' });
   }
 };
 
@@ -188,7 +188,7 @@ exports.addArtistName = async (req, res) => {
 exports.facebookLogin = async (req, res) => {
   const { accessToken } = req.body;
   if (!accessToken) {
-    return res.status(400).json({ message: 'Facebook access token is required.' });
+    return res.status(400).json({ success: false, message: 'Facebook access token is required.' });
   }
   try {
     const data = await nodeFbLogin.getUserProfile({
@@ -197,7 +197,7 @@ exports.facebookLogin = async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({ message: 'Failed to fetch user details from Facebook.' });
+      return res.status(404).json({ success: false, message: 'Failed to fetch user details from Facebook.' });
     }
 
     console.log("data ", data)
@@ -217,14 +217,14 @@ exports.facebookLogin = async (req, res) => {
       // Generate a JWT token
       const token = authService.generateToken(user);
 
-      return res.status(201).json({ username: name, artistName: name, email: user.email, id: user._id, token });
+      return res.status(201).json({ success: true, username: name, artistName: name, email: user.email, id: user._id, token });
     } else {
       req.session.userId = user._id;
 
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
-      return res.status(200).json({ token });
+      return res.status(200).json({ success: true, token });
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });
