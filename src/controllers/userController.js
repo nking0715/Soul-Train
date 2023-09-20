@@ -242,6 +242,12 @@ exports.logout = (req, res) => {
 };
 
 exports.searchDancers = async (req, res) => {
+  const { page, per_page } = req.body;
+  if (isEmpty(page) || isEmpty(per_page)) {
+    return res.status(400).json({ success: false, message: "Invalid Request!" });
+  }
+  const start = (page - 1) * per_page; // Calculate the skip value
+
   const { searchText } = req.params;
   const userId = req.user.id; // Assumed to be set somewhere in your code
 
@@ -257,7 +263,19 @@ exports.searchDancers = async (req, res) => {
         { artistName: { $regex: searchText, $options: "i" } },
         { bio: { $regex: searchText, $options: "i" } },
       ]
-    }).select("profilePicture username artistName follower"); // Also fetch the followers field
+    })
+      .select("profilePicture username artistName follower") // Also fetch the followers field
+      .skip(start)  // Skip the documents
+      .limit(per_page);  // Limit the number of documents
+
+    const totalCount = await User.countDocuments({
+      _id: { $ne: userId },
+      $or: [
+        { username: { $regex: searchText, $options: "i" } },
+        { artistName: { $regex: searchText, $options: "i" } },
+        { bio: { $regex: searchText, $options: "i" } },
+      ]
+    });
 
     // Add a "followed" boolean to each user based on whether the current user follows them
     const usersWithFollowStatus = users.map(user => {
@@ -268,7 +286,14 @@ exports.searchDancers = async (req, res) => {
       };
     });
 
-    return res.status(200).json({ success: true, users: usersWithFollowStatus });
+    return res.status(200).json({
+      success: true, users: usersWithFollowStatus,
+      meta: {
+        total: totalCount,
+        page,
+        per_page,
+      },
+    });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
