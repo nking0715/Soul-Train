@@ -243,18 +243,32 @@ exports.logout = (req, res) => {
 
 exports.searchDancers = async (req, res) => {
   const { searchText } = req.params;
+  const userId = req.user.id; // Assumed to be set somewhere in your code
+
   if (isEmpty(searchText)) {
     return res.status(400).json({ success: false, message: "Invalid Request" });
   }
+
   try {
     const users = await User.find({
+      _id: { $ne: userId },
       $or: [
-        { username: { $regex: searchText, $options: "i" } }, // Case-insensitive search
-        { artistName: { $regex: searchText, $options: "i" } } // Case-insensitive search
+        { username: { $regex: searchText, $options: "i" } },
+        { artistName: { $regex: searchText, $options: "i" } },
+        { bio: { $regex: searchText, $options: "i" } },
       ]
-    }).select("profilePicture username artistName"); // Select only the desired fields
+    }).select("profilePicture username artistName follower"); // Also fetch the followers field
 
-    return res.status(200).json({ success: true, users });
+    // Add a "followed" boolean to each user based on whether the current user follows them
+    const usersWithFollowStatus = users.map(user => {
+      const followed = user.follower.includes(userId);
+      return {
+        ...user._doc, // Spread the existing user fields
+        followed, // Add the "followed" status
+      };
+    });
+
+    return res.status(200).json({ success: true, users: usersWithFollowStatus });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
