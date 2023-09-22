@@ -37,9 +37,9 @@ exports.getProfile = async (req, res) => {
             delete profile.email;
             delete profile.phoneNumber;
         }
-        res.status(200).json(profile);
+        return res.status(200).json(profile);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -200,6 +200,77 @@ exports.uploadPhoto = async (req, res) => {
         }
     } catch (err) {
         console.log("upload Photo Error ", err)
+        return res.status(400).json({ success: false, message: err.message });
+    }
+}
+
+exports.uploadContents = async (req, res) => {
+    var contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, moderationType = '';
+    try {
+        const files = req.files;
+        const userId = req.user.id;
+        const tags = req.tags;
+        const description = req.description;
+        const type = req.type;
+        const user = await User.findOne({ _id: userId });
+
+        if (isEmpty(user)) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (type == 0) {
+            contentType = "image";
+            contentMimeToExt = imageMimeToExt;
+            maxFileSizeBytes = 10000000;
+            bucketPath = "photos";
+            moderationType = "photo";
+        } else if (type == 1) {
+            contentType = "video";
+            contentMimeToExt = videoMimeToExt;
+            maxFileSizeBytes = 200000000;
+            bucketPath = "videos";
+            moderationType = "video";
+        }
+
+        if (req.files && Object.keys(req.files).length > 0) {
+            let uploadedContents = req.files.content;
+            // Get file extension
+            const fileExtension = contentMimeToExt[uploadedContents.mimetype];
+
+            let extdotname = path.extname(uploadedContents.name);
+            var ext = extdotname.slice(1);
+            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
+            // Check if the file type is supported
+            if (!fileExtension) {
+                return res.status(400).json({ success: false, message: 'Unsupported file type' });
+            }
+            if (uploadedContents.size > maxFileSizeBytes) {
+                return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
+            } else {
+                for (const key of Object.keys(files)) {
+                    const file = files[key];
+                    const file_on_s3 = await uploadFileToS3(name, file, bucketPath);
+                    contentLink = file_on_s3;
+                    const rekognitionResult = await moderateContent(`${bucketPath}/${name}`, contentType);
+                    console.log("content rekognitionResult ", rekognitionResult)
+                    break;
+                }
+            }
+            const newAsset = new Asset({
+                userId: userId,
+                url: contentLink,
+                type: moderationType,
+                tags: tags,
+                description: description,
+                blocked: rekognitionResult.success ? false : true
+            })
+            await newAsset.save();
+            return res.status(400).json({ success: true, message: "success", contentLink })
+        } else {
+            return res.status(400).json({ success: false, message: "Invalid Request!" })
+        }
+    } catch (err) {
+        console.log("upload content Error ", err)
         return res.status(400).json({ success: false, message: err.message });
     }
 }

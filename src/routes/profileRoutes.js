@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, uploadVideo, uploadPhoto, uploadImage, connectDancer, acceptDancer, followManage } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadContents, uploadImage, connectDancer, acceptDancer, followManage } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -50,9 +50,8 @@ router.put('/', [
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
 
-router.post('/uploadVideo', uploadVideo);
-router.post('/uploadPhoto', uploadPhoto);
 router.post('/uploadImg', uploadImage);
+router.post('/uploadContents', uploadContents)
 
 router.post('/connect_dancer', connectDancer);
 router.post('/accept_dancer', acceptDancer);
