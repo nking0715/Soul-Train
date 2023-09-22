@@ -333,6 +333,23 @@ exports.resetReq = async (req, res) => {
   }
 }
 
+exports.verifyResetCode = async (req, res) => {
+  try {
+    const { resetToken, email } = req.body;
+    const user = await User.findOne({ email: email });
+    if (isEmpty(user)) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.resetToken != resetToken || user.resetPassExpiry < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset password token' });
+    }
+    // Return the token to the client
+    return res.status(200).json({ success: true, message: "valid token" });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
 exports.resetPassword = async (req, res) => {
   try {
     const { resetToken, email, password } = req.body;
