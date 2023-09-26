@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema({
     resetPassExpiry: {
         type: Date,
     },
+    resetCodeValidated: {
+        type: Boolean,
+        default: false
+    },
     validationCode: {
         type: String,
     },

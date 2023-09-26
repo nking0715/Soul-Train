@@ -335,14 +335,16 @@ exports.resetReq = async (req, res) => {
 
 exports.verifyResetCode = async (req, res) => {
   try {
-    const { resetToken, email } = req.body;
-    const user = await User.findOne({ email: email });
+    const { resetToken } = req.body;
+    const user = await User.findOne({ _id: req.user.id });
     if (isEmpty(user)) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     if (user.resetToken != resetToken || user.resetPassExpiry < Date.now()) {
       return res.status(400).json({ success: false, message: 'Invalid or expired reset password token' });
     }
+    
+    user.resetCodeValidated = true;
     // Return the token to the client
     return res.status(200).json({ success: true, message: "valid token" });
   } catch (error) {
@@ -352,15 +354,16 @@ exports.verifyResetCode = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { resetToken, email, password } = req.body;
-    const user = await User.findOne({ email: email });
+    const { password } = req.body;
+    const user = await User.findOne({ _id: req.user.id });
     if (isEmpty(user)) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    if (user.resetToken != resetToken || user.resetPassExpiry < Date.now()) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired reset password token' });
+    if (user.resetCodeValidated != true ) {
+      return res.status(400).json({ success: false, message: 'Code is not validated' });
     }
-    user.password = password
+    user.password = password;
+    user.resetCodeValidated = false;
     await user.save();
     // Generate a JWT token
     const token = authService.generateToken(user);
