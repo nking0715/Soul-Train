@@ -336,7 +336,7 @@ exports.resetReq = async (req, res) => {
 exports.verifyResetCode = async (req, res) => {
   try {
     const { resetToken } = req.body;
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.session.userId });
     if (isEmpty(user)) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -355,7 +355,7 @@ exports.verifyResetCode = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { password } = req.body;
-    const user = await User.findOne({ _id: req.user.id });
+    const user = await User.findOne({ _id: req.session.userId });
     if (isEmpty(user)) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
