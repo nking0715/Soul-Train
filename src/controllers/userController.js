@@ -345,6 +345,7 @@ exports.verifyResetCode = async (req, res) => {
     }
     
     user.resetCodeValidated = true;
+    user.save();
     // Return the token to the client
     return res.status(200).json({ success: true, message: "valid token" });
   } catch (error) {
