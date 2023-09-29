@@ -90,78 +90,21 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-exports.uploadVideo = async (req, res) => {
-    var videoLink = ''
-    try {
-        const files = req.files;
-        const userId = req.user.id;
-        const tags = req.tags;
-        const description = req.description;
-        const profile = await User.findOne({ _id: userId });
-
-        if (isEmpty(profile)) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        if (req.files && Object.keys(req.files).length > 0) {
-            let uploadVideo = req.files.video;
-            let maxFileSizeBytes = 200000000; // At least 200MB
-            // Get file extension
-            const fileExtension = videoMimeToExt[uploadVideo.mimetype];
-
-            let extdotname = path.extname(uploadVideo.name);
-            var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
-            // Check if the file type is supported
-            if (!fileExtension) {
-                return res.status(400).json({ success: false, message: 'Unsupported file type' });
-            }
-            if (uploadVideo.size > maxFileSizeBytes) {
-                return res.status(400).json({ success: false, message: "File size should be less than 200MB" });
-            } else {
-                for (const key of Object.keys(files)) {
-                    const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(name, file, "videos");
-                    videoLink = file_on_s3;
-                    const rekognitionResult = await moderateContent(`videos/${name}`, 'video');
-                    console.log("video rekognitionResult ", rekognitionResult)
-                    break;
-                }
-            }
-
-            const newVideo = new Asset({
-                userId: userId,
-                url: videoLink,
-                type: "video",
-                tags: tags,
-                description: description,
-                blocked: rekognitionResult.success ? false : true
-            })
-            await newVideo.save();
-            return res.status(400).json({ success: true, message: "success" })
-        } else {
-            return res.status(400).json({ success: false, message: "Invalid Request!" })
-        }
-    } catch (err) {
-        console.log("Upload Video Error ", err)
-        return res.status(400).json({ success: false, message: err.message });
-    }
-}
-
 exports.uploadPhoto = async (req, res) => {
-    var imageLink = '';
+    let photoLink, rekognitionResult;
     try {
-        const files = req.files;
+        const photo = req.files;
         const userId = req.user.id;
-        const tags = req.tags;
-        const description = req.description;
+        const tags = req.body.tags;
+        const description = req.body.description;
         const profile = await User.findOne({ _id: userId });
 
         if (isEmpty(profile)) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (req.files && Object.keys(req.files).length > 0) {
-            let uploadImage = req.files.photo;
+        if (photo && Object.keys(photo).length > 0) {
+            let uploadImage = photo.photo;
             let maxFileSizeBytes = 10000000; // At least 10MB
             // Get file extension
             const fileExtension = imageMimeToExt[uploadImage.mimetype];
@@ -176,25 +119,21 @@ exports.uploadPhoto = async (req, res) => {
             if (uploadImage.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                for (const key of Object.keys(files)) {
-                    const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(name, file, "photos");
-                    imageLink = file_on_s3;
-                    const rekognitionResult = await moderateContent(`photos/${name}`, 'image');
-                    console.log("photo rekognitionResult ", rekognitionResult)
-                    break;
-                }
+                const file_on_s3 = await uploadFileToS3(name, uploadImage, "photos");
+                photoLink = file_on_s3;
+                rekognitionResult = await moderateContent(`photos/${name}`, 'image');
+                console.log("photo rekognitionResult ", rekognitionResult)
             }
             const newPhoto = new Asset({
                 userId: userId,
-                url: imageLink,
+                url: photoLink,
                 type: "photo",
                 tags: tags,
                 description: description,
                 blocked: rekognitionResult.success ? false : true
             })
             await newPhoto.save();
-            return res.status(400).json({ success: true, message: "success" })
+            return res.status(400).json({ success: true, message: "success", photoLink })
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }
@@ -232,7 +171,7 @@ exports.uploadContents = async (req, res) => {
             moderationType = "video";
         }
 
-        if (req.files && Object.keys(req.files).length > 0) {
+        if (files && Object.keys(files).length > 0) {
             let uploadedContents = files.files;
             // Get file extension
             const fileExtension = contentMimeToExt[uploadedContents.mimetype];
@@ -268,48 +207,6 @@ exports.uploadContents = async (req, res) => {
     } catch (err) {
         console.log("upload content Error ", err)
         return res.status(400).json({ success: false, message: err.message });
-    }
-}
-
-exports.uploadImage = async (req, res) => {
-    var imageLink = '';
-    const files = req.files;
-    try {
-        if (req.files && Object.keys(req.files).length > 0) {
-            let uploadImage = req.files.image;
-            let maxFileSizeBytes = 10000000; // At least 10MB
-            const fileExtension = imageMimeToExt[uploadImage.mimetype];
-
-            let extdotname = path.extname(uploadImage.name);
-            var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
-            // Check if the file type is supported
-            if (!fileExtension) {
-                return res.status(400).json({ success: false, message: 'Unsupported file type' });
-            }
-
-            if (uploadImage.size > maxFileSizeBytes) {
-                return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
-            } else {
-                for (const key of Object.keys(files)) {
-                    const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(name, file, "images");
-                    imageLink = file_on_s3;
-                    const rekognitionResult = await moderateContent(`images/${name}`, 'image');
-                    console.log("image rekognitionResult ", rekognitionResult)
-                    if (rekognitionResult.success) {
-                        break;
-                    } else {
-                        return res.status(400).json({ success: false, message: 'Please upload appropriate image' });
-                    }
-                }
-            }
-        } else {
-            return res.status(400).json({ success: false, message: "You didn't upload image" });
-        }
-        return res.status(200).json({ success: true, message: "success", imageLink });
-    } catch (error) {
-        return res.status(400).json({ success: false, message: error.message });
     }
 }
 
