@@ -205,35 +205,35 @@ exports.uploadPhoto = async (req, res) => {
 }
 
 exports.uploadContents = async (req, res) => {
-    var contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, moderationType = '';
+    let contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, moderationType, rekognitionResult = '';
     try {
         const files = req.files;
         const userId = req.user.id;
-        const tags = req.tags;
-        const description = req.description;
-        const type = req.type;
+        const tags = req.body.tags;
+        const description = req.body.description;
+        const type = req.body.type;
         const user = await User.findOne({ _id: userId });
 
         if (isEmpty(user)) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (type == 0) {
+        if (type == "0") {
             contentType = "image";
-            contentMimeToExt = imageMimeToExt;
+            contentMimeToExt = { ...imageMimeToExt };
             maxFileSizeBytes = 10000000;
             bucketPath = "photos";
             moderationType = "photo";
-        } else if (type == 1) {
+        } else if (type == "1") {
             contentType = "video";
-            contentMimeToExt = videoMimeToExt;
+            contentMimeToExt = { ...videoMimeToExt };
             maxFileSizeBytes = 200000000;
             bucketPath = "videos";
             moderationType = "video";
         }
 
         if (req.files && Object.keys(req.files).length > 0) {
-            let uploadedContents = req.files.content;
+            let uploadedContents = files.files;
             // Get file extension
             const fileExtension = contentMimeToExt[uploadedContents.mimetype];
 
@@ -247,14 +247,10 @@ exports.uploadContents = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                for (const key of Object.keys(files)) {
-                    const file = files[key];
-                    const file_on_s3 = await uploadFileToS3(name, file, bucketPath);
-                    contentLink = file_on_s3;
-                    const rekognitionResult = await moderateContent(`${bucketPath}/${name}`, contentType);
-                    console.log("content rekognitionResult ", rekognitionResult)
-                    break;
-                }
+                const file_on_s3 = await uploadFileToS3(name, uploadedContents, bucketPath);
+                contentLink = file_on_s3;
+                rekognitionResult = await moderateContent(`${bucketPath}/${name}`, contentType);
+                console.log("content rekognitionResult ", rekognitionResult)
             }
             const newAsset = new Asset({
                 userId: userId,
@@ -265,7 +261,7 @@ exports.uploadContents = async (req, res) => {
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
-            return res.status(400).json({ success: true, message: "success", contentLink })
+            return res.status(200).json({ success: true, message: "success", contentLink })
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }

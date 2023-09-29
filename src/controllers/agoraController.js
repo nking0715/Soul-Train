@@ -5,54 +5,96 @@ require('dotenv').config();
 const APP_ID = process.env.APP_ID;
 const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 
-// Generate access token for Agora
-exports.generateAccessToken = async (req, res) => {
-    res.header('Access-Control-Allow-Origin', '*');
+exports.createChannel = async (req, res) => {
+    const { channelType, audienceType } = req.body;
+    const channel = await Channel.findOne({ userId: req.user.id });
 
-    const channelName = req.body.channelName;
-    if (!channelName) {
-        return res.status(500).json({ error: 'channel is required' });
+    // Check if the request is valid
+    if (isEmpty(channelType)) {
+        return res.status(400).json({ success: false, message: 'The ChannelType is required.' });
+    }
+    if (isEmpty(audienceTypeType)) {
+        return res.status(400).json({ success: false, message: 'The AudienceType is required.' });
     }
 
-    // Get uid
-    let uid = req.body.uid;
-    if (!uid || uid == '') {
-        uid = 0;
+    // Check if the user has already created a channel.
+    if (!isEmpty(channel)) {
+        return res.status(405).json({ success: false, message: 'The channel for this user already exists.' });
     }
 
-    // Get role
-    let role;
-    if (req.body.role === 'publisher') {
-        role = RtcRole.PUBLISHER;
+    const channelName = generateRandomChannelName();
+    const token = generateAccessToken(channelName, 0);
 
-        // Create a new Channel document for the publisher
-        const channel = new Channel({
-            channelID: channelName,
-            creatorID: uid
+    const newChannel = new Channel({
+        userId: req.user.id,
+        channelType: channelType,
+        audienceType: audienceType,
+        channelName: channelName,
+        uid: 0
+    });
+    newChannel.save();
+
+    return res.status(200).json({ token: token, chanelName: channelName });
+};
+
+exports.joinChannel = async (req, res) => {
+    const channelId = req.body.channelId;
+
+    if (isEmpty(channelId)) {
+        return res.status(400).json({ success: false, message: 'The channelId is required' });
+    }
+
+    const channel = await Channel.findOne({ _id: channelId });
+
+    if (isEmpty(channel)) {
+        return res.status(400).json({ success: false, message: 'The channel does not exist.' });
+    }
+
+    const channelName = channel.channelName;
+    let uid;
+
+    do {
+        uid = Math.floor(Math.random() * 1000) + 1;
+    } while (checkUIDForChannelName(channelName, uid));
+
+    const token = generateAccessToken(channelName, uid);
+};
+
+const checkUIDForChannelName = async (targetChannelName, targetUID) => {
+    try {
+        const channelsWithTargetName = await Channel.find({
+            channelName: targetChannelName
         });
-        await channel.save();
-    } else if (req.body.role === 'audience') {
-        role = RtcRole.SUBSCRIBER;
 
-        // Add participant ID to the existing Channel document for the audience
-        await Channel.updateOne({ channelID: channelName }, { $push: { participantID: uid } });
-    } else {
-        return res.status(500).json({ error: 'role is incorrect' });
-    }
+        const uids = channelsWithTargetName.map(channel => channel.uid);
 
-    // Get the expire time
-    let expireTime = req.body.expireTime;
-    if (!expireTime || expireTime == '') {
-        expireTime = 3600;
-    } else {
-        expireTime = parseInt(expireTime, 10);
+        return uids.includes(targetUID);
+
+    } catch (err) {
+        console.error('Error checking uid:', err);
     }
+}
+
+const generateRandomChannelName = (length = 12) => {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charset.length);
+        result += charset.charAt(randomIndex);
+    }
+    return result;
+};
+
+// Generate access token for Agora
+const generateAccessToken = (channelName, uid) => {
+    const role = RtcRole.PUBLISHER;
 
     // Calculate privilege expire time
+    const expireTime = 3600;
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + expireTime;
 
     // Build and return the token
     const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
-    return res.json({ token });
+    return token;
 };

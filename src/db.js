@@ -6,8 +6,10 @@ const connectDB = async () => {
     var db_url;
     if(process.env.NODE_ENV == "development") {
       db_url = process.env.MONGODB_DEV_URI
-    } else {
+    } else if(process.env.NODE_ENV == "live") {
       db_url = process.env.MONGODB_URI
+    } else {
+      db_url = process.env.MONGODB_LOCAL_URI
     }
     // Connect to the database
     mongoose.connect(db_url, {
