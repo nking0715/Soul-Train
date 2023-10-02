@@ -1,63 +1,108 @@
 const { RtcTokenBuilder, RtcRole } = require('agora-token');
 const Channel = require('../models/channel');
+const User = require('../models/user');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
 const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 
 exports.createChannel = async (req, res) => {
-    const { channelType, audienceType } = req.body;
-    const channel = await Channel.findOne({ userId: req.user.id });
+    try {
+        const { channelType, audienceType } = req.body;
+        const channel = await Channel.findOne({ userId: req.user.id });
 
-    // Check if the request is valid
-    if (isEmpty(channelType)) {
-        return res.status(400).json({ success: false, message: 'The ChannelType is required.' });
+        // Check if the request is valid
+        if (isEmpty(channelType)) {
+            return res.status(400).json({ success: false, message: 'The ChannelType is required.' });
+        }
+        if (isEmpty(audienceType)) {
+            return res.status(400).json({ success: false, message: 'The AudienceType is required.' });
+        }
+
+        // Check if the user has already created a channel.
+        if (!isEmpty(channel)) {
+            return res.status(405).json({ success: false, message: 'The channel for this user already exists.' });
+        }
+
+        const channelName = generateRandomChannelName();
+        const token = generateAccessToken(channelName, 0);
+
+        const newChannel = new Channel({
+            userId: req.user.id,
+            channelType: channelType,
+            audienceType: audienceType,
+            channelName: channelName,
+            uid: [0]
+        });
+        newChannel.save();
+
+        return res.status(200).json({ token: token, chanelName: channelName });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
-    if (isEmpty(audienceTypeType)) {
-        return res.status(400).json({ success: false, message: 'The AudienceType is required.' });
-    }
-
-    // Check if the user has already created a channel.
-    if (!isEmpty(channel)) {
-        return res.status(405).json({ success: false, message: 'The channel for this user already exists.' });
-    }
-
-    const channelName = generateRandomChannelName();
-    const token = generateAccessToken(channelName, 0);
-
-    const newChannel = new Channel({
-        userId: req.user.id,
-        channelType: channelType,
-        audienceType: audienceType,
-        channelName: channelName,
-        uid: 0
-    });
-    newChannel.save();
-
-    return res.status(200).json({ token: token, chanelName: channelName });
 };
 
+exports.getChannels = async (req, res) => {
+    try {
+        const channelsForAll = await Channel.find({ audienceType: "all" });
+
+        const userIDsOfChannelsFollowedByRequestingUser = await User.find({
+            follower: { $in: [req.user.id] }
+        }).select('_id');  // This will return an array of user IDs that the requesting user follows.
+
+        const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
+
+        const channelsForFollowers = await Channel.find({
+            audienceType: "followers",
+            userId: { $in: channelUserIDs }
+        });
+
+        const channels = [
+            ...channelsForAll,
+            ...channelsForFollowers
+        ];
+
+        if (channels.length === 0) {
+            return res.status(204).json({ success: true, message: 'There is no active channel at the moment' });
+        }
+
+        return res.status(200).json({ success: true, channels: channels });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+
 exports.joinChannel = async (req, res) => {
-    const channelId = req.body.channelId;
+    try {
+        const channelId = req.body.channelId;
 
-    if (isEmpty(channelId)) {
-        return res.status(400).json({ success: false, message: 'The channelId is required' });
+        if (isEmpty(channelId)) {
+            return res.status(400).json({ success: false, message: 'The channelId is required' });
+        }
+
+        const channel = await Channel.findOne({ _id: channelId });
+
+        if (isEmpty(channel)) {
+            return res.status(400).json({ success: false, message: 'The channel does not exist.' });
+        }
+
+        const channelName = channel.channelName;
+        let uid;
+
+        do {
+            uid = Math.floor(Math.random() * 1000) + 1;
+        } while (!checkUIDForChannelName(channelName, uid));// Assuming checkUIDForChannelName checks if the uid already exists for the channel
+
+        channel.uid.push(uid); // Pushing the new UID to the array
+        await channel.save(); // Saving the channel document with the new UID
+
+        const token = generateAccessToken(channelName, uid);
+
+        return res.status(200).json({ success: true, token: token });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
-
-    const channel = await Channel.findOne({ _id: channelId });
-
-    if (isEmpty(channel)) {
-        return res.status(400).json({ success: false, message: 'The channel does not exist.' });
-    }
-
-    const channelName = channel.channelName;
-    let uid;
-
-    do {
-        uid = Math.floor(Math.random() * 1000) + 1;
-    } while (checkUIDForChannelName(channelName, uid));
-
-    const token = generateAccessToken(channelName, uid);
 };
 
 const checkUIDForChannelName = async (targetChannelName, targetUID) => {

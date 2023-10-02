@@ -9,7 +9,7 @@ const channelSchema = new mongoose.Schema({
     channelType: { type: String, required: true },
     audienceType: { type: String, required: true },
     channelName: { type: String, required: true },
-    uid: { type: Number, required: true }
+    uid: [{ type: Number, required: true }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Channel', channelSchema);

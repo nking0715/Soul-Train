@@ -37,11 +37,11 @@ exports.register = async (req, res) => {
 
       const options = {
         to: user.email,
-        from: 'noreply@soultrain.app',
+        from: 'no-reply@soultrain.app',
         subject: 'Validation Code',
         text: `Your validation code is: ${validationCode}`,
       };
-
+      
       const messageId = await sendMail(options);
       console.log('Message sent successfully:', messageId);
 
