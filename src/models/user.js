@@ -77,22 +77,22 @@ const userSchema = new mongoose.Schema({
         trim: true,
         private: true
     },
-    follower: {
-        type: Array,
-        default: []
-    },
-    following: {
-        type: Array,
-        default: []
-    },
-    pending: {
-        type: Array,
-        default: []
-    },
-    connect: {
-        type: Array,
-        default: []
-    },
+    follower: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    following: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    pending: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
+    connect: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {
