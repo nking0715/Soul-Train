@@ -11,7 +11,7 @@ exports.discoverContents = async (req, res) => {
 
     try {
         const result = await Asset.aggregate([
-            { $match: { blocked: false } },
+            { $match: { blocked: false, type: "video" } },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_page }, // Limit the number of documents

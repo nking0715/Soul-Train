@@ -99,7 +99,7 @@ exports.uploadContents = async (req, res) => {
         const user = await User.findOne({ _id: userId });
 
         if (isEmpty(user)) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(400).json({ message: 'User not found' });
         }
 
         if (type == "image") {
@@ -144,6 +144,10 @@ exports.uploadContents = async (req, res) => {
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
+
+            if(rekognitionResult.success == false) {
+                return res.status(400).json({success: false, message: "The uploaded image or video contains inappropriate content"});
+            }
 
             switch(purpose){
                 case "profilePicture":
