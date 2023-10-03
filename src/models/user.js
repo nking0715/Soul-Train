@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { toString } = require('express-validator/src/utils');
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -43,14 +44,18 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-
-    // Profile
     profilePicture: {
-        type: String,
+        type: String
     },
     coverPicture: {
-        type: String,
+        type: String
     },
+    uploadedImage: [{
+        type: String
+    }],
+    uploadedVideo: [{
+        type: String
+    }],
     bio: {
         type: String,
         trim: true

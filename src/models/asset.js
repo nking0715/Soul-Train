@@ -23,6 +23,10 @@ const assetSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    purpose: {
+        type: String,
+        required: true
+    },
     uploadedTime: {
         type: Date,
         default: Date.now()

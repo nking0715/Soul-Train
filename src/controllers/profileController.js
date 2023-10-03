@@ -95,27 +95,23 @@ exports.uploadContents = async (req, res) => {
     try {
         const files = req.files;
         const userId = req.user.id;
-        const tags = req.body.tags;
-        const description = req.body.description;
-        const type = req.body.type;
+        const { tags, description, type, purpose } = req.body;
         const user = await User.findOne({ _id: userId });
 
         if (isEmpty(user)) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        if (type == "0") {
+        if (type == "image") {
             contentType = "image";
             contentMimeToExt = { ...imageMimeToExt };
             maxFileSizeBytes = 10000000;
-            bucketPath = "photos";
-            moderationType = "photo";
-        } else if (type == "1") {
+            bucketPath = "images";
+        } else if (type == "video") {
             contentType = "video";
             contentMimeToExt = { ...videoMimeToExt };
             maxFileSizeBytes = 200000000;
             bucketPath = "videos";
-            moderationType = "video";
         }
 
         if (files && Object.keys(files).length > 0) {
@@ -141,13 +137,28 @@ exports.uploadContents = async (req, res) => {
             const newAsset = new Asset({
                 userId: userId,
                 url: contentLink,
-                type: moderationType,
+                purpose: purpose,
+                type: type,
                 tags: tags,
                 description: description,
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
-            return res.status(200).json({ success: true, message: "success", contentLink })
+
+            switch(purpose){
+                case "profilePicture":
+                    user.profilePicture = newAsset.url; break;
+                case "coverPicture":
+                    user.coverPicture = newAsset.url; break;
+                case "uploadedImage":
+                    user.uploadedImage.push(newAsset.url); break;
+                case "uploadedVideo":
+                    user.uploadedVideo.push(newAsset.url);
+            }
+
+            await user.save();
+            
+            return res.status(200).json({ success: true, user })
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }
