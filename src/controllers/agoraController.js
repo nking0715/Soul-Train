@@ -72,7 +72,6 @@ exports.getChannels = async (req, res) => {
     }
 }
 
-
 exports.joinChannel = async (req, res) => {
     try {
         const channelId = req.body.channelId;

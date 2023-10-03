@@ -90,59 +90,6 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-exports.uploadPhoto = async (req, res) => {
-    let photoLink, rekognitionResult;
-    try {
-        const photo = req.files;
-        const userId = req.user.id;
-        const tags = req.body.tags;
-        const description = req.body.description;
-        const profile = await User.findOne({ _id: userId });
-
-        if (isEmpty(profile)) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        if (photo && Object.keys(photo).length > 0) {
-            let uploadImage = photo.photo;
-            let maxFileSizeBytes = 10000000; // At least 10MB
-            // Get file extension
-            const fileExtension = imageMimeToExt[uploadImage.mimetype];
-
-            let extdotname = path.extname(uploadImage.name);
-            var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
-            // Check if the file type is supported
-            if (!fileExtension) {
-                return res.status(400).json({ success: false, message: 'Unsupported file type' });
-            }
-            if (uploadImage.size > maxFileSizeBytes) {
-                return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
-            } else {
-                const file_on_s3 = await uploadFileToS3(name, uploadImage, "photos");
-                photoLink = file_on_s3;
-                rekognitionResult = await moderateContent(`photos/${name}`, 'image');
-                console.log("photo rekognitionResult ", rekognitionResult)
-            }
-            const newPhoto = new Asset({
-                userId: userId,
-                url: photoLink,
-                type: "photo",
-                tags: tags,
-                description: description,
-                blocked: rekognitionResult.success ? false : true
-            })
-            await newPhoto.save();
-            return res.status(400).json({ success: true, message: "success", photoLink })
-        } else {
-            return res.status(400).json({ success: false, message: "Invalid Request!" })
-        }
-    } catch (err) {
-        console.log("upload Photo Error ", err)
-        return res.status(400).json({ success: false, message: err.message });
-    }
-}
-
 exports.uploadContents = async (req, res) => {
     let contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, moderationType, rekognitionResult = '';
     try {
