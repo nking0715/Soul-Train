@@ -21,7 +21,7 @@ exports.createChannel = async (req, res) => {
 
         // Check if the user has already created a channel.
         if (!isEmpty(channel)) {
-            return res.status(405).json({ success: false, message: 'The channel for this user already exists.' });
+            return res.status(400).json({ success: false, message: 'The channel for this user already exists.' });
         }
 
         const channelName = generateRandomChannelName();
@@ -36,7 +36,7 @@ exports.createChannel = async (req, res) => {
         });
         newChannel.save();
 
-        return res.status(200).json({ token: token, chanelName: channelName });
+        return res.status(200).json({ success: true, token: token, chanelName: channelName });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }

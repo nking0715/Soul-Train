@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, uploadContents, uploadPhoto, connectDancer, acceptDancer, followManage } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadContents, getUploadedContents, connectDancer, acceptDancer, followManage } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -45,12 +45,12 @@ router.put('/', [
     check('artistName').notEmpty().withMessage('Artist name is required.'),
     check('coverPicture').optional().isURL().withMessage('Invalid cover picture URL.'),
     check('crew').optional().isLength({ max: 500 }).withMessage('Crew info should not exceed 500 characters.'),
-    check('homeLocation').optional().isLength({ max: 200 }).withMessage('Home location should not exceed 200 characters.'),
     check('email').optional().isEmail().withMessage('Invalid email address.'),
     check('phoneNumber').optional().isLength({ max: 20 }).withMessage('Phone number should not exceed 20 characters.'),
 ], updateProfile);
 
 router.post('/uploadContents', uploadContents)
+router.post('/getUploadedContents', getUploadedContents)
 
 router.post('/connect_dancer', connectDancer);
 router.post('/accept_dancer', acceptDancer);

@@ -67,10 +67,6 @@ const userSchema = new mongoose.Schema({
     style: {
         type: String,
     },
-    homeLocation: {
-        type: String,
-        trim: true
-    },
     // Private Information
     phoneNumber: {
         type: String,

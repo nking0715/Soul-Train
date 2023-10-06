@@ -50,7 +50,7 @@ exports.updateProfile = async (req, res) => {
     }
 
     try {
-        const { username, artistName, bio, profilePicture, coverPicture, crew, homeLocation, email, phoneNumber, style } = req.body;
+        const { username, artistName, bio, profilePicture, coverPicture, crew, email, phoneNumber, style } = req.body;
 
         const profile = await User.findOne({ _id: req.user.id });
 
@@ -74,7 +74,6 @@ exports.updateProfile = async (req, res) => {
         profile.profilePicture = profilePicture || profile.profilePicture;
         profile.coverPicture = coverPicture || profile.coverPicture;
         profile.crew = crew || profile.crew;
-        profile.homeLocation = homeLocation || profile.homeLocation;
         profile.email = email || profile.email;
         profile.phoneNumber = phoneNumber || profile.phoneNumber;
         profile.style = style || profile.style
@@ -91,12 +90,13 @@ exports.updateProfile = async (req, res) => {
 };
 
 exports.uploadContents = async (req, res) => {
-    let contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, moderationType, rekognitionResult = '';
+    let contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, rekognitionResult = '';
     try {
         const files = req.files;
         const userId = req.user.id;
         const { tags, description, type, purpose } = req.body;
         const user = await User.findOne({ _id: userId });
+        const per_page = 50;
 
         if (isEmpty(user)) {
             return res.status(400).json({ message: 'User not found' });
@@ -145,23 +145,30 @@ exports.uploadContents = async (req, res) => {
             })
             await newAsset.save();
 
-            if(rekognitionResult.success == false) {
-                return res.status(400).json({success: false, message: "The uploaded image or video contains inappropriate content"});
+            if (rekognitionResult.success == false) {
+                return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
             }
 
-            switch(purpose){
+            switch (purpose) {
                 case "profilePicture":
                     user.profilePicture = newAsset.url; break;
                 case "coverPicture":
                     user.coverPicture = newAsset.url; break;
                 case "uploadedImage":
-                    user.uploadedImage.push(newAsset.url); break;
+                    user.uploadedImage.push(newAsset.url);
+                    if (user.uploadedImage.length > per_page) {
+                        user.uploadedImage.pop();  // Remove the last element if there are more than 50 elements
+                    }
+                    break;
                 case "uploadedVideo":
                     user.uploadedVideo.push(newAsset.url);
+                    if (user.uploadedVideo.length > per_page) {
+                        user.uploadedVideo.pop();  // Remove the last element if there are more than 50 elements
+                    }
             }
 
             await user.save();
-            
+
             return res.status(200).json({ success: true, user })
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
@@ -171,6 +178,31 @@ exports.uploadContents = async (req, res) => {
         return res.status(400).json({ success: false, message: err.message });
     }
 }
+
+exports.getUploadedContents = async (req, res) => {
+    const { page, type } = req.body;
+    const per_page = 50;
+    if (isEmpty(page) || isEmpty(type)) {
+        return res.status(400).json({ success: false, message: "Invalid Request!" });
+    }
+    const skip = (page - 1) * per_page; // Calculate the skip value
+
+    try {
+        const assets = await Asset.find({
+            userId: req.params.userId || req.user.id,
+            type: type
+        })
+            .sort({ uploadedTime: 1 }) // Sort by updated time, descending
+            .limit(per_page)
+            .skip(skip)
+            .select('url');
+        const urls = assets.map(asset => asset.url);
+        return res.status(200).json({ success: true, urls: urls });
+    } catch (error) {
+        console.error("Error fetching assets:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
 
 exports.connectDancer = async (req, res) => {
     try {

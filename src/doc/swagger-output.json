@@ -300,9 +300,6 @@
                   "crew": {
                     "example": "any"
                   },
-                  "homeLocation": {
-                    "example": "any"
-                  },
                   "email": {
                     "example": "any"
                   },
