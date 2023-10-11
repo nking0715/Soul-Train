@@ -34,6 +34,9 @@ const assetSchema = new mongoose.Schema({
     blocked: {
         type: Boolean,
         default: false
+    },
+    numberOfViews: {
+        type: Number,
     }
     // ... any other video-related fields
 },

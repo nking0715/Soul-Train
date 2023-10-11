@@ -48,7 +48,7 @@ exports.getChannels = async (req, res) => {
 
         const userIDsOfChannelsFollowedByRequestingUser = await User.find({
             follower: { $in: [req.user.id] }
-        }).select('_id');  // This will return an array of user IDs that the requesting user follows.
+        });  // This will return an array of user IDs that the requesting user follows.
 
         const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
 
