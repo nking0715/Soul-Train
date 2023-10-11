@@ -149,11 +149,19 @@ exports.uploadContents = async (req, res) => {
                 return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
             }
 
+            if (purpose == 'profilePicture') {
+                user.profilePicture = newAsset.url;
+                await user.save();
+                return res.status(200).json({ success: true, user });
+            }
+
+            if (purpose == 'coverPicture') {
+                user.coverPicture = newAsset.url;
+                await user.save();
+                return res.status(200).json({ success: true, user });
+            }
+
             switch (purpose) {
-                case "profilePicture":
-                    user.profilePicture = newAsset.url; break;
-                case "coverPicture":
-                    user.coverPicture = newAsset.url; break;
                 case "uploadedImage":
                     user.uploadedImage.push(newAsset.url);
                     if (user.uploadedImage.length > per_page) {
@@ -167,9 +175,7 @@ exports.uploadContents = async (req, res) => {
                     }
             }
 
-            await user.save();
-
-            return res.status(200).json({ success: true, user })
+            return res.status(200).json({ success: true, user });
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }

@@ -34,9 +34,10 @@ exports.createChannel = async (req, res) => {
             channelName: channelName,
             uid: [0]
         });
+        console.log(newChannel);
         newChannel.save();
 
-        return res.status(200).json({ success: true, token: token, chanelName: channelName });
+        return res.status(200).json({ success: true, token: token, channelName: channelName });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
