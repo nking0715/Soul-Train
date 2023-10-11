@@ -187,12 +187,18 @@ exports.getUploadedContents = async (req, res) => {
     }
     const skip = (page - 1) * per_page; // Calculate the skip value
 
+    let typeFilter = {};
+    if (type !== 'all') {
+        typeFilter.type = type;
+    }
+
     try {
         const assets = await Asset.find({
             userId: req.params.userId || req.user.id,
-            type: type
+            ...typeFilter,
+            purpose: { $in: ['uploadedImage', 'uploadedVideo'] }
         })
-            .sort({ uploadedTime: 1 }) // Sort by updated time, descending
+            .sort({ uploadedTime: -1 }) // Sort by updated time, descending
             .limit(per_page)
             .skip(skip)
             .select('url');
