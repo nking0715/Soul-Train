@@ -105,6 +105,16 @@ exports.joinChannel = async (req, res) => {
     }
 };
 
+exports.deleteChannel = async (req, res) => {
+    userId = req.user.id;
+    try {
+        await Channel.deleteOne({ userId: req.user.id });
+        return res.status(200).json({ success: true, message: 'Channel successfully removed.' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 const checkUIDForChannelName = async (targetChannelName, targetUID) => {
     try {
         const channelsWithTargetName = await Channel.find({
