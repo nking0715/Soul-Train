@@ -35,11 +35,13 @@ exports.discoverContents = async (req, res) => {
                     url: 1,
                     type: 1,
                     uploadedTime: 1,
+                    numberOfViews: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     __v: 1,
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
-                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] }
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
                 }
             }
         ]);
