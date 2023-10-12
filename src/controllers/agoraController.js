@@ -45,18 +45,18 @@ exports.createChannel = async (req, res) => {
 
 exports.getChannels = async (req, res) => {
     try {
-        const channelsForAll = await Channel.find({ audienceType: "all" });
+        const channelsForAll = await Channel.find({ audienceType: "all" }).populate('userId', 'username profilePicture');
 
         const userIDsOfChannelsFollowedByRequestingUser = await User.find({
             follower: { $in: [req.user.id] }
-        });  // This will return an array of user IDs that the requesting user follows.
+        }).select('_id');  // This will return an array of user IDs that the requesting user follows.
 
         const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
 
         const channelsForFollowers = await Channel.find({
             audienceType: "followers",
             userId: { $in: channelUserIDs }
-        });
+        }).populate('userId', 'username profilePicture');
 
         const channels = [
             ...channelsForAll,
