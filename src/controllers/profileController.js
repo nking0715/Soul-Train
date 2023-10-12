@@ -96,7 +96,6 @@ exports.uploadContents = async (req, res) => {
         const userId = req.user.id;
         const { tags, description, type, purpose } = req.body;
         const user = await User.findOne({ _id: userId });
-        const per_page = 50;
 
         if (isEmpty(user)) {
             return res.status(400).json({ message: 'User not found' });
@@ -161,20 +160,27 @@ exports.uploadContents = async (req, res) => {
                 return res.status(200).json({ success: true, user });
             }
 
-            switch (purpose) {
-                case "uploadedImage":
-                    user.uploadedImage.push(newAsset.url);
-                    if (user.uploadedImage.length > per_page) {
-                        user.uploadedImage.pop();  // Remove the last element if there are more than 50 elements
-                    }
-                    break;
-                case "uploadedVideo":
-                    user.uploadedVideo.push(newAsset.url);
-                    if (user.uploadedVideo.length > per_page) {
-                        user.uploadedVideo.pop();  // Remove the last element if there are more than 50 elements
-                    }
+            if (purpose == 'uploadedImage') {
+                const assets = await Asset.find({
+                    userId: userId,
+                    purpose: 'uploadedImage'
+                })
+                    .sort({ uploadedTime: -1 }) // Sort by updated time, descending
+                    .limit(50)
+                    .select('_id url numberOfViews');
+                return res.status(200).json({ success: true, first50Images: assets });
             }
 
+            if (purpose == 'uploadedVideo') {
+                const assets = await Asset.find({
+                    userId: userId,
+                    purpose: 'uploadedVideo'
+                })
+                    .sort({ uploadedTime: -1 }) // Sort by updated time, descending
+                    .limit(50)
+                    .select('_id url numberOfViews');
+                return res.status(200).json({ success: true, first50Videos: assets });
+            }
             return res.status(200).json({ success: true, user });
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
@@ -182,6 +188,21 @@ exports.uploadContents = async (req, res) => {
     } catch (err) {
         console.log("upload content Error ", err)
         return res.status(400).json({ success: false, message: err.message });
+    }
+}
+
+exports.addNumberOfViews = async (req, res) => {
+    try {
+        const assetId = req.body.assetId;
+        const asset = await Asset.findOne({ _id: assetId });
+        if (isEmpty(asset)) {
+            return res.status(400).json({ success: false, message: 'The asset does not exist.' });
+        }
+        asset.numberOfViews += 1;
+        await asset.save();
+        return res.status(200).json({ success: true, numberOfViews: asset.numberOfViews });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
 

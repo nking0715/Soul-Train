@@ -50,12 +50,6 @@ const userSchema = new mongoose.Schema({
     coverPicture: {
         type: String
     },
-    uploadedImage: [{
-        type: String
-    }],
-    uploadedVideo: [{
-        type: String
-    }],
     bio: {
         type: String,
         trim: true

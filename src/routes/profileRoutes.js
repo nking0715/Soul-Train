@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, uploadContents, getUploadedContents, connectDancer, acceptDancer, followManage } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadContents, getUploadedContents, connectDancer, acceptDancer, followManage, addNumberOfViews } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -51,6 +51,7 @@ router.put('/', [
 
 router.post('/uploadContents', uploadContents)
 router.post('/getUploadedContents', getUploadedContents)
+router.post('/addNumberOfViews', addNumberOfViews)
 
 router.post('/connect_dancer', connectDancer);
 router.post('/accept_dancer', acceptDancer);

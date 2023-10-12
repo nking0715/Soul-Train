@@ -37,7 +37,8 @@ const assetSchema = new mongoose.Schema({
     },
     numberOfViews: {
         type: Number,
-    }
+        default: 0
+    },
     // ... any other video-related fields
 },
     { timestamps: true });
