@@ -64,7 +64,7 @@ exports.getChannels = async (req, res) => {
         ];
 
         if (channels.length === 0) {
-            return res.status(204).json({ success: true, message: 'There is no active channel at the moment' });
+            return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
         }
 
         return res.status(200).json({ success: true, channels: channels });
