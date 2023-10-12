@@ -228,9 +228,8 @@ exports.getUploadedContents = async (req, res) => {
             .sort({ uploadedTime: -1 }) // Sort by updated time, descending
             .limit(per_page)
             .skip(skip)
-            .select('url');
-        const urls = assets.map(asset => asset.url);
-        return res.status(200).json({ success: true, urls: urls });
+            .select('_id url numberOfViews');
+        return res.status(200).json({ success: true, assets: assets });
     } catch (error) {
         console.error("Error fetching assets:", error);
         res.status(500).json({ message: "Internal Server Error" });
