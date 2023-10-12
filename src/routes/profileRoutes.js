@@ -21,19 +21,6 @@ const mimeToExt = {
     // ... add other types as needed
 };
 
-
-const upload = multer({
-    dest: 'uploads/',
-    limits: { fileSize: 100 * 1024 * 1024 },  // 100 MB limit
-    fileFilter: (req, file, cb) => {
-        if (!mimeToExt[file.mimetype]) {
-            return cb(new Error('Invalid file type'), false);
-        }
-        cb(null, true);
-    }
-});
-
-
 router.get('/', getProfile);
 router.get('/:userId', getProfile);
 

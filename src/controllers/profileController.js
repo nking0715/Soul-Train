@@ -207,7 +207,7 @@ exports.addNumberOfViews = async (req, res) => {
 }
 
 exports.getUploadedContents = async (req, res) => {
-    const { page, type } = req.body;
+    const { page, type, userId } = req.body;
     const per_page = 50;
     if (isEmpty(page) || isEmpty(type)) {
         return res.status(400).json({ success: false, message: "Invalid Request!" });
@@ -221,7 +221,7 @@ exports.getUploadedContents = async (req, res) => {
 
     try {
         const assets = await Asset.find({
-            userId: req.params.userId || req.user.id,
+            userId: userId || req.user.id,
             ...typeFilter,
             purpose: { $in: ['uploadedImage', 'uploadedVideo'] }
         })
