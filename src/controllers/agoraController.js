@@ -99,7 +99,7 @@ exports.joinChannel = async (req, res) => {
 
         const token = generateAccessToken(channelName, uid);
 
-        return res.status(200).json({ success: true, token: token });
+        return res.status(200).json({ success: true, token: token, uid: uid, channelName: channelName });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
