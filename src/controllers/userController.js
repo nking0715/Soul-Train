@@ -41,7 +41,7 @@ exports.register = async (req, res) => {
         subject: 'Validation Code',
         text: `Your validation code is: ${validationCode}`,
       };
-      
+
       const messageId = await sendMail(options);
       console.log('Message sent successfully:', messageId);
 
@@ -144,18 +144,13 @@ exports.googleLogin = async (req, res) => {
     }
     let user = await User.findOne({ email: email });
     if (isEmpty(user)) {
-      user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      user = new User({ email: email, username: name, emailVerified: true });
       await user.save();
 
       req.session.userId = user._id;
 
-      // Generate a JWT token
-      const token = authService.generateToken(user);
-
-      return res.status(201).json({ success: true, username: user.username, artistName: name, email: user.email, id: user._id, token });
+      return res.status(201).json({ success: true, username: user.username, email: user.email, id: user._id });
     } else {
-      req.session.userId = user._id;
-
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
@@ -169,15 +164,12 @@ exports.googleLogin = async (req, res) => {
 exports.addArtistName = async (req, res) => {
   const artistName = req.body.artistName;
   try {
-    let user = await User.findOne({ _id: req.params.userId });
+    let user = await User.findOne({ _id: req.session.userId });
     if (isEmpty(user)) {
       return res.status(400).json({ success: false, message: "User not found" })
     }
     user.artistName = artistName;
     await user.save();
-
-    req.session.userId = user._id;
-
     // Generate a JWT token
     const token = authService.generateToken(user);
     // Return the token to the client
@@ -209,18 +201,13 @@ exports.facebookLogin = async (req, res) => {
     }
     let user = await User.findOne({ email: email });
     if (isEmpty(user)) {
-      user = new User({ email: email, username: name, artistName: name, emailVerified: true });  // Assuming your User model has fields for email and name
+      user = new User({ email: email, username: name, emailVerified: true });
       await user.save();
 
       req.session.userId = user._id;
 
-      // Generate a JWT token
-      const token = authService.generateToken(user);
-
-      return res.status(201).json({ success: true, username: name, artistName: name, email: user.email, id: user._id, token });
+      return res.status(201).json({ success: true, username: name, email: user.email, id: user._id });
     } else {
-      req.session.userId = user._id;
-
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
@@ -343,7 +330,7 @@ exports.verifyResetCode = async (req, res) => {
     if (user.resetToken != resetToken || user.resetPassExpiry < Date.now()) {
       return res.status(400).json({ success: false, message: 'Invalid or expired reset password token' });
     }
-    
+
     user.resetCodeValidated = true;
     user.save();
     // Return the token to the client
@@ -360,7 +347,7 @@ exports.resetPassword = async (req, res) => {
     if (isEmpty(user)) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    if (user.resetCodeValidated != true ) {
+    if (user.resetCodeValidated != true) {
       return res.status(400).json({ success: false, message: 'Code is not validated' });
     }
     user.password = password;

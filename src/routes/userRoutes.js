@@ -17,7 +17,7 @@ router.post('/register', [
 router.post('/verifyValidationCode', verifyValidationCode);
 router.post('/login', login);
 router.post('/verify-google-token', googleLogin);
-router.post('/add-artist-name/:userId', addArtistName);
+router.post('/add-artist-name', addArtistName);
 router.post('/facebookLogin', facebookLogin);
 router.post('/logout', logout);
 

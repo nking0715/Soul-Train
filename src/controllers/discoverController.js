@@ -1,6 +1,6 @@
-const isEmpty = require('../utils/isEmpty')
+const isEmpty = require('../utils/isEmpty');
 const Asset = require('../models/asset');
-const User = require('../models/user')
+const User = require('../models/user');
 
 exports.discoverContents = async (req, res) => {
     const { page, per_page } = req.body;

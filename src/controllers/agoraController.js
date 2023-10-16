@@ -115,6 +115,11 @@ exports.deleteChannel = async (req, res) => {
     }
 }
 
+exports.contentModerationWebhook = async (req, res) => {
+    const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
+    
+}
+
 const checkUIDForChannelName = async (targetChannelName, targetUID) => {
     try {
         const channelsWithTargetName = await Channel.find({
