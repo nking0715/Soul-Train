@@ -154,10 +154,10 @@ exports.googleLogin = async (req, res) => {
       // Generate a JWT token
       const token = authService.generateToken(user);
       // Return the token to the client
-      return res.status(200).json({ token });
+      return res.status(200).json({ success: true, token });
     }
   } catch (error) {
-    res.status(400).send({ status: 'error', success: false, message: 'Token verification failed.' });
+    return res.status(500).json({ success: false, message: error.message })
   }
 };
 
@@ -173,8 +173,10 @@ exports.addArtistName = async (req, res) => {
     // Generate a JWT token
     const token = authService.generateToken(user);
     // Return the token to the client
-    return res.status(200).json({ token });
-  } catch (err) { res.status(400).send({ status: 'error', message: err.message }) }
+    return res.status(200).json({ success: true, token });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message })
+  }
 };
 
 exports.facebookLogin = async (req, res) => {
@@ -189,7 +191,7 @@ exports.facebookLogin = async (req, res) => {
     });
 
     if (!data) {
-      return res.status(404).json({ success: false, message: 'Failed to fetch user details from Facebook.' });
+      return res.status(400).json({ success: false, message: 'Failed to fetch user details from Facebook.' });
     }
 
     console.log("data ", data)
@@ -214,7 +216,7 @@ exports.facebookLogin = async (req, res) => {
       return res.status(200).json({ success: true, token });
     }
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
