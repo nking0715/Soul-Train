@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const api = require('./routes/api-router');
+const webhookRoutes = require('./routes/webhook')
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 
@@ -20,6 +21,10 @@ connectDB();
 
 const app = express();
 const server = require('http').createServer(app);
+
+// Initialize socket.io
+const socketManager = require('./utils/socket');
+socketManager.initialize(server);
 
 app.use(cors('*'));
 
@@ -57,6 +62,7 @@ app.get("/", (req, res) => {
 
 // User routes
 app.use('/users', userRoutes);
+app.use('/contentModerationWebhook', webhookRoutes);
 
 // Profile routes with authentication and authorization
 app.use(authMiddleware.authenticate);

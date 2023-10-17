@@ -1,6 +1,7 @@
 const { RtcTokenBuilder, RtcRole } = require('agora-token');
 const Channel = require('../models/channel');
 const User = require('../models/user');
+const socketManager = require('../utils/socket');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
@@ -117,7 +118,21 @@ exports.deleteChannel = async (req, res) => {
 
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
-    
+    try {
+        const io = socketManager.getIO();
+        io.emit('content-moderation', {
+            contentUrl,
+            status,
+            userId,
+            addedAt,
+            contentId,
+            reason,
+            metaData
+        });
+        return res.status(200).json({ success: true, message: 'Webhook processed' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
 }
 
 const checkUIDForChannelName = async (targetChannelName, targetUID) => {
