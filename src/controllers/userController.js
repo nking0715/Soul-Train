@@ -150,6 +150,9 @@ exports.googleLogin = async (req, res) => {
       req.session.userId = user._id;
 
       return res.status(201).json({ success: true, username: user.username, email: user.email, id: user._id });
+    } else if (isEmpty(user.artistName)) {
+      req.session.userId = user._id;
+      return res.status(201).json({ success: true, username: user.username, email: user.email, id: user._id });
     } else {
       // Generate a JWT token
       const token = authService.generateToken(user);
@@ -167,6 +170,9 @@ exports.addArtistName = async (req, res) => {
     let user = await User.findOne({ _id: req.session.userId });
     if (isEmpty(user)) {
       return res.status(400).json({ success: false, message: "User not found" })
+    }
+    if (!isEmpty(user.artistName)) {
+      return res.status(400).json({ success: false, message: "This user already has an artist name." });
     }
     user.artistName = artistName;
     await user.save();
@@ -208,6 +214,9 @@ exports.facebookLogin = async (req, res) => {
 
       req.session.userId = user._id;
 
+      return res.status(201).json({ success: true, username: name, email: user.email, id: user._id });
+    } else if (isEmpty(user.artistName)) {
+      req.session.userId = user._id;
       return res.status(201).json({ success: true, username: name, email: user.email, id: user._id });
     } else {
       // Generate a JWT token
