@@ -1,5 +1,6 @@
 const isEmpty = require('../utils/isEmpty');
 const Player = require('../models/player');
+const Match = require('../models/match')
 const socketManager = require('../utils/socket');
 
 exports.joinLobby = async (req, res) => {
@@ -71,6 +72,16 @@ const createPairs = (arr) => {
     return pairs;
 }
 
-const createMatches = (pairs) => {
-    
+const createMatches = async (pairs) => {
+    let matches = [];
+    for (let i = 0; i < pairs.length; i++) {
+        const match = new Match({
+            playerA: pairs[i][0],
+            playerB: pairs[i][1],
+            startTime: Date.now()
+        })
+        await match.save();
+        matches.push(match._id);
+    }
+    return matches;
 }

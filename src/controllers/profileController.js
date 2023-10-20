@@ -228,7 +228,7 @@ exports.getUploadedContents = async (req, res) => {
             .sort({ uploadedTime: -1 }) // Sort by updated time, descending
             .limit(per_page)
             .skip(skip)
-            .select('_id url numberOfViews');
+            .select('_id url numberOfViews numberOfLikes numberOfComments caption uploadedTime isLike');
         return res.status(200).json({ success: true, assets: assets });
     } catch (error) {
         console.error("Error fetching assets:", error);

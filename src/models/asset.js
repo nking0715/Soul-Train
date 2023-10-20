@@ -39,6 +39,20 @@ const assetSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    numberOfLikes: {
+        type: Number,
+        default: 0
+    },
+    numberOfComments: {
+        type: Number,
+        default: 0
+    },
+    caption: {
+        type: String
+    },
+    isLike: {
+        type: Boolean
+    }
     // ... any other video-related fields
 },
     { timestamps: true });
