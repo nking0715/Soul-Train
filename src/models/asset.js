@@ -51,7 +51,8 @@ const assetSchema = new mongoose.Schema({
         type: String
     },
     isLike: {
-        type: Boolean
+        type: Boolean,
+        default: false
     }
     // ... any other video-related fields
 },
