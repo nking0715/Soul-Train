@@ -50,10 +50,11 @@ const assetSchema = new mongoose.Schema({
     caption: {
         type: String
     },
-    isLike: {
-        type: Boolean,
-        default: false
-    }
+    likeList: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }]
     // ... any other video-related fields
 },
     { timestamps: true });
