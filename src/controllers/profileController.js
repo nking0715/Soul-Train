@@ -28,8 +28,9 @@ const imageMimeToExt = {
 
 exports.getProfile = async (req, res) => {
     try {
-        let profile = await User.findOne({ _id: req.params.userId || req.user.id });
-        if (isEmpty(profile)) return res.status(404).json({ message: 'Profile not found' });
+        let profile = await User.findOne({ _id: req.params.userId || req.user.id })
+            .select('username artistName email profilePicture coverPicture bio crew style phoneNumber numberOfFollowers numberOfFollowings');
+        if (isEmpty(profile)) return res.status(404).json({ success: false, message: 'Profile not found' });
 
         profile = profile.toObject();
         // Remove private fields if the requester isn't the profile owner
@@ -42,6 +43,42 @@ exports.getProfile = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.getFollowerList = async (req, res) => {
+    try {
+        const { page, userId } = req.body;
+        const per_page = 50;
+        if (isEmpty(page)) {
+            return res.status(400).json({ success: false, message: "Invalid Request!" });
+        }
+        const skip = (page - 1) * per_page; // Calculate the skip value
+        const user = await User.findOne({ _id: userId || req.user.id })
+            .limit(per_page)
+            .skip(skip)
+            .select('follower');
+        return res.status(200).json({ success: true, user });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.getFollowingList = async (req, res) => {
+    try {
+        const { page, userId } = req.body;
+        const per_page = 50;
+        if (isEmpty(page)) {
+            return res.status(400).json({ success: false, message: "Invalid Request!" });
+        }
+        const skip = (page - 1) * per_page; // Calculate the skip value
+        const user = await User.findOne({ _id: userId || req.user.id })
+            .limit(per_page)
+            .skip(skip)
+            .select('following');
+        return res.status(200).json({ success: true, user });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
 
 exports.updateProfile = async (req, res) => {
     const errors = validationResult(req);
