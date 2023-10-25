@@ -57,7 +57,7 @@ exports.getFollowerList = async (req, res) => {
             .skip(skip)
             .select('follower');
         const followers = await User.find({ _id: { $in: user.follower } })
-            .select('username, artistName, profilePicture');
+            .select('username artistName profilePicture');
         return res.status(200).json({ success: true, followers });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -77,7 +77,7 @@ exports.getFollowingList = async (req, res) => {
             .skip(skip)
             .select('following');
         const followings = await User.find({ _id: { $in: user.following } })
-            .select('username, artistName, profilePicture');
+            .select('username artistName profilePicture');
         return res.status(200).json({ success: true, followings });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
