@@ -46,29 +46,42 @@ exports.createChannel = async (req, res) => {
 
 exports.getChannels = async (req, res) => {
     try {
-        const channelsForAll = await Channel.find({ audienceType: "all" }).populate('userId', 'username profilePicture');
-
-        const userIDsOfChannelsFollowedByRequestingUser = await User.find({
-            follower: { $in: [req.user.id] }
-        }).select('_id');  // This will return an array of user IDs that the requesting user follows.
-
-        const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
-
-        const channelsForFollowers = await Channel.find({
-            audienceType: "followers",
-            userId: { $in: channelUserIDs }
-        }).populate('userId', 'username profilePicture');
-
-        const channels = [
-            ...channelsForAll,
-            ...channelsForFollowers
-        ];
-
-        if (channels.length === 0) {
-            return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
+        const isHomeFeed = req.body.isHomeFeed;
+        if (isEmpty(isHomeFeed)) {
+            return res.status(400).json({ success: false, message: "Bad request." });
         }
+        if (isHomeFeed) {
+            const userIDsOfChannelsFollowedByRequestingUser = await User.find({
+                follower: { $in: [req.user.id] }
+            }).select('_id');  // This will return an array of user IDs that the requesting user follows.
 
-        return res.status(200).json({ success: true, channels: channels });
+            const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
+
+            const channels = await Channel.find({
+                userId: { $in: channelUserIDs }
+            }).populate('userId username profilePicture');
+
+            if (channels.length === 0) {
+                return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
+            }
+            return res.status(200).json({ success: true, channels: channels });
+        } else {
+            const userIDsOfChannelsFollowedByRequestingUser = await User.find({
+                follower: { $in: [req.user.id] }
+            }).select('_id');  // This will return an array of user IDs that the requesting user follows.
+
+            const channelUserIDs = userIDsOfChannelsFollowedByRequestingUser.map(user => user._id);
+
+            const channels = await Channel.find({
+                audienceType: "all",
+                userId: { $nin: channelUserIDs }
+            }).populate('userId username profilePicture');
+
+            if (channels.length === 0) {
+                return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
+            }
+            return res.status(200).json({ success: true, channels: channels });
+        }        
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
