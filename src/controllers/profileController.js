@@ -361,16 +361,12 @@ exports.followManage = async (req, res) => {
         if (user.following.includes(dancerId)) {
             const userIndex = user.following.indexOf(dancerId);
             user.following.splice(userIndex, 1);
-            user.numberOfFollowings -= 1;
 
             const dancerIndex = dancer.follower.indexOf(userId)
             dancer.follower.splice(dancerIndex, 1);
-            dancer.numberOfFollowers -= 1;
         } else {
             user.following.push(dancerId)
-            user.numberOfFollowings += 1;
             dancer.follower.push(userId)
-            user.numberOfFollowers += 1;
         }
 
         await user.save();
