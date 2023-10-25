@@ -72,14 +72,16 @@ const userSchema = new mongoose.Schema({
         ref: 'User',
     }],
     numberOfFollowers: {
-        type: Number
+        type: Number,
+        default: 0
     },
     following: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }],
     numberOfFollowings: {
-        type: Number
+        type: Number,
+        default: 0
     },
     pending: [{
         type: mongoose.Schema.Types.ObjectId,
