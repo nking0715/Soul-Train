@@ -29,7 +29,7 @@ const imageMimeToExt = {
 exports.getProfile = async (req, res) => {
     try {
         let profile = await User.findOne({ _id: req.params.userId || req.user.id })
-            .select('username artistName email profilePicture coverPicture bio crew style phoneNumber numberOfFollowers numberOfFollowings');
+            .select('username artistName bio style  profilePicture coverPicture numberOfFollowers numberOfFollowings hasChangedArtistName emailVerified email phoneNumber');
         if (isEmpty(profile)) return res.status(404).json({ success: false, message: 'Profile not found' });
 
         profile = profile.toObject();
@@ -38,7 +38,7 @@ exports.getProfile = async (req, res) => {
             delete profile.email;
             delete profile.phoneNumber;
         }
-        return res.status(200).json(profile);
+        return res.status(200).json({ success: true, profile });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -56,7 +56,9 @@ exports.getFollowerList = async (req, res) => {
             .limit(per_page)
             .skip(skip)
             .select('follower');
-        return res.status(200).json({ success: true, user });
+        const followers = User.find({ _id: { $in: user.follower } })
+            .select('username, artistName, profilePicture');
+        return res.status(200).json({ success: true, followers });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -74,7 +76,9 @@ exports.getFollowingList = async (req, res) => {
             .limit(per_page)
             .skip(skip)
             .select('following');
-        return res.status(200).json({ success: true, user });
+        const followings = User.find({ _id: { $in: user.following } })
+            .select('username, artistName, profilePicture');
+        return res.status(200).json({ success: true, followings });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
