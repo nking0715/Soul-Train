@@ -5,7 +5,7 @@ const verifyWebhookKey = require('../middlewares/verifyWebhookKey');
 const router = express.Router();
 
 router.post('/createChannel', agoraController.createChannel);
-router.get('/getChannels', agoraController.getChannels);
+router.post('/getChannels', agoraController.getChannels);
 router.post('/joinChannel', agoraController.joinChannel);
 router.get('/deleteChannel', agoraController.deleteChannel);
 
