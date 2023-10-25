@@ -61,9 +61,6 @@ exports.getChannels = async (req, res) => {
                 userId: { $in: channelUserIDs }
             }).populate('userId','username profilePicture');
 
-            if (channels.length === 0) {
-                return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
-            }
             return res.status(200).json({ success: true, channels: channels });
         } else {
             const userIDsOfChannelsFollowedByRequestingUser = await User.find({
@@ -76,10 +73,6 @@ exports.getChannels = async (req, res) => {
                 audienceType: "all",
                 userId: { $nin: channelUserIDs }
             }).populate('userId','username profilePicture');
-
-            if (channels.length === 0) {
-                return res.status(400).json({ success: true, message: 'There is no active channel at the moment' });
-            }
             return res.status(200).json({ success: true, channels: channels });
         }        
     } catch (error) {

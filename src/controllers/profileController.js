@@ -30,7 +30,7 @@ exports.getProfile = async (req, res) => {
     try {
         let profile = await User.findOne({ _id: req.params.userId || req.user.id })
             .select('username artistName bio style  profilePicture coverPicture numberOfFollowers numberOfFollowings hasChangedArtistName emailVerified email phoneNumber');
-        if (isEmpty(profile)) return res.status(404).json({ success: false, message: 'Profile not found' });
+        if (isEmpty(profile)) return res.status(400).json({ success: false, message: 'Profile not found' });
 
         profile = profile.toObject();
         // Remove private fields if the requester isn't the profile owner
