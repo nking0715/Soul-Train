@@ -48,7 +48,7 @@ exports.getChannels = async (req, res) => {
     try {
         const isHomeFeed = req.body.isHomeFeed;
         if (isEmpty(isHomeFeed)) {
-            return res.status(400).json({ success: false, message: "Bad request." });
+            return res.status(400).json({ success: false, message: "A key is missing." });
         }
         if (isHomeFeed) {
             const userIDsOfChannelsFollowedByRequestingUser = await User.find({
