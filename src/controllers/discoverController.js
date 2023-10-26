@@ -45,11 +45,16 @@ exports.discoverContents = async (req, res) => {
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
                     likedByUser: {
-                        $cond: {
-                            if: { $isArray: { $ifNull: ["$likeList", []] } },
-                            then: { $in: [userId, "$likeList"] },
-                            else: false
-                        }
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [userId, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
                     }
                 }
             }
@@ -104,11 +109,16 @@ exports.homeFeed = async (req, res) => {
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
                     likedByUser: {
-                        $cond: {
-                            if: { $isArray: { $ifNull: ["$likeList", []] } },
-                            then: { $in: [userId, "$likeList"] },
-                            else: false
-                        }
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [userId, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
                     }
                 }
             }
