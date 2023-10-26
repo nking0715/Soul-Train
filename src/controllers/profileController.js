@@ -37,6 +37,11 @@ exports.getProfile = async (req, res) => {
         if (req.user.id !== profile._id.toString()) {
             delete profile.email;
             delete profile.phoneNumber;
+            if (profile.follower.includes(req.user.id)) {
+                profile.isFollowed = true;
+            } else {
+                profile.isFollowed = false;
+            }
         }
         return res.status(200).json({ success: true, profile });
     } catch (error) {
