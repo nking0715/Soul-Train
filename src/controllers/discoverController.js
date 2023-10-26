@@ -36,12 +36,15 @@ exports.discoverContents = async (req, res) => {
                     type: 1,
                     uploadedTime: 1,
                     numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     __v: 1,
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    likedByUser: { $in: [userId, "$likeList"] }
                 }
             }
         ]);
@@ -86,12 +89,15 @@ exports.homeFeed = async (req, res) => {
                     type: 1,
                     uploadedTime: 1,
                     numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     __v: 1,
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    likedByUser: { $in: [userId, "$likeList"] }
                 }
             }
         ]);
@@ -156,19 +162,19 @@ exports.likeContent = async (req, res) => {
         if (asset.likeList.includes(userId)) {
             // If userId exists in the likeList array, remove it
             asset.likeList.pull(userId);
-            
+
             // Decrease the numberOfLikes by 1
             asset.numberOfLikes -= 1;
-            
+
             await asset.save();
             return res.status(200).json({ success: true, message: "UserId removed from the likeList.", numberOfLikes: asset.numberOfLikes, likeContent: false });
         } else {
             // If userId does not exist in the likeList array, add it
             asset.likeList.push(userId);
-            
+
             // Increase the numberOfLikes by 1
             asset.numberOfLikes += 1;
-            
+
             await asset.save();
             return res.status(200).json({ success: true, message: "UserId added to the likeList.", numberOfLikes: asset.numberOfLikes, likeContent: true });
         }
