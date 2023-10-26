@@ -55,7 +55,13 @@ exports.discoverContents = async (req, res) => {
                             true,
                             false
                         ]
-                    }
+                    },
+                    likeList: 1
+                }
+            },
+            {
+                $project: {
+                    likeList: 0
                 }
             }
         ]);
@@ -119,7 +125,13 @@ exports.homeFeed = async (req, res) => {
                             true,
                             false
                         ]
-                    }
+                    },
+                    likeList: 1
+                }
+            },
+            {
+                $project: {
+                    likeList: 0
                 }
             }
         ]);
