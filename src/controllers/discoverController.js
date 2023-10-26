@@ -49,7 +49,7 @@ exports.discoverContents = async (req, res) => {
                             {
                                 $and: [
                                     { $isArray: "$likeList" },
-                                    { $in: [userId, "$likeList"] }
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
                                 ]
                             },
                             true,
@@ -119,7 +119,7 @@ exports.homeFeed = async (req, res) => {
                             {
                                 $and: [
                                     { $isArray: "$likeList" },
-                                    { $in: [userId, "$likeList"] }
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
                                 ]
                             },
                             true,
