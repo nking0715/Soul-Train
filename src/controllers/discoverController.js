@@ -44,7 +44,13 @@ exports.discoverContents = async (req, res) => {
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                    likedByUser: { $in: [userId, "$likeList"] }
+                    likedByUser: {
+                        $cond: {
+                            if: { $isArray: { $ifNull: ["$likeList", []] } },
+                            then: { $in: [userId, "$likeList"] },
+                            else: false
+                        }
+                    }
                 }
             }
         ]);
@@ -97,7 +103,13 @@ exports.homeFeed = async (req, res) => {
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                    likedByUser: { $in: [userId, "$likeList"] }
+                    likedByUser: {
+                        $cond: {
+                            if: { $isArray: { $ifNull: ["$likeList", []] } },
+                            then: { $in: [userId, "$likeList"] },
+                            else: false
+                        }
+                    }
                 }
             }
         ]);
