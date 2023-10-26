@@ -37,8 +37,9 @@ exports.getProfile = async (req, res) => {
         if (req.user.id !== profile._id.toString()) {
             delete profile.email;
             delete profile.phoneNumber;
-            const follower = await User.findOne({ _id: req.params.userId })
+            const user = await User.findOne({ _id: req.params.userId })
                 .select('follower')
+            const follower = user.follower;
             console.log(follower);
             if (!isEmpty(follower) && follower.some(followerObj => followerObj.id.toString === req.user.id)) {
                 profile.isFollowed = true;
