@@ -41,7 +41,7 @@ exports.getProfile = async (req, res) => {
                 .select('follower')
             const follower = user.follower;
             console.log(follower);
-            if (!isEmpty(follower) && follower.some(followerObj => followerObj.id.toString === req.user.id)) {
+            if (!isEmpty(follower) && follower.includes(req.user.id)) {
                 profile.isFollowed = true;
             } else {
                 profile.isFollowed = false;
