@@ -5,6 +5,6 @@ const { commentPost, editComment, deleteComment } = require('../controllers/post
 
 router.post('/comment', commentPost)
 router.put('/comment', editComment)
-router.delete('/comment', deleteComment)
+router.delete('/comment/:commentId', deleteComment)
 
 module.exports = router;
