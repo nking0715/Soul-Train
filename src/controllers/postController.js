@@ -41,8 +41,51 @@ exports.createPost = async (req, res) => {
         if (files && Object.keys(files).length > 0) {
             let assets = [];
             const uploadedContents = files.files;
-            for (let i = 0; i < uploadedContents.length; i++) {
-                const uploadedContent = uploadedContents[i];
+            if (uploadedContents.length > 1) {
+                for (let i = 0; i < uploadedContents.length; i++) {
+                    const uploadedContent = uploadedContents[i];
+                    try {
+                        // Get file extension
+                        const contentMimeToExt = { ...imageMimeToExt, ...videoMimeToExt };
+                        const fileExtension = contentMimeToExt[uploadedContent.mimetype];
+                        let maxFileSizeBytes, contentType = '';
+
+                        // Check if the file type is supported
+                        if (!fileExtension) {
+                            return res.status(400).json({ success: false, message: 'Unsupported file type' });
+                        }
+                        if (uploadedContent.mimetype.startsWith('image')) {
+                            contentType = "image";
+                            maxFileSizeBytes = 10000000;
+                        } else {
+                            contentType = "video";
+                            maxFileSizeBytes = 200000000;
+                        }
+                        if (uploadedContent.size > maxFileSizeBytes) {
+                            return res.status(400).json({ success: false, message: "File size exceeds limit." });
+                        }
+                        const file_on_s3 = await uploadFileToS3(uploadedContent, fileExtension, bucketPath);
+                        contentLink = file_on_s3.location;
+                        rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
+
+                        const newAsset = new Asset({
+                            userId: userId,
+                            url: contentLink,
+                            category: "post",
+                            contentType: contentType,
+                            blocked: rekognitionResult.success ? false : true
+                        })
+                        assets.push(newAsset);
+                        await newAsset.save();
+                        if (rekognitionResult.success == false) {
+                            return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+                        }
+                    } catch (error) {
+                        return res.status(500).json({ success: false, message: error.message });
+                    }
+                }
+            } else {
+                const uploadedContent = uploadedContents;
                 try {
                     // Get file extension
                     const contentMimeToExt = { ...imageMimeToExt, ...videoMimeToExt };
@@ -83,6 +126,7 @@ exports.createPost = async (req, res) => {
                     return res.status(500).json({ success: false, message: error.message });
                 }
             }
+
             if (assets[0].contentType == "image") {
                 const promise = await uploadImageThumbnailToS3(assets[0].url, assets[0].id);
                 let newPost = new Post({
