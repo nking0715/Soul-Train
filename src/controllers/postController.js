@@ -213,3 +213,25 @@ exports.deleteComment = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 }
+
+exports.savePost = async (req, res) => {
+    try {
+        const postId = req.body.postId;
+        const userId = req.user.id;
+        const post = await Post.findById(postId);
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: 'Post not found.' });
+        }
+
+        if (!isEmpty(post.saveList) && post.saveList.includes(userId)) {
+            post.saveList.pull(userId);
+            await post.save();
+            return res.status(200).json({ success: true, message: 'Post was removed from saved content.' });
+        }
+        post.saveList.push(userId);
+        await post.save();
+        return res.status(200).json({ success: true, message: 'Post was saved.' });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
