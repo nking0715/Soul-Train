@@ -157,6 +157,25 @@ exports.commentPost = async (req, res) => {
     }
 }
 
+exports.getComment = async (req, res) => {
+    try {
+        const { postId, page } = req.body;
+        const perPage = 10;
+        const skip = (page - 1) * perPage;
+        const comments = await Comment.find({ post: postId })
+            .skip(skip)
+            .limit(perPage)
+            .populate('author', 'username profilePicture')
+            .sort({ createdAt: -1 });
+        return res.status(200).json({
+            success: true,
+            comments,
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 exports.editComment = async (req, res) => {
     try {
         const { commentId, content } = req.body;
