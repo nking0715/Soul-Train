@@ -477,6 +477,9 @@ exports.commentPost = async (req, res) => {
     try {
         const { content, postId } = req.body;
         const userId = req.user.id;
+        if (isEmpty(content) || isEmpty(postId)) {
+            return res.status(400).json({ success: false, message: "Bad request" });
+        }
         const newComment = new Comment({
             content: content,
             post: postId,
@@ -485,10 +488,13 @@ exports.commentPost = async (req, res) => {
 
         await newComment.save();
         const post = await Post.findById(postId);
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: "Post not found" });
+        }
         post.comments.push(newComment);
         await post.save();
 
-        res.status(200).json({ success: true, newComment });
+        res.status(200).json({ success: true, comment: newComment });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
