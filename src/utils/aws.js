@@ -9,8 +9,9 @@ const s3 = new aws.S3({
     httpOptions: { timeout: 1800000 }
 })
 
-exports.uploadFileToS3 = async (newFileName, file, filepath) => {    
+exports.uploadFileToS3 = async (file, filepath) => {
     const fileStream = new stream.PassThrough();
+    const newFileName = Date.now().toString() + '_' + file.name;
     fileStream.end(file.data);
     const uploadedFile = await s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filepath}`,
@@ -18,7 +19,11 @@ exports.uploadFileToS3 = async (newFileName, file, filepath) => {
         ContentType: file.mimetype,
         Body: fileStream,
         ACL: 'public-read'
-    }).promise();
+    }).promise().then(uploadData => ({
+        originalName: file.name,
+        newFileName,
+        location: uploadData.Location
+    }));
 
-    return uploadedFile.Location;
+    return uploadedFile;
 }

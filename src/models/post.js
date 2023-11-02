@@ -1,33 +1,30 @@
 const mongoose = require('mongoose');
 
-const assetSchema = new mongoose.Schema({
+const postSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    url: {
-        type: String,
+    assets: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Asset',
         required: true
-    },
-    thumnail: {
+    }],
+    tags: {
         type: String,
+        trim: true,
+        default: ""
     },
-    type: {
+    description: {
         type: String,
-        required: true
+        trim: true,
+        default: ""
     },
     uploadedTime: {
         type: Date,
         default: Date.now()
-    },
-    blocked: {
-        type: Boolean,
-        default: false
-    },
-    caption: {
-        type: String
-    },
+    },    
     numberOfViews: {
         type: Number,
         default: 0
@@ -45,8 +42,7 @@ const assetSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     }]
-    // ... any other video-related fields
 },
     { timestamps: true });
 
-module.exports = mongoose.model('Asset', assetSchema);
+module.exports = mongoose.model('Post', postSchema);

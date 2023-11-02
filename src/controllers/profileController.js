@@ -1,16 +1,16 @@
 const User = require('../models/user');
 const Asset = require('../models/asset');
+const Post = require('../models/post');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
-const dateFormat = require('date-and-time');
-const path = require('path');
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
     'video/avi': '.avi',
+    'video/x-msvideo': '.avi',
     'video/mpeg': '.mpeg',
     'video/quicktime': '.mov',
     'video/x-matroska': '.mkv',
@@ -139,38 +139,25 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-exports.uploadContents = async (req, res) => {
-    let contentLink, contentType, contentMimeToExt, maxFileSizeBytes, bucketPath, rekognitionResult = '';
+exports.uploadProfilePicture = async (req, res) => {
     try {
         const files = req.files;
         const userId = req.user.id;
-        const { tags, description, type, purpose } = req.body;
         const user = await User.findOne({ _id: userId });
+        const bucketPath = 'ProfilePicture';
+        const maxFileSizeBytes = 10000000;
+        const contentType = "image";
+        let contentLink, rekognitionResult = '';
 
         if (isEmpty(user)) {
             return res.status(400).json({ message: 'User not found' });
         }
 
-        if (type == "image") {
-            contentType = "image";
-            contentMimeToExt = { ...imageMimeToExt };
-            maxFileSizeBytes = 10000000;
-            bucketPath = "images";
-        } else if (type == "video") {
-            contentType = "video";
-            contentMimeToExt = { ...videoMimeToExt };
-            maxFileSizeBytes = 200000000;
-            bucketPath = "videos";
-        }
-
         if (files && Object.keys(files).length > 0) {
-            let uploadedContents = files.files;
+            const uploadedContents = files.files;
             // Get file extension
-            const fileExtension = contentMimeToExt[uploadedContents.mimetype];
+            const fileExtension = imageMimeToExt[uploadedContents.mimetype];
 
-            let extdotname = path.extname(uploadedContents.name);
-            var ext = extdotname.slice(1);
-            let name = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + "." + ext;
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
@@ -178,18 +165,14 @@ exports.uploadContents = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                const file_on_s3 = await uploadFileToS3(name, uploadedContents, bucketPath);
-                contentLink = file_on_s3;
-                rekognitionResult = await moderateContent(`${bucketPath}/${name}`, contentType);
-                console.log("content rekognitionResult ", rekognitionResult)
+                const file_on_s3 = await uploadFileToS3(uploadedContents, bucketPath);
+                contentLink = file_on_s3.location;
+                rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
             }
             const newAsset = new Asset({
                 userId: userId,
                 url: contentLink,
-                purpose: purpose,
-                type: type,
-                tags: tags,
-                description: description,
+                type: "profilePicture",
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
@@ -197,47 +180,149 @@ exports.uploadContents = async (req, res) => {
             if (rekognitionResult.success == false) {
                 return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
             }
+            user.profilePicture = newAsset.url;
+            await user.save();
+            return res.status(200).json({ success: true, url: user.profilePicture });
 
-            if (purpose == 'profilePicture') {
-                user.profilePicture = newAsset.url;
-                await user.save();
-                return res.status(200).json({ success: true, user });
-            }
-
-            if (purpose == 'coverPicture') {
-                user.coverPicture = newAsset.url;
-                await user.save();
-                return res.status(200).json({ success: true, user });
-            }
-
-            if (purpose == 'uploadedImage') {
-                const assets = await Asset.find({
-                    userId: userId,
-                    purpose: 'uploadedImage'
-                })
-                    .sort({ uploadedTime: -1 }) // Sort by updated time, descending
-                    .limit(50)
-                    .select('_id url numberOfViews');
-                return res.status(200).json({ success: true, first50Images: assets });
-            }
-
-            if (purpose == 'uploadedVideo') {
-                const assets = await Asset.find({
-                    userId: userId,
-                    purpose: 'uploadedVideo'
-                })
-                    .sort({ uploadedTime: -1 }) // Sort by updated time, descending
-                    .limit(50)
-                    .select('_id url numberOfViews');
-                return res.status(200).json({ success: true, first50Videos: assets });
-            }
-            return res.status(200).json({ success: true, user });
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }
-    } catch (err) {
-        console.log("upload content Error ", err)
-        return res.status(400).json({ success: false, message: err.message });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.uploadCoverPicture = async (req, res) => {
+    try {
+        const files = req.files;
+        const userId = req.user.id;
+        const user = await User.findOne({ _id: userId });
+        const bucketPath = 'CoverPicture';
+        const maxFileSizeBytes = 10000000;
+        const contentType = "image";
+        let contentLink, rekognitionResult = '';
+
+        if (isEmpty(user)) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        if (files && Object.keys(files).length > 0) {
+            const uploadedContents = files.files;
+            // Get file extension
+            const fileExtension = imageMimeToExt[uploadedContents.mimetype];
+
+            // Check if the file type is supported
+            if (!fileExtension) {
+                return res.status(400).json({ success: false, message: 'Unsupported file type' });
+            }
+            if (uploadedContents.size > maxFileSizeBytes) {
+                return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
+            } else {
+                const file_on_s3 = await uploadFileToS3(uploadedContents, bucketPath);
+                contentLink = file_on_s3.location;
+                rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
+            }
+            const newAsset = new Asset({
+                userId: userId,
+                url: contentLink,
+                type: 'coverPicture',
+                blocked: rekognitionResult.success ? false : true
+            })
+            await newAsset.save();
+
+            if (rekognitionResult.success == false) {
+                return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+            }
+            user.coverPicture = newAsset.url;
+            await user.save();
+            return res.status(200).json({ success: true, url: user.coverPicture });
+
+        } else {
+            return res.status(400).json({ success: false, message: "Invalid Request!" })
+        }
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+exports.uploadPost = async (req, res) => {
+    try {
+        let contentLink, rekognitionResult = '';
+        const bucketPath = "Post";
+        const files = req.files;
+        const userId = req.user.id;
+        const { tags, description } = req.body;
+        const user = await User.findOne({ _id: userId });
+
+        if (isEmpty(user)) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+
+        if (files && Object.keys(files).length > 0) {
+            let assets = [];
+            const uploadedContents = files.files;
+            for (let i = 0; i < uploadedContents.length; i++) {
+                const uploadedContent = uploadedContents[i];
+                try {
+                    // Get file extension
+                    const contentMimeToExt = { ...imageMimeToExt, ...videoMimeToExt };
+                    console.log(uploadedContent.mimetype);
+                    const fileExtension = contentMimeToExt[uploadedContent.mimetype];
+                    let maxFileSizeBytes, contentType = '';
+
+                    // Check if the file type is supported
+                    if (!fileExtension) {
+                        return res.status(400).json({ success: false, message: 'Unsupported file type' });
+                    }
+                    if (uploadedContent.mimetype.startsWith('image')) {
+                        contentType = "image";
+                        maxFileSizeBytes = 10000000;
+                    } else {
+                        contentType = "video";
+                        maxFileSizeBytes = 200000000;
+                    }
+                    if (uploadedContent.size > maxFileSizeBytes) {
+                        return res.status(400).json({ success: false, message: "File size exceeds limit." });
+                    }
+                    const file_on_s3 = await uploadFileToS3(uploadedContent, bucketPath);
+                    contentLink = file_on_s3.location;
+                    rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
+
+                    const newAsset = new Asset({
+                        userId: userId,
+                        url: contentLink,
+                        type: "post",
+                        blocked: rekognitionResult.success ? false : true
+                    })
+                    await newAsset.save();
+                    if (rekognitionResult.success == false) {
+                        return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+                    }
+                    assets.push(newAsset.id);
+                } catch (error) {
+                    return res.status(500).json({ success: false, message: error.message });
+                }
+            }
+            const newPost = new Post({
+                userId: userId,
+                assets: assets,
+                tags: tags,
+                description: description
+            });
+            await newPost.save();
+            const posts = await Post.find({
+                userId: userId,
+            })
+                .sort({ uploadedTime: -1 }) // Sort by updated time, descending
+                .limit(50)
+                .select('_id assets numberOfViews numberOfLikes numberOfComments likeList');
+            return res.status(200).json({ success: true, first50Posts: posts });
+
+        } else {
+            return res.status(400).json({ success: false, message: "Invalid Request!" })
+        }
+    } catch (error) {
+        console.log("upload content Error ", error)
+        return res.status(500).json({ success: false, message: error.message });
     }
 }
 
