@@ -235,3 +235,19 @@ exports.savePost = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 }
+
+exports.getSavedPost = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const page = req.body.page;
+        const perPage = 10;
+        const skip = (page - 1) * perPage;
+        const posts = await Post.find({ saveList: userId })
+            .skip(skip)
+            .limit(perPage)
+            .sort({ createdAt: -1 });
+        return res.status(200).json({ success: true, posts });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
