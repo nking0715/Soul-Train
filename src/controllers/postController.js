@@ -52,7 +52,7 @@ exports.editComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
     try {
-        const { commentId, content } = req.body;
+        const { commentId } = req.body;
         const userId = req.user.id;
         const comment = await Comment.findById(commentId);
         if (isEmpty(comment)) {
@@ -61,9 +61,9 @@ exports.deleteComment = async (req, res) => {
         if (userId !== comment.author.toString()) {
             return res.status(403).json({ success: false, message: 'Attempt failed.' });
         }
-        comment.content = content;
-        await comment.save();
-        return res.status(200).json({ success: true, comment });
+        await Comment.findByIdAndRemove(commentId);
+
+        return res.status(200).json({success: true, message: 'Comment was successfully deleted.'})
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
