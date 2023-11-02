@@ -15,20 +15,27 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
+    thumbnail: {
+        type: String
+    },
     tags: {
         type: String,
         trim: true,
         default: ""
     },
-    description: {
+    caption: {
         type: String,
         trim: true,
+        default: ""
+    },
+    category: {
+        type: String,
         default: ""
     },
     uploadedTime: {
         type: Date,
         default: Date.now()
-    },    
+    },
     numberOfViews: {
         type: Number,
         default: 0
