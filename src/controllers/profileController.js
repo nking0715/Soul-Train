@@ -256,14 +256,14 @@ exports.uploadCoverPicture = async (req, res) => {
 
 exports.addNumberOfViews = async (req, res) => {
     try {
-        const assetId = req.body.assetId;
-        const asset = await Asset.findOne({ _id: assetId });
-        if (isEmpty(asset)) {
-            return res.status(400).json({ success: false, message: 'The asset does not exist.' });
+        const postId = req.body.postId;
+        const post = await Post.findOne({ _id: assetId });
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: 'The post does not exist.' });
         }
-        asset.numberOfViews += 1;
-        await asset.save();
-        return res.status(200).json({ success: true, numberOfViews: asset.numberOfViews });
+        post.numberOfViews += 1;
+        await post.save();
+        return res.status(200).json({ success: true, numberOfViews: post.numberOfViews });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
