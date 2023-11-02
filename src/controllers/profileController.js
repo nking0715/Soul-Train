@@ -1,7 +1,5 @@
 const User = require('../models/user');
 const Asset = require('../models/asset');
-const Post = require('../models/post');
-const Comment = require('../models/comment');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
@@ -173,7 +171,8 @@ exports.uploadProfilePicture = async (req, res) => {
             const newAsset = new Asset({
                 userId: userId,
                 url: contentLink,
-                type: "profilePicture",
+                category: "profilePicture",
+                type: "image",
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
@@ -226,7 +225,8 @@ exports.uploadCoverPicture = async (req, res) => {
             const newAsset = new Asset({
                 userId: userId,
                 url: contentLink,
-                type: 'coverPicture',
+                category: "profilePicture",
+                type: "image",
                 blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
@@ -242,87 +242,6 @@ exports.uploadCoverPicture = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
         }
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
-    }
-}
-exports.uploadPost = async (req, res) => {
-    try {
-        let contentLink, rekognitionResult = '';
-        const bucketPath = "Post";
-        const files = req.files;
-        const userId = req.user.id;
-        const { tags, description } = req.body;
-        const user = await User.findOne({ _id: userId });
-
-        if (isEmpty(user)) {
-            return res.status(400).json({ message: 'User not found' });
-        }
-
-        if (files && Object.keys(files).length > 0) {
-            let assets = [];
-            const uploadedContents = files.files;
-            for (let i = 0; i < uploadedContents.length; i++) {
-                const uploadedContent = uploadedContents[i];
-                try {
-                    // Get file extension
-                    const contentMimeToExt = { ...imageMimeToExt, ...videoMimeToExt };
-                    console.log(uploadedContent.mimetype);
-                    const fileExtension = contentMimeToExt[uploadedContent.mimetype];
-                    let maxFileSizeBytes, contentType = '';
-
-                    // Check if the file type is supported
-                    if (!fileExtension) {
-                        return res.status(400).json({ success: false, message: 'Unsupported file type' });
-                    }
-                    if (uploadedContent.mimetype.startsWith('image')) {
-                        contentType = "image";
-                        maxFileSizeBytes = 10000000;
-                    } else {
-                        contentType = "video";
-                        maxFileSizeBytes = 200000000;
-                    }
-                    if (uploadedContent.size > maxFileSizeBytes) {
-                        return res.status(400).json({ success: false, message: "File size exceeds limit." });
-                    }
-                    const file_on_s3 = await uploadFileToS3(uploadedContent, bucketPath);
-                    contentLink = file_on_s3.location;
-                    rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
-
-                    const newAsset = new Asset({
-                        userId: userId,
-                        url: contentLink,
-                        type: "post",
-                        blocked: rekognitionResult.success ? false : true
-                    })
-                    await newAsset.save();
-                    if (rekognitionResult.success == false) {
-                        return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
-                    }
-                    assets.push(newAsset);
-                } catch (error) {
-                    return res.status(500).json({ success: false, message: error.message });
-                }
-            }
-            const newPost = new Post({
-                userId: userId,
-                assets: assets,
-                tags: tags,
-                description: description
-            });
-            await newPost.save();
-            const posts = await Post.find({
-                userId: userId,
-            })
-                .sort({ uploadedTime: -1 }) // Sort by updated time, descending
-                .limit(50)
-                .select('_id assets numberOfViews numberOfLikes numberOfComments likeList');
-            return res.status(200).json({ success: true, first50Posts: posts });
-
-        } else {
-            return res.status(400).json({ success: false, message: "Invalid Request!" })
-        }
-    } catch (error) {
-        console.log("upload content Error ", error)
         return res.status(500).json({ success: false, message: error.message });
     }
 }

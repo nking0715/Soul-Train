@@ -13,9 +13,12 @@ const assetSchema = new mongoose.Schema({
     thumnail: {
         type: String,
     },
-    type: {
+    category: {
         type: String,
         required: true
+    },
+    contentType: {
+        type: String,
     },
     uploadedTime: {
         type: Date,
@@ -24,9 +27,6 @@ const assetSchema = new mongoose.Schema({
     blocked: {
         type: Boolean,
         default: false
-    },
-    caption: {
-        type: String
     },
     numberOfViews: {
         type: Number,
