@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Asset = require('../models/asset');
 const Post = require('../models/post');
+const Comment = require('../models/comment');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
@@ -297,7 +298,7 @@ exports.uploadPost = async (req, res) => {
                     if (rekognitionResult.success == false) {
                         return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
                     }
-                    assets.push(newAsset.id);
+                    assets.push(newAsset);
                 } catch (error) {
                     return res.status(500).json({ success: false, message: error.message });
                 }
@@ -467,6 +468,27 @@ exports.followManage = async (req, res) => {
         await dancer.save();
 
         return res.status(200).json({ success: true, message: "success" });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.commentPost = async (req, res) => {
+    try {
+        const { content, postId } = req.body;
+        const userId = req.user.id;
+        const newComment = new Comment({
+            content: content,
+            post: postId,
+            author: userId
+        });
+
+        await newComment.save();
+        const post = await Post.findById(postId);
+        post.comments.push(newComment);
+        await post.save();
+
+        res.status(200).json({ success: true, newComment });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }

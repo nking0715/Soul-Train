@@ -11,6 +11,10 @@ const postSchema = new mongoose.Schema({
         ref: 'Asset',
         required: true
     }],
+    comments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment'
+    }],
     tags: {
         type: String,
         trim: true,
