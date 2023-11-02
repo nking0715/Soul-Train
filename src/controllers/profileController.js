@@ -64,8 +64,12 @@ exports.getFollowerList = async (req, res) => {
             .limit(per_page)
             .skip(skip)
             .select('follower');
-        const followers = await User.find({ _id: { $in: user.follower } })
+        const followersList = await User.find({ _id: { $in: user.follower } })
             .select('username artistName profilePicture');
+        const followers = followersList.map(follower => {
+            const isFollowingBack = user.following.some(followingId => followingId.toString() === follower._id.toString());
+            return { ...follower.toObject(), isFollowingBack }; // Add the new key here
+        });
         return res.status(200).json({ success: true, followers });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -84,8 +88,12 @@ exports.getFollowingList = async (req, res) => {
             .limit(per_page)
             .skip(skip)
             .select('following');
-        const followings = await User.find({ _id: { $in: user.following } })
+        const followingsList = await User.find({ _id: { $in: user.following } })
             .select('username artistName profilePicture');
+        const followings = followingsList.map(following => {
+            const isFollowedBack = user.follower.some(followerId => followerId.toString() === following._id.toString());
+            return { ...following.toObject(), isFollowedBack }; // Add the new key here
+        });
         return res.status(200).json({ success: true, followings });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
