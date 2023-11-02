@@ -7,6 +7,7 @@ const authMiddleware = require('./middlewares/authMiddleware');
 const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const postRoutes = require('./routes/postRoutes');
 const api = require('./routes/api-router');
 const webhookRoutes = require('./routes/webhook')
 const cors = require('cors');
@@ -67,6 +68,7 @@ app.use('/contentModerationWebhook', webhookRoutes);
 // Profile routes with authentication and authorization
 app.use(authMiddleware.authenticate);
 app.use('/profile', profileRoutes);
+app.use('/post', postRoutes);
 
 // Api Router
 app.use('/api', api);
