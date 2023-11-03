@@ -1,3 +1,4 @@
+const { generateRandomChannelName, generateAccessToken } = require('../../helper/agora.helper');
 const SOCKET_IDS = require('./sockProc');
 
 class SocketHandler {
