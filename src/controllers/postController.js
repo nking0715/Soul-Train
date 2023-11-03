@@ -248,12 +248,11 @@ exports.savePost = async (req, res) => {
 exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
-        const page = req.body.page;
-        const perPage = 10;
-        const skip = (page - 1) * perPage;
+        const {page, per_page} = req.query;
+        const skip = (page - 1) * per_page;
         const posts = await Post.find({ saveList: userId })
             .skip(skip)
-            .limit(perPage)
+            .limit(per_page)
             .sort({ createdAt: -1 });
         return res.status(200).json({ success: true, posts });
     } catch (error) {
