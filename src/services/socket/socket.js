@@ -109,21 +109,26 @@ class SocketHandler {
           return users[randomIndex];
         }
         const starter = selectRandomUser();
-        
+
         // start the battle
         clearInterval(this.timeoutId);
+
+        const channelName = generateRandomChannelName();
+        const token1 = generateAccessToken(channelName, 1);
+        const token2 = generateAccessToken(channelName, 2);
+
         socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
           ...this.rooms.running[this.roomId],
-          me: { userId },
-          opposite: { userId: oppoisteUserId },
+          me: { userId, token: token1 },
+          channelName,
+          opponent: { userId: oppoisteUserId, token: token2 },
           starter
         });
-
 
         this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
           ...this.rooms.running[this.roomId],
           me: { userId: oppoisteUserId },
-          opposite: { userId },
+          opponent: { userId },
           starter
         });
 
@@ -156,18 +161,18 @@ class SocketHandler {
     if (this.rooms.running[roomId]) {
       console.log("Request quit room is running. " + roomId);
       delete this.rooms.running[roomId].players[userId];
-      const oppositeName = Object.keys(this.rooms.running[roomId].players)[0];
-      const oppositeSocketId = this.rooms.running[roomId].players[oppositeName].socketId;
+      const opponentName = Object.keys(this.rooms.running[roomId].players)[0];
+      const opponentSocketId = this.rooms.running[roomId].players[opponentName].socketId;
       // delete running room
       delete this.rooms.running[roomId];
 
-      this.sockets[oppositeSocketId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
+      this.sockets[opponentSocketId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
       isConnected && this.sockets[currentSocketId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
       // destroy oppoiste socket info
-      this.sockets[oppositeSocketId].roomId = 0;
-      this.sockets[oppositeSocketId].userId = "";
-      delete this.users[oppositeName];
-      // send to opposite user to this user is outed, so this match is stopped and waiting
+      this.sockets[opponentSocketId].roomId = 0;
+      this.sockets[opponentSocketId].userId = "";
+      delete this.users[opponentName];
+      // send to opponent user to this user is outed, so this match is stopped and waiting
     } else if (this.rooms.waiting[roomId]) {
       delete this.rooms.waiting[roomId];
     }
