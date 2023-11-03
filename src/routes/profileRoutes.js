@@ -22,7 +22,6 @@ const mimeToExt = {
 };
 
 router.get('/', getProfile);
-router.get('/:userId', getProfile);
 
 router.put('/', [
     // Existing validations
@@ -44,7 +43,7 @@ router.post('/addNumberOfViews', addNumberOfViews)
 router.post('/connect_dancer', connectDancer);
 router.post('/accept_dancer', acceptDancer);
 router.post('/follow', followManage)
-router.post('/getfollowerList', getFollowerList)
-router.post('/getfollowingList', getFollowingList)
+router.get('/getfollowerList', getFollowerList)
+router.get('/getfollowingList', getFollowingList)
 
 module.exports = router;
