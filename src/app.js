@@ -22,12 +22,13 @@ connectDB();
 
 const app = express();
 const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
 // Initialize socket.io
-const socketManager = require('./utils/socket');
-socketManager.initialize(server);
-
 app.use(cors('*'));
+const SocketHandler = require('./services/socket/socket');
+
+new SocketHandler(io);
 
 // Body parsers
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -55,10 +56,12 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static('public'));
+
 
 app.get("/", (req, res) => {
-  console.log("calling")
-  res.json({ message: "Welcome to SoulTrain App!" });
+  res.sendFile(__dirname + '/public/index.html');
+  // res.json({ message: "Welcome to SoulTrain App!" });
 });
 
 // User routes
