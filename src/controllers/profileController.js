@@ -27,7 +27,7 @@ const imageMimeToExt = {
 
 exports.getProfile = async (req, res) => {
     try {
-        let profile = await User.findOne({ _id: req.params.userId || req.user.id })
+        let profile = await User.findOne({ _id: req.query.userId || req.user.id })
             .select('username artistName bio style  profilePicture coverPicture numberOfFollowers numberOfFollowings hasChangedArtistName emailVerified email phoneNumber');
         if (isEmpty(profile)) return res.status(400).json({ success: false, message: 'Profile not found' });
 
@@ -36,7 +36,7 @@ exports.getProfile = async (req, res) => {
         if (req.user.id !== profile._id.toString()) {
             delete profile.email;
             delete profile.phoneNumber;
-            const user = await User.findOne({ _id: req.params.userId })
+            const user = await User.findOne({ _id: req.query.userId })
                 .select('follower')
             const follower = user.follower;
             console.log(follower);
@@ -54,17 +54,16 @@ exports.getProfile = async (req, res) => {
 
 exports.getFollowerList = async (req, res) => {
     try {
-        const { page, userId } = req.body;
-        const per_page = 50;
-        if (isEmpty(page)) {
+        const { page, userId, per_page } = req.query;
+        if (isEmpty(page) || isEmpty(per_page)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
         const skip = (page - 1) * per_page; // Calculate the skip value
         const user = await User.findOne({ _id: userId || req.user.id })
+            .select('follower following');
+        const followersList = await User.find({ _id: { $in: user.follower } })
             .limit(per_page)
             .skip(skip)
-            .select('follower');
-        const followersList = await User.find({ _id: { $in: user.follower } })
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
             const isFollowingBack = user.following.some(followingId => followingId.toString() === follower._id.toString());
@@ -72,23 +71,24 @@ exports.getFollowerList = async (req, res) => {
         });
         return res.status(200).json({ success: true, followers });
     } catch (error) {
+        console.log(error.message);
         return res.status(500).json({ success: false, message: error.message });
     }
 }
 
 exports.getFollowingList = async (req, res) => {
     try {
-        const { page, userId } = req.body;
-        const per_page = 50;
-        if (isEmpty(page)) {
+        const { page, userId, per_page } = req.query;
+        if (isEmpty(page) || isEmpty(per_page)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
         const skip = (page - 1) * per_page; // Calculate the skip value
-        const user = await User.findOne({ _id: userId || req.user.id })
+        const userToSearch = userId || req.user.id;
+        const user = await User.findById(userToSearch)
+            .select('following follower');
+        const followingsList = await User.find({ _id: { $in: user.following } })
             .limit(per_page)
             .skip(skip)
-            .select('following');
-        const followingsList = await User.find({ _id: { $in: user.following } })
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {
             const isFollowedBack = user.follower.some(followerId => followerId.toString() === following._id.toString());
@@ -96,6 +96,8 @@ exports.getFollowingList = async (req, res) => {
         });
         return res.status(200).json({ success: true, followings });
     } catch (error) {
+        console.log(error.message);
+        console.log("ddd");
         return res.status(500).json({ success: false, message: error.message });
     }
 }
