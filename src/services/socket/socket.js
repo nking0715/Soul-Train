@@ -7,11 +7,13 @@ class SocketHandler {
     this.rooms = { waiting: {}, running: {} };
     this.users = {};
     this.roomId = 0;
+    this.timeoutId = null;
 
     io.on("connection", (socket) => {
       this.handleConnection(socket);
     });
   }
+
 
   handleConnection(socket) {
     const currentSocketId = socket.id;
@@ -38,9 +40,6 @@ class SocketHandler {
 
   handleEnter(socket, data) {
     const currentSocketId = socket.id;
-
-    console.log("A client send to enter event: " + currentSocketId);
-
     // get userId from socket request
     const { userId } = data;
 
@@ -52,15 +51,18 @@ class SocketHandler {
           [userId]: { socketId: currentSocketId }
         }
       };
-      // socket.emit(SOCKET_IDS.ENTER_SUCCESS, { ...rooms.waiting[newRoomId] });
       // if after 30s, this room is not auto-closed, close this room
-
       // bind user and room info to room
       this.sockets[currentSocketId].roomId = newRoomId;
       this.sockets[currentSocketId].userId = userId;
-
-
     };
+
+    const updateRemainingTime = (socket) => {
+      if (this.timeoutId) {
+        socket.emit(SOCKET_IDS.REMAIN_TIME, this.timeoutId._idleTimeout);
+      }
+    }
+
 
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
@@ -69,6 +71,7 @@ class SocketHandler {
       return;
     }
 
+    // init data
     this.users[userId] = { socket, roomId: 0 };
 
     // set userId of this socket
@@ -82,9 +85,12 @@ class SocketHandler {
       // get waiting room Ids
       const waitingRoomIds = Object.keys(this.rooms.waiting);
       if (waitingRoomIds.length) {
+
         const enterRoomId = waitingRoomIds[0];
         let room = this.rooms.waiting[enterRoomId];
         let oppoisteUserId = Object.keys(this.rooms.waiting[enterRoomId].players)[0];
+
+
         // update room info
         room = {
           ...room, players: {
@@ -97,21 +103,45 @@ class SocketHandler {
         this.rooms.running[this.roomId] = room;
         delete this.rooms.waiting[this.roomId];
         // send result to clients enter a room
+        const selectRandomUser = () => {
+          const users = [userId, oppoisteUserId];
+          const randomIndex = Math.floor(Math.random() % users.length);
+          return users[randomIndex];
+        }
+        const starter = selectRandomUser();
+        
+        // start the battle
+        clearInterval(this.timeoutId);
         socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
           ...this.rooms.running[this.roomId],
           me: { userId },
-          opposite: { userId: oppoisteUserId }
+          opposite: { userId: oppoisteUserId },
+          starter
         });
+
 
         this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
           ...this.rooms.running[this.roomId],
           me: { userId: oppoisteUserId },
-          opposite: { userId }
+          opposite: { userId },
+          starter
         });
+
         // bind user and room info to room
         this.sockets[currentSocketId].roomId = this.roomId;
         this.sockets[currentSocketId].userId = userId;
       } else {
+        // wait the opponent for 30 sec
+        this.timeoutId = setTimeout(() => {
+          if (true) {
+            // If the room has only one user (the creator), remove it
+            delete this.rooms.waiting[this.roomId];
+            this.timeoutId = null;
+            console.log('Room removed due to inactivity.');
+          }
+        }, 30000);
+
+        updateRemainingTime(socket);
         // no waiting rooms, you need create a room or send result to enter room is failed
         createRoomAndEnter();
       }
@@ -128,7 +158,6 @@ class SocketHandler {
       delete this.rooms.running[roomId].players[userId];
       const oppositeName = Object.keys(this.rooms.running[roomId].players)[0];
       const oppositeSocketId = this.rooms.running[roomId].players[oppositeName].socketId;
-      /* waiting[roomId] = rooms.running[roomId]; */
       // delete running room
       delete this.rooms.running[roomId];
 
@@ -149,7 +178,6 @@ class SocketHandler {
 
   handleDisconnect(socket) {
     const currentSocketId = socket.id;
-
     console.log("A client is disconnected: " + currentSocketId);
     const socketInfo = this.sockets[currentSocketId];
     if (!socketInfo) return;
