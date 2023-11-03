@@ -259,7 +259,7 @@ exports.uploadCoverPicture = async (req, res) => {
 exports.addNumberOfViews = async (req, res) => {
     try {
         const postId = req.body.postId;
-        const post = await Post.findOne({ _id: assetId });
+        const post = await Post.findOne({ _id: postId });
         if (isEmpty(post)) {
             return res.status(400).json({ success: false, message: 'The post does not exist.' });
         }
