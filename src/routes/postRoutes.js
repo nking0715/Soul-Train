@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const { createPost, commentPost, editComment, deleteComment, getComment, savePost, getSavedPost, reportContent } = require('../controllers/postController');
+const { createPost, deletePost, commentPost, editComment, deleteComment, getComment, savePost, getSavedPost, reportContent } = require('../controllers/postController');
 
 router.post('/', createPost);
+router.delete('/', deletePost)
 router.post('/comment', commentPost);
 router.put('/comment', editComment);
 router.delete('/comment', deleteComment);
