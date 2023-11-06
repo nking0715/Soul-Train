@@ -140,6 +140,25 @@ exports.createPost = async (req, res) => {
     }
 }
 
+exports.deletePost = async (req, res) => {
+    try {
+        const postId = req.query.postId;
+        const userId = req.user.id;
+        const post = await Post.findById(postId)
+            .select("userId");
+        if (userId !== post.userId.toString()) {
+            return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
+        }
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: "Post not found." });
+        }
+        await Post.findByIdAndRemove(postId);
+        return res.status(200).json({ success: true, message: "Post successfully removed." });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 exports.commentPost = async (req, res) => {
     try {
         const { content, postId } = req.body;
