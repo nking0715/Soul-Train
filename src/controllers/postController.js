@@ -207,7 +207,7 @@ exports.editComment = async (req, res) => {
 
 exports.deleteComment = async (req, res) => {
     try {
-        const commentId = req.params.commentId;
+        const commentId = req.query.commentId;
         const userId = req.user.id;
         const comment = await Comment.findById(commentId);
         if (isEmpty(comment)) {

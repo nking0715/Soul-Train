@@ -6,7 +6,7 @@ const { createPost, commentPost, editComment, deleteComment, getComment, savePos
 router.post('/', createPost);
 router.post('/comment', commentPost);
 router.put('/comment', editComment);
-router.delete('/comment/:commentId', deleteComment);
+router.delete('/comment', deleteComment);
 router.post('/getComment', getComment);
 router.post('/savePost', savePost);
 router.get('/getSavedPost', getSavedPost);
