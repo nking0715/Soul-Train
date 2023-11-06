@@ -2,6 +2,7 @@ const User = require('../models/user');
 const Asset = require('../models/asset');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
+const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
 const { uploadFileToS3, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
@@ -248,7 +249,7 @@ exports.savePost = async (req, res) => {
 exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
-        const {page, per_page} = req.query;
+        const { page, per_page } = req.query;
         const skip = (page - 1) * per_page;
         const posts = await Post.find({ saveList: userId })
             .skip(skip)
@@ -256,6 +257,45 @@ exports.getSavedPost = async (req, res) => {
             .sort({ createdAt: -1 });
         return res.status(200).json({ success: true, posts });
     } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+exports.reportContent = async (req, res) => {
+    try {
+        const { postId, commentId, content } = req.body;
+        const userId = req.user.id;
+        if (postId) {
+            const post = await Post.findById(postId);
+            if (isEmpty(post)) {
+                return res.status(400).json({ success: false, message: 'Post not found' });
+            }
+            const newReport = new Report({
+                reporter: userId,
+                reportedPost: postId,
+                reportContent: content,
+                contentType: "Post"
+            });
+            await newReport.save();
+            return res.status(200).json({ success: true, message: 'Post successfully reported.' });
+        } else if (commentId) {
+            const comment = await Comment.findById(commentId);
+            if (isEmpty(comment)) {
+                return res.status(400).json({ success: false, message: 'Comment not found' });
+            }
+            const newReport = new Report({
+                reporter: userId,
+                reportedComment: commentId,
+                reportContent: content,
+                contentType: "Comment"
+            });
+            await newReport.save();
+            return res.status(200).json({ success: true, message: 'Comment successfully reported.' });
+        } else {
+            return res.status(400).json({ success: false, message: 'Bad Request' });
+        }
+    } catch (error) {
+        console.log(error.message);
         return res.status(500).json({ success: false, message: error.message });
     }
 }
