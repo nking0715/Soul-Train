@@ -187,9 +187,18 @@ exports.getPost = async (req, res) => {
                 }
             },
             {
+                $lookup: {
+                    from: "assets", // Name of the assets collection
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
+            },
+            {
                 $project: {
                     _id: 1,
                     thumbnail: 1,
+                    assetUrls: "$assetDetails.url",
                     numberOfViews: 1,
                     numberOfLikes: 1,
                     numberOfComments: 1,
