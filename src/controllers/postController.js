@@ -85,6 +85,7 @@ exports.createPost = async (req, res) => {
                     assets.push(newAsset);
                     await newAsset.save();
                     if (rekognitionResult.success == false) {
+                        console.log(rekognitionResult.reason);
                         return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
                     }
                 } catch (error) {
@@ -190,6 +191,7 @@ exports.getPost = async (req, res) => {
                     _id: 1,
                     thumbnail: 1,
                     numberOfViews: 1,
+                    numberOfLikes: 1,
                     numberOfComments: 1,
                     caption: 1,
                     uploadedTime: 1,
