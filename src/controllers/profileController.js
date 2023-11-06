@@ -271,36 +271,6 @@ exports.addNumberOfViews = async (req, res) => {
     }
 }
 
-exports.getUploadedContents = async (req, res) => {
-    const { page, type, userId } = req.body;
-    const per_page = 50;
-    if (isEmpty(page) || isEmpty(type)) {
-        return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const skip = (page - 1) * per_page; // Calculate the skip value
-
-    let typeFilter = {};
-    if (type !== 'all') {
-        typeFilter.type = type;
-    }
-
-    try {
-        const assets = await Asset.find({
-            userId: userId || req.user.id,
-            ...typeFilter,
-            purpose: { $in: ['uploadedImage', 'uploadedVideo'] }
-        })
-            .sort({ uploadedTime: -1 }) // Sort by updated time, descending
-            .limit(per_page)
-            .skip(skip)
-            .select('_id url numberOfViews numberOfLikes numberOfComments caption uploadedTime isLike');
-        return res.status(200).json({ success: true, assets: assets });
-    } catch (error) {
-        console.error("Error fetching assets:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
 exports.connectDancer = async (req, res) => {
     try {
         const { dancerId } = req.body;

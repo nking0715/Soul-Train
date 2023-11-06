@@ -140,6 +140,90 @@ exports.createPost = async (req, res) => {
     }
 }
 
+exports.getPost = async (req, res) => {
+    try {
+        const { page, per_page, type, userId } = req.query;
+        const userToSearch = userId || req.user.id;
+        if (isEmpty(page) || isEmpty(per_page) || isEmpty(type)) {
+            return res.status(400).json({ success: false, message: "Invalid Request!" });
+        }
+        const pageConverted = parseInt(page, 10);
+        const per_pageConverted = parseInt(per_page, 10);
+        const skip = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+
+        let typeFilter = [];
+        switch (type) {
+            case 'all':
+                typeFilter = ['singleVideo', 'singleImage', 'combination'];
+                break;
+            case 'image':
+                typeFilter = ['singleImage', 'combination'];
+                break;
+            case 'video':
+                typeFilter = ['singleVideo'];
+                break;
+        }
+        const posts = await Post.aggregate([
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $toString: "$userId" }, userToSearch] },
+                            { $in: ["$category", typeFilter] }
+                        ]
+                    }, category: { $in: typeFilter }
+                }
+            },
+            { $sort: { uploadedTime: 1 } },
+            { $skip: skip },
+            { $limit: per_pageConverted },
+            {
+                $lookup: {
+                    from: "users", // Name of the user collection
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                    numberOfViews: 1,
+                    numberOfComments: 1,
+                    caption: 1,
+                    uploadedTime: 1,
+                    likeList: 1,
+                    likedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    username: { $arrayElemAt: ["$userDetails.username", 0] },
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                }
+            },
+            {
+                $project: {
+                    likeList: 0
+                }
+            }
+        ]);
+        return res.status(200).json({ success: true, posts: posts });
+    } catch (error) {
+        console.error("Error fetching posts:", error);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 exports.deletePost = async (req, res) => {
     try {
         const postId = req.query.postId;
