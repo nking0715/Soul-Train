@@ -10,9 +10,6 @@ const assetSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    thumnail: {
-        type: String,
-    },
     category: {
         type: String,
         required: true
@@ -28,23 +25,6 @@ const assetSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    numberOfViews: {
-        type: Number,
-        default: 0
-    },
-    numberOfLikes: {
-        type: Number,
-        default: 0
-    },
-    numberOfComments: {
-        type: Number,
-        default: 0
-    },    
-    likeList: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    }]
     // ... any other video-related fields
 },
     { timestamps: true });
