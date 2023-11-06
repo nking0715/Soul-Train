@@ -7,7 +7,7 @@ router.post('/', createPost);
 router.post('/comment', commentPost);
 router.put('/comment', editComment);
 router.delete('/comment', deleteComment);
-router.post('/getComment', getComment);
+router.get('/comment', getComment);
 router.post('/savePost', savePost);
 router.get('/getSavedPost', getSavedPost);
 router.post('/report', reportContent);

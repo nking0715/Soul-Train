@@ -169,12 +169,11 @@ exports.commentPost = async (req, res) => {
 
 exports.getComment = async (req, res) => {
     try {
-        const { postId, page } = req.body;
-        const perPage = 10;
-        const skip = (page - 1) * perPage;
+        const { postId, page, per_page } = req.query;
+        const skip = (page - 1) * per_page;
         const comments = await Comment.find({ post: postId })
             .skip(skip)
-            .limit(perPage)
+            .limit(per_page)
             .populate('author', 'username profilePicture')
             .sort({ createdAt: -1 });
         return res.status(200).json({
