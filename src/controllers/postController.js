@@ -422,6 +422,42 @@ exports.deleteComment = async (req, res) => {
     }
 }
 
+exports.likeComment = async (req, res) => {
+    try {
+        const commentId = req.query.commentId;
+        const userId = req.user.id;
+        const comment = await Comment.findOne({ _id: commentId });
+        if (isEmpty(comment)) {
+            return res.status(400).json({ success: false, message: "The comment to be liked or unliked does not exist." })
+        }
+        if (userId == comment.author.toString()) {
+            return res.status(403).json({ success: false, message: 'Attempt failed.' });
+        }
+        if (comment.likeList.includes(userId)) {
+            // If userId exists in the likeList array, remove it
+            comment.likeList.pull(userId);
+
+            // Decrease the numberOfLikes by 1
+            comment.numberOfLikes -= 1;
+        } else {
+            // If userId does not exist in the likeList array, add it
+            comment.likeList.push(userId);
+
+            // Increase the numberOfLikes by 1
+            comment.numberOfLikes += 1;
+        }
+        await comment.save();
+        return res.status(200).json({
+            success: true,
+            message: `UserId ${comment.likeList.includes(userId) ? 'added to' : 'removed from'} the likeList.`,
+            numberOfLikes: comment.numberOfLikes,
+            likeContent: comment.likeList.includes(userId)
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 exports.savePost = async (req, res) => {
     try {
         const postId = req.body.postId;
@@ -707,6 +743,9 @@ exports.likePost = async (req, res) => {
         const post = await Post.findOne({ _id: postId });
         if (isEmpty(post)) {
             return res.status(400).json({ success: false, message: "The post to be liked or unliked does not exist." })
+        }
+        if (userId == post.author.toString()) {
+            return res.status(403).json({ success: false, message: 'Attempt failed.' });
         }
         if (post.likeList.includes(userId)) {
             // If userId exists in the likeList array, remove it
