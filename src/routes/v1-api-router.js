@@ -4,7 +4,6 @@ const { discoverContents, homeFeed, discoverBlockedContents, likeContent } = req
 const { searchDancers } = require('../controllers/userController');
 
 // App Backend Router
-router.post("/discover/contents", discoverContents);
 router.post("/homeFeed", homeFeed);
 router.post("/discover/blocked-contents", discoverBlockedContents);
 router.post('/search/:searchText', searchDancers);
