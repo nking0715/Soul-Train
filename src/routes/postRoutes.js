@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { createPost, getPost, deletePost, commentPost, editComment, deleteComment, getComment, savePost, getSavedPost, reportContent } = require('../controllers/postController');
+const { createPost, getPost, deletePost, commentPost, editComment, deleteComment, getComment, savePost, getSavedPost, reportContent, discoverPosts } = require('../controllers/postController');
 
 router.post('/', createPost);
 router.get('/', getPost);
@@ -13,5 +13,6 @@ router.get('/comment', getComment);
 router.post('/savePost', savePost);
 router.get('/getSavedPost', getSavedPost);
 router.post('/report', reportContent);
+router.get("/discover", discoverPosts);
 
 module.exports = router;
