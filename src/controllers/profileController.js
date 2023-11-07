@@ -60,7 +60,7 @@ exports.getFollowerList = async (req, res) => {
         }
         const skip = (page - 1) * per_page; // Calculate the skip value
         const currentUser = await User.findOne({ _id: req.user.id })
-            .select('follower');
+            .select('following');
         const user = await User.findOne({ _id: userId || req.user.id })
             .select('follower');
         const followersList = await User.find({ _id: { $in: user.follower } })
@@ -87,7 +87,7 @@ exports.getFollowingList = async (req, res) => {
         const skip = (page - 1) * per_page; // Calculate the skip value
         const userToSearch = userId || req.user.id;
         const currentUser = await User.findOne({ _id: req.user.id })
-            .select('follower');
+            .select('following');
         const user = await User.findById(userToSearch)
             .select('following');
         const followingsList = await User.find({ _id: { $in: user.following } })
