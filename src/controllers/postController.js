@@ -489,3 +489,72 @@ exports.discoverPosts = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.homeFeed = async (req, res) => {
+    const { page, per_page } = req.query;
+    const userId = req.user.id;
+    if (isEmpty(page) || isEmpty(per_page)) {
+        return res.status(400).json({ success: false, message: "Invalid Request!" });
+    }
+    const pageConverted = parseInt(page, 10);
+    const per_pageConverted = parseInt(per_page, 10);
+    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+
+    try {
+        // Get the users that the requesting user follows
+        const user = await User.findById(userId);
+        const followedUserIds = user.following;
+
+        const result = await Asset.aggregate([
+            { $match: { category: "singleVideo", userId: { $in: followedUserIds } } },
+            { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
+            { $skip: start }, // Skip the specified number of documents
+            { $limit: per_pageConverted }, // Limit the number of documents
+            {
+                $lookup: {
+                    from: "users", // Name of the user collection
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                    assetUrls: "$assetDetails.url",
+                    numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
+                    caption: 1,
+                    uploadedTime: 1,
+                    likeList: 1,
+                    likedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    username: { $arrayElemAt: ["$userDetails.username", 0] },
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                }
+            },
+            {
+                $project: {
+                    likeList: 0
+                }
+            }
+        ]);
+
+        return res.status(200).json({ success: true, results: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
