@@ -9,6 +9,9 @@ const assetSchema = new mongoose.Schema({
     url: {
         type: String,
         required: true
+    },    
+    thumbnail: {
+        type: String
     },
     category: {
         type: String,
