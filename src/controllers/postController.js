@@ -506,7 +506,7 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { category: "singleVideo", userId: { $in: followedUserIds } } },
+            { $match: { userId: { $in: followedUserIds } } },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
