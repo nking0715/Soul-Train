@@ -174,7 +174,7 @@ exports.uploadProfilePicture = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                const file_on_s3 = await uploadFileToS3(uploadedContents, bucketPath);
+                const file_on_s3 = await uploadFileToS3(uploadedContents, fileExtension, bucketPath);
                 contentLink = file_on_s3.location;
                 rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
             }
@@ -228,7 +228,7 @@ exports.uploadCoverPicture = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                const file_on_s3 = await uploadFileToS3(uploadedContents, bucketPath);
+                const file_on_s3 = await uploadFileToS3(uploadedContents, fileExtension, bucketPath);
                 contentLink = file_on_s3.location;
                 rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
             }
