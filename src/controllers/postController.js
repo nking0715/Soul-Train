@@ -517,6 +517,14 @@ exports.homeFeed = async (req, res) => {
                     foreignField: "_id",
                     as: "userDetails"
                 }
+            },            
+            {
+                $lookup: {
+                    from: "assets", // Name of the assets collection
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
             },
             {
                 $project: {
