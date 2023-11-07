@@ -59,15 +59,17 @@ exports.getFollowerList = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
         const skip = (page - 1) * per_page; // Calculate the skip value
+        const currentUser = await User.findOne({ _id: req.user.id })
+            .select('follower');
         const user = await User.findOne({ _id: userId || req.user.id })
-            .select('follower following');
+            .select('follower');
         const followersList = await User.find({ _id: { $in: user.follower } })
             .limit(per_page)
             .skip(skip)
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
-            const isFollowingBack = user.following.some(followingId => followingId.toString() === follower._id.toString());
-            return { ...follower.toObject(), isFollowingBack }; // Add the new key here
+            const followed = currentUser.follower.some(followingId => followingId.toString() === follower._id.toString());
+            return { ...follower.toObject(), followed }; // Add the new key here
         });
         return res.status(200).json({ success: true, followers });
     } catch (error) {
@@ -84,15 +86,17 @@ exports.getFollowingList = async (req, res) => {
         }
         const skip = (page - 1) * per_page; // Calculate the skip value
         const userToSearch = userId || req.user.id;
+        const currentUser = await User.findOne({ _id: req.user.id })
+            .select('follower');
         const user = await User.findById(userToSearch)
-            .select('following follower');
+            .select('following');
         const followingsList = await User.find({ _id: { $in: user.following } })
             .limit(per_page)
             .skip(skip)
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {
-            const isFollowedBack = user.follower.some(followerId => followerId.toString() === following._id.toString());
-            return { ...following.toObject(), isFollowedBack }; // Add the new key here
+            const followed = currentUser.follower.some(followerId => followerId.toString() === following._id.toString());
+            return { ...following.toObject(), followed }; // Add the new key here
         });
         return res.status(200).json({ success: true, followings });
     } catch (error) {
