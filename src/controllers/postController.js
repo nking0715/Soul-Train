@@ -452,6 +452,7 @@ exports.discoverPosts = async (req, res) => {
             {
                 $project: {
                     _id: 1,
+                    userId: 1,
                     thumbnail: 1,
                     assetUrls: "$assetDetails.url",
                     numberOfViews: 1,
@@ -529,6 +530,7 @@ exports.homeFeed = async (req, res) => {
             {
                 $project: {
                     _id: 1,
+                    userId: 1,
                     thumbnail: 1,
                     assetUrls: "$assetDetails.url",
                     numberOfViews: 1,
