@@ -172,7 +172,7 @@ exports.getPost = async (req, res) => {
                             { $eq: [{ $toString: "$userId" }, userToSearch] },
                             { $in: ["$category", typeFilter] }
                         ]
-                    }, category: { $in: typeFilter }
+                    }
                 }
             },
             { $sort: { uploadedTime: 1 } },
@@ -558,3 +558,36 @@ exports.homeFeed = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+exports.likePost = async (req, res) => {
+    try {
+        const postId = req.query.postId;
+        const userId = req.user.id;
+        const post = await Post.findOne({ _id: postId });
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: "The post to be liked or unliked does not exist." })
+        }
+        if (post.likeList.includes(userId)) {
+            // If userId exists in the likeList array, remove it
+            post.likeList.pull(userId);
+
+            // Decrease the numberOfLikes by 1
+            post.numberOfLikes -= 1;
+        } else {
+            // If userId does not exist in the likeList array, add it
+            post.likeList.push(userId);
+
+            // Increase the numberOfLikes by 1
+            post.numberOfLikes += 1;
+        }
+        await post.save();
+        return res.status(200).json({
+            success: true,
+            message: `UserId ${post.likeList.includes(userId) ? 'added to' : 'removed from'} the likeList.`,
+            numberOfLikes: post.numberOfLikes,
+            likeContent: post.likeList.includes(userId)
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
