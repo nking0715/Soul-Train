@@ -370,7 +370,7 @@ exports.followManage = async (req, res) => {
         await user.save();
         await dancer.save();
 
-        return res.status(200).json({ success: true, message: `Successfully ${user.following.includes(dancerId) ? 'unliked' : 'liked'} the dancer.` });
+        return res.status(200).json({ success: true, message: `Successfully ${user.following.includes(dancerId) ? 'followed' : 'unfollowed'} the dancer.` });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
