@@ -68,7 +68,7 @@ exports.getFollowerList = async (req, res) => {
             .skip(skip)
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
-            const followed = currentUser.follower.some(followingId => followingId.toString() === follower._id.toString());
+            const followed = currentUser.following.some(followingId => followingId.toString() === follower._id.toString());
             return { ...follower.toObject(), followed }; // Add the new key here
         });
         return res.status(200).json({ success: true, followers });
@@ -95,7 +95,7 @@ exports.getFollowingList = async (req, res) => {
             .skip(skip)
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {
-            const followed = currentUser.follower.some(followerId => followerId.toString() === following._id.toString());
+            const followed = currentUser.following.some(followerId => followerId.toString() === following._id.toString());
             return { ...following.toObject(), followed }; // Add the new key here
         });
         return res.status(200).json({ success: true, followings });
@@ -370,7 +370,7 @@ exports.followManage = async (req, res) => {
         await user.save();
         await dancer.save();
 
-        return res.status(200).json({ success: true, message: "success" });
+        return res.status(200).json({ success: true, message: "Successfully ${user.following.includes(dancerId) ? 'unliked' : 'liked'} the dancer." });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
