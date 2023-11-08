@@ -554,7 +554,7 @@ exports.discoverPosts = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { userId: { $nin: followedUserIds } } },
+            { $match: { author: { $nin: followedUserIds } } },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
@@ -655,7 +655,7 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { userId: { $in: followedUserIds } } },
+            { $match: { author: { $in: followedUserIds } } },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
