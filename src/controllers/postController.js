@@ -351,6 +351,7 @@ exports.commentPost = async (req, res) => {
             return res.status(400).json({ success: false, message: "Post not found" });
         }
         post.comments.push(newComment);
+        post.numberOfComments += 1;
         await post.save();
 
         res.status(200).json({ success: true, comment: newComment });
@@ -410,7 +411,10 @@ exports.deleteComment = async (req, res) => {
 
         await Post.findByIdAndUpdate(
             comment.post,
-            { $pull: { comments: commentId } },
+            {
+                $pull: { comments: commentId },
+                $inc: { numberOfComments: -1 }
+            },
             { new: true }
         );
 

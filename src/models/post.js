@@ -25,10 +25,6 @@ const postSchema = new mongoose.Schema({
         trim: true,
         default: ""
     },
-    category: {
-        type: String,
-        default: ""
-    },
     uploadedTime: {
         type: Date,
         default: Date.now()
