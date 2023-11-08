@@ -17,8 +17,9 @@ const fileUpload = require('express-fileupload');
 dotenv.config();
 
 // Connect to the database
-const connectDB = require('./db');
-connectDB();
+
+// const connectDB = require('./db');
+// connectDB();
 
 const app = express();
 const server = require('http').createServer(app);

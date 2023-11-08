@@ -5,5 +5,6 @@ module.exports = {
     REMAIN_TIME: 105,
     USERID_DUPLICATED: 150,
     QUIT: 200,
+    RECONNECT: 205,
     QUIT_SUCCESS: 201
 };

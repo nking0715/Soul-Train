@@ -1,4 +1,5 @@
 const { generateRandomChannelName, generateAccessToken } = require('../../helper/agora.helper');
+const { selectRandomUser } = require('../../helper/socket.helper');
 const SOCKET_IDS = require('./sockProc');
 
 class SocketHandler {
@@ -6,20 +7,22 @@ class SocketHandler {
     this.io = io;
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
     this.rooms = { waiting: {}, running: {} };
+    this.newRooms = {};
+    this.lobbyUserList = [];
     this.users = {};
     this.roomId = 0;
+    this.newRoomId = 0;
     this.timeoutId = null;
+
+    setInterval(this.handleCreateRooms.bind(this), 10000);
 
     io.on("connection", (socket) => {
       this.handleConnection(socket);
     });
   }
 
-
   handleConnection(socket) {
     const currentSocketId = socket.id;
-    console.log("A client is connected: " + currentSocketId);
-
     this.sockets[currentSocketId] = {
       userId: "",
       roomId: 0,
@@ -34,124 +37,80 @@ class SocketHandler {
       this.handleQuit(socket, true);
     });
 
+    socket.on(SOCKET_IDS.RECONNECT, data => {
+      this.handleReconnect(socket, data);
+    });
+
     socket.on("disconnect", () => {
       this.handleDisconnect(socket);
     });
+  }
+
+  handleCreateRooms() {
+    let userList = this.lobbyUserList;
+    while (this.lobbyUserList.length >= 2) {
+      let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
+      let playerA = userList[randomIndexA];
+      userList.splice(randomIndexA, 1);
+      let randomIndexB = Math.floor(Math.random() * 100) % userList.length;
+      let playerB = userList[randomIndexB];
+      userList.splice(randomIndexB, 1);
+
+      let room = {
+        roomId: this.newRoomId,
+        players: {
+          playerA,
+          playerB
+        }
+      }
+      this.newRooms[this.newRoomId++] = room;
+      this.lobbyUserList = userList;
+
+      const starter = selectRandomUser(playerA, playerB);
+
+      // start the battle
+      clearInterval(this.timeoutId);
+      const channelName = generateRandomChannelName();
+      const token1 = generateAccessToken(channelName, 1);
+      const token2 = generateAccessToken(channelName, 2);
+
+      
+      this.users[playerA].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+        ...room,
+        playerA,
+        playerB,
+        starter
+      });
+
+      this.users[playerB].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+        ...room,
+        playerA,
+        playerB,
+        starter
+      });
+      this.users[playerA].roomId = room.roomId;
+      this.users[playerB].roomId = room.roomId;
+    }
   }
 
   handleEnter(socket, data) {
     const currentSocketId = socket.id;
     // get userId from socket request
     const { userId } = data;
-
-    const createRoomAndEnter = () => {
-      const newRoomId = ++this.roomId;
-      // create waiting room and enter this room
-      this.rooms.waiting[newRoomId] = {
-        roomId: newRoomId, players: {
-          [userId]: { socketId: currentSocketId }
-        }
-      };
-      // if after 30s, this room is not auto-closed, close this room
-      // bind user and room info to room
-      this.sockets[currentSocketId].roomId = newRoomId;
-      this.sockets[currentSocketId].userId = userId;
-    };
-
-    const updateRemainingTime = (socket) => {
-      if (this.timeoutId) {
-        socket.emit(SOCKET_IDS.REMAIN_TIME, this.timeoutId._idleTimeout);
-      }
-    }
-
-
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
       // this userId is duplicated
       socket.emit(SOCKET_IDS.USERID_DUPLICATED);
       return;
     }
+    // add the user to the lobby space
+    this.lobbyUserList.push(userId);
 
     // init data
-    this.users[userId] = { socket, roomId: 0 };
-
+    this.users[userId] = { socket, roomId: null };
     // set userId of this socket
     this.sockets[currentSocketId].userId = userId;
-    const nUsers = Object.keys(this.users);
-    // if this user create room
-
-    if (nUsers & 1 == 0) {
-      createRoomAndEnter();
-    } else {
-      // get waiting room Ids
-      const waitingRoomIds = Object.keys(this.rooms.waiting);
-      if (waitingRoomIds.length) {
-
-        const enterRoomId = waitingRoomIds[0];
-        let room = this.rooms.waiting[enterRoomId];
-        let oppoisteUserId = Object.keys(this.rooms.waiting[enterRoomId].players)[0];
-
-
-        // update room info
-        room = {
-          ...room, players: {
-            ...room.players,
-            [userId]: { socketId: currentSocketId }
-          }
-        };
-        if (this.rooms.running[this.roomId]) delete this.rooms.running[roomId];
-        // this room's status is running
-        this.rooms.running[this.roomId] = room;
-        delete this.rooms.waiting[this.roomId];
-        // send result to clients enter a room
-        const selectRandomUser = () => {
-          const users = [userId, oppoisteUserId];
-          const randomIndex = Math.floor(Math.random() % users.length);
-          return users[randomIndex];
-        }
-        const starter = selectRandomUser();
-
-        // start the battle
-        clearInterval(this.timeoutId);
-
-        const channelName = generateRandomChannelName();
-        const token1 = generateAccessToken(channelName, 1);
-        const token2 = generateAccessToken(channelName, 2);
-
-        socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
-          ...this.rooms.running[this.roomId],
-          me: { userId, token: token1 },
-          channelName,
-          opponent: { userId: oppoisteUserId, token: token2 },
-          starter
-        });
-
-        this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
-          ...this.rooms.running[this.roomId],
-          me: { userId: oppoisteUserId },
-          opponent: { userId },
-          starter
-        });
-
-        // bind user and room info to room
-        this.sockets[currentSocketId].roomId = this.roomId;
-        this.sockets[currentSocketId].userId = userId;
-      } else {
-        // wait the opponent for 30 sec
-        this.timeoutId = setTimeout(() => {
-          if (true) {
-            // If the room has only one user (the creator), remove it
-            delete this.rooms.waiting[this.roomId];
-            this.timeoutId = null;
-            console.log('Room removed due to inactivity.');
-          }
-        }, 30000);
-
-        updateRemainingTime(socket);
-        // no waiting rooms, you need create a room or send result to enter room is failed
-        createRoomAndEnter();
-      }
-    }
+    socket.emit(SOCKET_IDS.REMAIN_TIME, 30000);
   }
 
   handleQuit(socket, isConnected = false) {
@@ -182,14 +141,23 @@ class SocketHandler {
     delete this.users[userId];
   }
 
+  handleReconnect(socket, data) {
+    const { userId } = data;
+    this.users[userId].socket = socket;
+  }
+
   handleDisconnect(socket) {
     const currentSocketId = socket.id;
-    console.log("A client is disconnected: " + currentSocketId);
     const socketInfo = this.sockets[currentSocketId];
     if (!socketInfo) return;
     // get out from room
     if (socketInfo.roomId) {
       this.handleQuit(socket);
+    }
+    const currentUserId = this.sockets[currentSocketId].userId;
+    const currentRoomId = this.users[currentUserId].roomId;
+    if(currentRoomId) {
+      const currentRoom = this.newRooms[currentRoomId];
     }
     delete this.sockets[currentSocketId];
   }
