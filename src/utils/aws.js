@@ -2,7 +2,6 @@ const aws = require('aws-sdk');
 const stream = require('stream');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
-const dateFormat = require('date-and-time');
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -12,9 +11,8 @@ const s3 = new aws.S3({
     httpOptions: { timeout: 1800000 }
 })
 
-exports.uploadFileToS3 = async (file, fileExtension, filepath) => {
-    const fileStream = new stream.PassThrough();
-    const newFileName = dateFormat.format(new Date(), "YYYYMMDDHHmmss") + fileExtension;
+exports.uploadFileToS3 = async (file, newFileName, filepath) => {
+    const fileStream = new stream.PassThrough();    
     fileStream.end(file.data);
     const uploadedFile = await s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filepath}`,

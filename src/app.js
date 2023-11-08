@@ -28,7 +28,6 @@ const io = require('socket.io')(server);
 // Initialize socket.io
 app.use(cors('*'));
 const SocketHandler = require('./services/socket/socket.module');
-
 new SocketHandler(io);
 
 // Body parsers

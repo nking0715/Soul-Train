@@ -4,7 +4,7 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const { getProfile, updateProfile, getUploadedContents, uploadProfilePicture, uploadCoverPicture, connectDancer, acceptDancer, followManage, addNumberOfViews, getFollowerList, getFollowingList } = require('../controllers/profileController');
+const { getProfile, updateProfile, uploadProfilePicture, uploadCoverPicture, connectDancer, acceptDancer, followManage, addNumberOfViews, getFollowerList, getFollowingList } = require('../controllers/profileController');
 
 
 const mimeToExt = {
@@ -22,7 +22,6 @@ const mimeToExt = {
 };
 
 router.get('/', getProfile);
-router.get('/:userId', getProfile);
 
 router.put('/', [
     // Existing validations
@@ -38,13 +37,12 @@ router.put('/', [
 
 router.post('/uploadProfilePicture', uploadProfilePicture)
 router.post('/uploadCoverPicture', uploadCoverPicture)
-router.post('/getUploadedContents', getUploadedContents)
 router.post('/addNumberOfViews', addNumberOfViews)
 
 router.post('/connect_dancer', connectDancer);
 router.post('/accept_dancer', acceptDancer);
 router.post('/follow', followManage)
-router.post('/getfollowerList', getFollowerList)
-router.post('/getfollowingList', getFollowingList)
+router.get('/getfollowerList', getFollowerList)
+router.get('/getfollowingList', getFollowingList)
 
 module.exports = router;

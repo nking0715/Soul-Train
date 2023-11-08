@@ -63,20 +63,17 @@ async function moderateVideo(filePath) {
   };
 
   const { JobId } = await rekognition.startContentModeration(params).promise();
-  console.log("Video JobId ", JobId);
   let moderationResponse;
   do {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
     moderationResponse = await rekognition.getContentModeration({ JobId }).promise();
   } while (moderationResponse.JobStatus === 'IN_PROGRESS');
 
-  console.log("Video moderationResponse ", moderationResponse);
   if (moderationResponse.JobStatus === 'FAILED') {
     return { success: false, reason: 'Moderation failed' };
   }
 
   const labels = moderationResponse.ModerationLabels.map((label) => label.ParentName).filter(Boolean);
   const foundForbiddenLabels = labels.filter((label) => forbiddenLabels.includes(label));
-  console.log("Video foundForbiddenLabels", foundForbiddenLabels)
-  return { success: foundForbiddenLabels.length === 0, foundForbiddenLabels };
+  return { success: foundForbiddenLabels.length === 0, reason: foundForbiddenLabels };
 }

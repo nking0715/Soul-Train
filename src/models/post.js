@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
-    userId: {
+    author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -15,9 +15,6 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
-    thumbnail: {
-        type: String
-    },
     tags: {
         type: String,
         trim: true,
@@ -26,10 +23,6 @@ const postSchema = new mongoose.Schema({
     caption: {
         type: String,
         trim: true,
-        default: ""
-    },
-    category: {
-        type: String,
         default: ""
     },
     uploadedTime: {
