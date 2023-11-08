@@ -434,9 +434,9 @@ exports.likeComment = async (req, res) => {
         if (isEmpty(comment)) {
             return res.status(400).json({ success: false, message: "The comment to be liked or unliked does not exist." })
         }
-        if (userId == comment.author.toString()) {
+        /* if (userId == comment.author.toString()) {
             return res.status(403).json({ success: false, message: 'Attempt failed.' });
-        }
+        } */
         if (comment.likeList.includes(userId)) {
             // If userId exists in the likeList array, remove it
             comment.likeList.pull(userId);
@@ -748,9 +748,9 @@ exports.likePost = async (req, res) => {
         if (isEmpty(post)) {
             return res.status(400).json({ success: false, message: "The post to be liked or unliked does not exist." })
         }
-        if (userId == post.author.toString()) {
+        /* if (userId == post.author.toString()) {
             return res.status(403).json({ success: false, message: 'Attempt failed.' });
-        }
+        } */
         if (post.likeList.includes(userId)) {
             // If userId exists in the likeList array, remove it
             post.likeList.pull(userId);
