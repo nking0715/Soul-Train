@@ -108,6 +108,7 @@ exports.createPost = async (req, res) => {
                 assets: assets,
                 tags: tags,
                 caption: caption,
+                uploadedTime: Date.now()
             });
 
             await newPost.save();
