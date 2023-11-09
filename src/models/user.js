@@ -45,14 +45,17 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     profilePicture: {
-        type: String
+        type: String,
+        default: ""
     },
     coverPicture: {
-        type: String
+        type: String,
+        default: ""
     },
     bio: {
         type: String,
-        trim: true
+        trim: true,
+        default: ""
     },
     crew: {
         type: String,
