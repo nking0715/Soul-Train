@@ -295,6 +295,7 @@ exports.getPost = async (req, res) => {
                             false
                         ]
                     },
+                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
@@ -497,10 +498,10 @@ exports.getSavedPost = async (req, res) => {
         const skip = (pageConverted - 1) * per_pageConverted;
         const result = await Post.aggregate([
             {
-                $match: 
+                $match:
                 {
                     $expr: {
-                        $in: [{$toObjectId: userId}, "$saveList"]
+                        $in: [{ $toObjectId: userId }, "$saveList"]
                     }
                 }
             },
@@ -556,6 +557,7 @@ exports.getSavedPost = async (req, res) => {
                             false
                         ]
                     },
+                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
@@ -695,6 +697,7 @@ exports.discoverPosts = async (req, res) => {
                             false
                         ]
                     },
+                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
@@ -796,6 +799,7 @@ exports.homeFeed = async (req, res) => {
                             false
                         ]
                     },
+                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
