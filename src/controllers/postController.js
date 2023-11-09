@@ -488,12 +488,79 @@ exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
         const { page, per_page } = req.query;
-        const skip = (page - 1) * per_page;
-        const posts = await Post.find({ saveList: userId })
-            .skip(skip)
-            .limit(per_page)
-            .sort({ createdAt: -1 });
-        return res.status(200).json({ success: true, posts });
+        if (isEmpty(page) || isEmpty(per_page)) {
+            return res.status(400).json({ success: false, message: "Invalid Request!" });
+        }
+        const pageConverted = parseInt(page, 10);
+        const per_pageConverted = parseInt(per_page, 10);
+        const skip = (pageConverted - 1) * per_pageConverted;
+        const result = await Post.aggregate([
+            { $match: { saveList: userId } },
+            { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
+            { $skip: skip }, // Skip the specified number of documents
+            { $limit: per_pageConverted }, // Limit the number of documents
+            {
+                $lookup: {
+                    from: "users", // Name of the user collection
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            {
+                $lookup: {
+                    from: "assets", // Name of the assets collection
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                    assets: {
+                        $map: {
+                            input: "$assetDetails",
+                            as: "asset",
+                            in: {
+                                url: "$$asset.url",
+                                thumbnail: "$$asset.thumbnail",
+                                contentType: "$$asset.contentType"
+                            }
+                        }
+                    },
+                    numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
+                    caption: 1,
+                    uploadedTime: 1,
+                    likeList: 1,
+                    likedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    username: { $arrayElemAt: ["$userDetails.username", 0] },
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                }
+            },
+            {
+                $project: {
+                    likeList: 0,
+                }
+            }
+        ]);
+
+        return res.status(200).json({ success: true, results: result });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
