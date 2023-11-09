@@ -495,7 +495,14 @@ exports.getSavedPost = async (req, res) => {
         const per_pageConverted = parseInt(per_page, 10);
         const skip = (pageConverted - 1) * per_pageConverted;
         const result = await Post.aggregate([
-            { $match: { saveList: { $in: [userIdObjectId] } } },
+            {
+                $match: 
+                {
+                    $expr: {
+                        $in: [{$toObjectId: userId}, "$saveList"]
+                    }
+                }
+            },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: skip }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
