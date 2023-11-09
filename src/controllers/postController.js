@@ -657,25 +657,22 @@ exports.discoverPosts = async (req, res) => {
                 }
             },
             {
-                $lookup: {
-                    from: "assets", // Name of the assets collection
-                    localField: "assets",
-                    foreignField: "_id",
-                    as: "assetDetails"
-                }
-            },
-            {
                 $project: {
                     _id: 1,
                     thumbnail: 1,
                     assets: {
-                        $filter: { // Use $filter to include only video assets in the final output
-                            input: "$assetDetails",
+                        $map: {
+                            input: {
+                                $filter: {
+                                    input: "$assetDetails",
+                                    as: "asset",
+                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+                                }
+                            },
                             as: "asset",
-                            cond: { $eq: ["$$asset.contentType", "video"] },
                             in: {
                                 url: "$$asset.url",
-                                thumbnail: "$$asset.thumbnail",
+                                thumbnail: "$$asset.thumbnail"
                             }
                         }
                     },
@@ -714,6 +711,22 @@ exports.discoverPosts = async (req, res) => {
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    assets: {
+                $map: {
+                    input: {
+                        $filter: {
+                            input: "$assetDetails",
+                            as: "asset",
+                            cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+                        }
+                    },
+                    as: "asset",
+                    in: {
+                        url: "$$asset.url",
+                        thumbnail: "$$asset.thumbnail"
+                    }
+                }
+            },
                 }
             },
             {
