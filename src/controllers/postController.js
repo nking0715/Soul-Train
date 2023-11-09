@@ -641,7 +641,7 @@ exports.discoverPosts = async (req, res) => {
             },
             {
                 $match: {
-                    'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
+                    '$assetDetails.contentType': 'video', // Match posts with at least one asset of type video
                     author: { $nin: followedUserIds } // Original author filtering logic
                 }
             },
