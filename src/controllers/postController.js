@@ -631,7 +631,20 @@ exports.discoverPosts = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { author: { $nin: followedUserIds } } },
+            {
+                $lookup: {
+                    from: "assets", // Join with the assets collection first to filter posts with video assets
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
+            },
+            {
+                $match: {
+                    'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
+                    author: { $nin: followedUserIds } // Original author filtering logic
+                }
+            },
             { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
@@ -656,13 +669,13 @@ exports.discoverPosts = async (req, res) => {
                     _id: 1,
                     thumbnail: 1,
                     assets: {
-                        $map: {
+                        $filter: { // Use $filter to include only video assets in the final output
                             input: "$assetDetails",
                             as: "asset",
+                            cond: { $eq: ["$$asset.contentType", "video"] },
                             in: {
                                 url: "$$asset.url",
                                 thumbnail: "$$asset.thumbnail",
-                                contentType: "$$asset.contentType"
                             }
                         }
                     },
