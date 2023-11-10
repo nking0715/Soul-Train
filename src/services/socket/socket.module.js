@@ -30,16 +30,13 @@ class SocketHandler {
       socket,
     };
 
-    socket.on(SOCKET_IDS.ENTER, data => {
-      this.handleEnter(socket, data);
-    });
 
     socket.on(SOCKET_IDS.QUIT, () => {
       this.handleQuit(socket, true);
     });
 
-    socket.on(SOCKET_IDS.RECONNECT, data => {
-      this.handleReconnect(socket, data);
+    socket.on(SOCKET_IDS.CONNECT, data => {
+      this.handleCONNECT(socket, data);
     });
 
     socket.on("disconnect", () => {
@@ -76,7 +73,7 @@ class SocketHandler {
       const token2 = generateAccessToken(channelName, 2);
 
 
-      this.users[playerA].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+      this.users[playerA].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
         ...room,
         playerA,
         channelName,
@@ -85,7 +82,7 @@ class SocketHandler {
         starter
       });
 
-      this.users[playerB].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+      this.users[playerB].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
         ...room,
         playerA,
         channelName,
@@ -119,7 +116,7 @@ class SocketHandler {
     this.users[userId] = { socket, roomId: null, isOnline: true };
     // set userId of this socket
     this.sockets[currentSocketId].userId = userId;
-    socket.emit(SOCKET_IDS.REMAIN_TIME, 30000);
+    socket.emit(SOCKET_IDS.WAIT_BATTLE, 30000);
   }
 
   handleQuit(socket, isConnected = false) {
@@ -149,7 +146,7 @@ class SocketHandler {
     delete this.users[userId];
   }
 
-  handleReconnect(socket, data) {
+  handleCONNECT(socket, data) {
     const currentSocketId = socket.id;
     const { userId } = data;
     const userInfo = this.users[userId];

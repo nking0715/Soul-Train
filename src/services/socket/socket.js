@@ -60,7 +60,7 @@ class SocketHandler {
 
     const updateRemainingTime = (socket) => {
       if (this.timeoutId) {
-        socket.emit(SOCKET_IDS.REMAIN_TIME, this.timeoutId._idleTimeout);
+        socket.emit(SOCKET_IDS.WAIT_BATTLE, this.timeoutId._idleTimeout);
       }
     }
 
@@ -118,7 +118,7 @@ class SocketHandler {
         const token1 = generateAccessToken(channelName, 1);
         const token2 = generateAccessToken(channelName, 2);
 
-        socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+        socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
           ...this.rooms.running[this.roomId],
           me: { userId, token: token1 },
           channelName,
@@ -126,7 +126,7 @@ class SocketHandler {
           starter
         });
 
-        this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
+        this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
           ...this.rooms.running[this.roomId],
           me: { userId: oppoisteUserId },
           opponent: { userId },
