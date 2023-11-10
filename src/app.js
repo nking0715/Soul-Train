@@ -8,6 +8,7 @@ const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const postRoutes = require('./routes/postRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const api = require('./routes/api-router');
 const webhookRoutes = require('./routes/webhook')
 const cors = require('cors');
@@ -72,6 +73,7 @@ app.use('/contentModerationWebhook', webhookRoutes);
 app.use(authMiddleware.authenticate);
 app.use('/profile', profileRoutes);
 app.use('/post', postRoutes);
+app.use('/notification', notificationRoutes);
 
 // Api Router
 app.use('/api', api);
