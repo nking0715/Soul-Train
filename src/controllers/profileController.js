@@ -169,15 +169,15 @@ exports.uploadProfilePicture = async (req, res) => {
         }
 
         if (files && Object.keys(files).length > 0) {
-            const uploadedContents = files.files;
+            const uploadedContent = files.files;
             // Get file extension
-            const fileExtension = imageMimeToExt[uploadedContents.mimetype];
+            const fileExtension = imageMimeToExt[uploadedContent.mimetype];
 
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
             }
-            if (uploadedContents.size > maxFileSizeBytes) {
+            if (uploadedContent.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
                 const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
@@ -225,15 +225,15 @@ exports.uploadCoverPicture = async (req, res) => {
         }
 
         if (files && Object.keys(files).length > 0) {
-            const uploadedContents = files.files;
+            const uploadedContent = files.files;
             // Get file extension
-            const fileExtension = imageMimeToExt[uploadedContents.mimetype];
+            const fileExtension = imageMimeToExt[uploadedContent.mimetype];
 
             // Check if the file type is supported
             if (!fileExtension) {
                 return res.status(400).json({ success: false, message: 'Unsupported file type' });
             }
-            if (uploadedContents.size > maxFileSizeBytes) {
+            if (uploadedContent.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
                 const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
