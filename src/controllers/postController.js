@@ -108,7 +108,6 @@ exports.createPost = async (req, res) => {
                 assets: assets,
                 tags: tags,
                 caption: caption,
-                uploadedTime: Date.now()
             });
 
             await newPost.save();
@@ -122,7 +121,7 @@ exports.createPost = async (req, res) => {
                         }
                     }
                 },
-                { $sort: { uploadedTime: 1 } },
+                { $sort: { createdAt: -1 } },
                 { $skip: 0 },
                 { $limit: 50 },
                 {
@@ -160,7 +159,7 @@ exports.createPost = async (req, res) => {
                         numberOfLikes: 1,
                         numberOfComments: 1,
                         caption: 1,
-                        uploadedTime: 1,
+                        createdAt: 1,
                         likeList: 1,
                         saveList: 1,
                         likedByUser: {
@@ -230,7 +229,7 @@ exports.getPost = async (req, res) => {
                     }
                 }
             },
-            { $sort: { uploadedTime: 1 } },
+            { $sort: { createdAt: -1 } },
             { $skip: skip },
             { $limit: per_pageConverted },
             {
@@ -268,7 +267,7 @@ exports.getPost = async (req, res) => {
                     numberOfLikes: 1,
                     numberOfComments: 1,
                     caption: 1,
-                    uploadedTime: 1,
+                    createdAt: 1,
                     likeList: 1,
                     saveList: 1,
                     likedByUser: {
@@ -505,7 +504,7 @@ exports.getSavedPost = async (req, res) => {
                     }
                 }
             },
-            { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
+            { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: skip }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
             {
@@ -543,7 +542,7 @@ exports.getSavedPost = async (req, res) => {
                     numberOfLikes: 1,
                     numberOfComments: 1,
                     caption: 1,
-                    uploadedTime: 1,
+                    createdAt: 1,
                     likeList: 1,
                     likedByUser: {
                         $cond: [
@@ -645,7 +644,7 @@ exports.discoverPosts = async (req, res) => {
                     author: { $nin: followedUserIds } // Original author filtering logic
                 }
             },
-            { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
+            { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
             {
@@ -680,7 +679,7 @@ exports.discoverPosts = async (req, res) => {
                     numberOfLikes: 1,
                     numberOfComments: 1,
                     caption: 1,
-                    uploadedTime: 1,
+                    createdAt: 1,
                     likeList: 1,
                     saveList: 1,
                     likedByUser: {
@@ -760,7 +759,7 @@ exports.homeFeed = async (req, res) => {
 
         const result = await Post.aggregate([
             { $match: { author: { $in: followedUserIds } } },
-            { $sort: { uploadedTime: 1 } }, // Sort assets by uploadedTime in ascending order
+            { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
             {
@@ -798,7 +797,7 @@ exports.homeFeed = async (req, res) => {
                     numberOfLikes: 1,
                     numberOfComments: 1,
                     caption: 1,
-                    uploadedTime: 1,
+                    createdAt: 1,
                     likeList: 1,
                     saveList: 1,
                     likedByUser: {

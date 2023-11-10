@@ -20,10 +20,6 @@ const assetSchema = new mongoose.Schema({
     contentType: {
         type: String,
     },
-    uploadedTime: {
-        type: Date,
-        default: Date.now()
-    },
     blocked: {
         type: Boolean,
         default: false

@@ -5,6 +5,8 @@ const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
+const dateFormat = require('date-and-time');
+
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
@@ -178,7 +180,9 @@ exports.uploadProfilePicture = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                const file_on_s3 = await uploadFileToS3(uploadedContents, fileExtension, bucketPath);
+                const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
+                const newFileName = key_prefix + fileExtension;
+                const file_on_s3 = await uploadFileToS3(uploadedContent, newFileName, bucketPath);
                 contentLink = file_on_s3.location;
                 rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
             }
@@ -232,7 +236,9 @@ exports.uploadCoverPicture = async (req, res) => {
             if (uploadedContents.size > maxFileSizeBytes) {
                 return res.status(400).json({ success: false, message: "File size should be less than 10MB" });
             } else {
-                const file_on_s3 = await uploadFileToS3(uploadedContents, fileExtension, bucketPath);
+                const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
+                const newFileName = key_prefix + fileExtension;
+                const file_on_s3 = await uploadFileToS3(uploadedContent, newFileName, bucketPath);
                 contentLink = file_on_s3.location;
                 rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
             }
