@@ -25,9 +25,6 @@ const postSchema = new mongoose.Schema({
         trim: true,
         default: ""
     },
-    uploadedTime: {
-        type: Date,
-    },
     numberOfViews: {
         type: Number,
         default: 0
