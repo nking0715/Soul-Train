@@ -79,6 +79,8 @@ class SocketHandler {
       this.users[playerA].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
         ...room,
         playerA,
+        channelName,
+        token: token1,
         playerB,
         starter
       });
@@ -86,6 +88,8 @@ class SocketHandler {
       this.users[playerB].socket.emit(SOCKET_IDS.ENTER_SUCCESS, {
         ...room,
         playerA,
+        channelName,
+        token: token2,
         playerB,
         starter
       });
@@ -102,7 +106,6 @@ class SocketHandler {
     const currentSocketId = socket.id;
     // get userId from socket request
     const { userId } = data;
-    console.log("join the room", userId);
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
       // this userId is duplicated
@@ -161,7 +164,7 @@ class SocketHandler {
         if (this.users[opponentUserId].isOnline == true) {
           this.users[userId].socket = socket;
           this.users[userId].isOnline = true;
-          
+
           // recover his prev roomInfo
           socket.emit(SOCKET_IDS.RECOVER, {
             ...roomInfo,
@@ -191,11 +194,9 @@ class SocketHandler {
       this.users[currentUserId].isOnline = false;
       const currentTime = Math.floor(Date.now());
       this.users[currentUserId].availableTime = currentTime + 30 * 1000;
-      console.log('userInfo is ', this.users[currentUserId]);
       const currentRoomId = currentUserId ? this.users[currentUserId].roomId : null;
       if (currentRoomId != null) {
         const opponentUserId = this.newRooms[currentRoomId].players.playerA == currentUserId ? this.newRooms[currentRoomId].players.playerB : this.newRooms[currentRoomId].players.playerA;
-        console.log('disconnect notification!');
         this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
           time: 30000
         });
