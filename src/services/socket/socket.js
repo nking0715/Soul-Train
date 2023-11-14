@@ -27,7 +27,7 @@ class SocketHandler {
     };
 
     socket.on(SOCKET_IDS.ENTER, data => {
-      this.handleEnter(socket, data);
+      this.handleEnterLobby(socket, data);
     });
 
     socket.on(SOCKET_IDS.QUIT, () => {
@@ -39,7 +39,7 @@ class SocketHandler {
     });
   }
 
-  handleEnter(socket, data) {
+  handleEnterLobby(socket, data) {
     const currentSocketId = socket.id;
     // get userId from socket request
     const { userId } = data;
