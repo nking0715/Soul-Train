@@ -12,7 +12,7 @@ const s3 = new aws.S3({
 })
 
 exports.uploadFileToS3 = async (file, newFileName, filepath) => {
-    const fileStream = new stream.PassThrough();    
+    const fileStream = new stream.PassThrough();
     fileStream.end(file.data);
     const uploadedFile = await s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filepath}`,
@@ -51,43 +51,57 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
 
 
 exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
-    const fileStream = new stream.PassThrough();
-    const filePath = "Post";
-    const newFileName = keyPrefix + '_thumbnail.jpg';
-    return new Promise((resolve, reject) => {
-        const params = {
-            Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
-            Key: newFileName,
-            Body: fileStream,
-            ContentType: 'image/jpeg',
-            ACL: 'public-read', // or as per your policy
-        };
+    try {
+        const url = new URL(videoPath);
+        const pathSegments = url.pathname.split('/');
+        const key = pathSegments.pop();
+        const filePath = 'Post';
+        const newFileName = keyPrefix + '_thumbnail.jpg';
 
-        // Start the S3 upload
-        const upload = s3.upload(params, (err, data) => {
-            if (err) {
-                return reject(err);
-            }
-            resolve(data.Location); // This will be the URL of the uploaded thumbnail
+        // Get the video stream from S3
+        const videoStream = s3.getObject({
+            Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
+            Key: key
+        }).createReadStream();
+
+        // Create a buffer to hold the thumbnail
+        let thumbnailBuffer = Buffer.from([]);
+
+        // Use FFmpeg to generate a thumbnail
+        await new Promise((resolve, reject) => {
+            ffmpeg(videoStream)
+                .screenshots({
+                    timestamps: [1],
+                    filename: newFileName,
+                    folder: '/',
+                    size: '300x300'
+                })
+                .on('data', (chunk) => {
+                    console.log(chunk);
+                    thumbnailBuffer = Buffer.concat([thumbnailBuffer, chunk]);
+                })
+                .on('end', () => {
+                    console.log('Thumbnail generation finished.');
+                    resolve();
+                })
+                .on('error', (err) => {
+                    console.error('Error generating thumbnail:', err);
+                    reject(err);
+                });
         });
 
-        // Use ffmpeg to generate the thumbnail and pipe it directly to S3
-        ffmpeg(videoPath)
-            .on('end', () => {
-                console.log('Thumbnail generation finished.');
-                fileStream.end(); // End the PassThrough stream to complete the S3 upload
-            })
-            .on('error', (err) => {
-                console.error('Error generating thumbnail:', err);
-                fileStream.destroy(err); // Destroy the stream with an error
-                upload.abort(); // Abort the S3 upload
-                reject(err);
-            })
-            .screenshots({
-                timestamps: [1],
-                filename: 'thumbnail.jpg',
-                size: '300x300'
-            })
-            .pipe(fileStream, { end: false }); // Important: set `end` option to `false`
-    });
-}
+        // Upload the thumbnail to S3
+        const uploadResponse = await s3.upload({
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `${filePath}/${newFileName}`,
+            ContentType: 'image/jpeg',
+            Body: thumbnailBuffer,
+            ACL: 'public-read'
+        }).promise();
+
+        return uploadResponse;
+    } catch (err) {
+        console.error('Error in uploadVideoThumbnailToS3:', err);
+        throw err;
+    }
+};
