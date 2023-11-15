@@ -81,7 +81,7 @@ exports.createPost = async (req, res) => {
                     if (contentType == 'image') {
                         thumbnailurl = (await uploadImageThumbnailToS3(contentLink, key_prefix)).Location;
                     } else if (contentType == 'video') {
-                        // thumbnailurl = (await uploadVideoThumbnailToS3(contentLink, key_prefix)).Location;
+                        thumbnailurl = (await uploadVideoThumbnailToS3(contentLink, key_prefix)).Location;
                     }
                     const newAsset = new Asset({
                         userId: userId,
@@ -369,7 +369,7 @@ exports.getComment = async (req, res) => {
             .skip(skip)
             .limit(per_page)
             .populate('author', 'username profilePicture')
-            .sort({ createdAt: 1 });
+            .sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
             comments,
