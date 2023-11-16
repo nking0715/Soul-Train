@@ -27,9 +27,7 @@ const server = require('http').createServer(app);
 
 const io = require('socket.io')(server, {
   cors: {
-    origin: "*", // Allow your frontend origin
-    methods: ["GET", "POST"], // Allowable methods
-    credentials: true
+    origin: "*", // Allow requests from any origin
   }
 });
 
