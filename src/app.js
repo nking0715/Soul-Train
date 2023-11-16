@@ -23,6 +23,9 @@ const connectDB = require('./db');
 connectDB();
 
 const app = express();
+
+// Initialize socket.io
+app.use(cors('*'));
 const server = require('http').createServer(app);
 
 const io = require('socket.io')(server, {
@@ -31,8 +34,6 @@ const io = require('socket.io')(server, {
   }
 });
 
-// Initialize socket.io
-app.use(cors('*'));
 
 const SocketHandler = require('./services/socket/socket.module');
 new SocketHandler(io);
