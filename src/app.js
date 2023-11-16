@@ -24,10 +24,18 @@ connectDB();
 
 const app = express();
 const server = require('http').createServer(app);
-const io = require('socket.io')(server);
+
+const io = require('socket.io')(server, {
+  cors: {
+    origin: "*", // Allow your frontend origin
+    methods: ["GET", "POST"], // Allowable methods
+    credentials: true
+  }
+});
 
 // Initialize socket.io
 app.use(cors('*'));
+
 const SocketHandler = require('./services/socket/socket.module');
 new SocketHandler(io);
 
