@@ -2,6 +2,8 @@ const aws = require('aws-sdk');
 const stream = require('stream');
 const sharp = require('sharp');
 const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+const tmp = require('tmp');
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -58,27 +60,22 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         const filePath = 'Post';
         const newFileName = keyPrefix + '_thumbnail.jpg';
 
+        // Create a temporary file for the thumbnail
+        const tempFilePath = tmp.tmpNameSync({ postfix: '.jpg' });
+
         // Get the video stream from S3
         const videoStream = s3.getObject({
             Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
             Key: key
         }).createReadStream();
 
-        // Create a buffer to hold the thumbnail
-        let thumbnailBuffer = Buffer.from([]);
-
-        // Use FFmpeg to generate a thumbnail
+        // Generate the thumbnail
         await new Promise((resolve, reject) => {
             ffmpeg(videoStream)
                 .screenshots({
                     timestamps: [1],
-                    filename: newFileName,
-                    folder: '/',
+                    filename: tempFilePath,
                     size: '300x300'
-                })
-                .on('data', (chunk) => {
-                    console.log(chunk);
-                    thumbnailBuffer = Buffer.concat([thumbnailBuffer, chunk]);
                 })
                 .on('end', () => {
                     console.log('Thumbnail generation finished.');
@@ -90,6 +87,9 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
                 });
         });
 
+        // Read the thumbnail file into a buffer
+        const thumbnailBuffer = fs.readFileSync(tempFilePath);
+
         // Upload the thumbnail to S3
         const uploadResponse = await s3.upload({
             Bucket: process.env.AWS_BUCKET_NAME,
@@ -98,6 +98,9 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
             Body: thumbnailBuffer,
             ACL: 'public-read'
         }).promise();
+
+        // Optional: Clean up the temporary file
+        fs.unlinkSync(tempFilePath);
 
         return uploadResponse;
     } catch (err) {
