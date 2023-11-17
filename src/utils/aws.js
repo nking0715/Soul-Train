@@ -62,6 +62,12 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
 
         // Create a temporary file for the thumbnail
         const tempFilePath = tmp.tmpNameSync({ postfix: '.jpg' });
+        const tempDir = path.dirname(tempFilePath);
+        if (!fs.existsSync(tempDir)) {
+            console.error("Directory does not exist:", tempDir);
+        } else {
+            console.log("Directory exists:", tempDir);
+        }
 
         console.log('tempFilePath', tempFilePath);
 
