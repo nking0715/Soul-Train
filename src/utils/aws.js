@@ -113,7 +113,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         }).promise();
 
         // Optional: Clean up the temporary file
-        fs.unlinkSync(tempFilePath);
+        // fs.unlinkSync(tempFilePath);
 
         return uploadResponse;
     } catch (err) {
