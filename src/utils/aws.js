@@ -98,8 +98,6 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
                 });
         });
 
-        console.log('thumbnailBuffer', thumbnailBuffer);
-
         // Read the thumbnail file into a buffer
         const thumbnailBuffer = fs.readFileSync(tempFilePath);
 
@@ -113,7 +111,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         }).promise();
 
         // Optional: Clean up the temporary file
-        // fs.unlinkSync(tempFilePath);
+        fs.unlinkSync(tempFilePath);
 
         return uploadResponse;
     } catch (err) {
