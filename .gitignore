@@ -9,5 +9,3 @@ package-lock.json
 src/controllers/sendMail/
 
 src/credentials
-
-public
