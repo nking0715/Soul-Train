@@ -63,11 +63,15 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         // Create a temporary file for the thumbnail
         const tempFilePath = tmp.tmpNameSync({ postfix: '.jpg' });
 
+        console.log('tempFilePath', tempFilePath);
+
         // Get the video stream from S3
         const videoStream = s3.getObject({
             Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
             Key: key
         }).createReadStream();
+
+        console.log('videoStream', videoStream);
 
         // Generate the thumbnail
         await new Promise((resolve, reject) => {
@@ -86,6 +90,8 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
                     reject(err);
                 });
         });
+
+        console.log('thumbnailBuffer', thumbnailBuffer);
 
         // Read the thumbnail file into a buffer
         const thumbnailBuffer = fs.readFileSync(tempFilePath);
