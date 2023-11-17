@@ -38,7 +38,7 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
         Key: key
     }).promise();
     const resizedBuffer = await sharp(objectData.Body)
-        .resize(300, 300)
+        .resize(300, 180)
         .toBuffer();
     const promise = s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
@@ -75,7 +75,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
                 .screenshots({
                     timestamps: [1],
                     filename: tempFilePath,
-                    size: '300x300'
+                    size: '320x180'
                 })
                 .on('end', () => {
                     console.log('Thumbnail generation finished.');
