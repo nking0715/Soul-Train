@@ -32,7 +32,7 @@ class SocketHandler {
       this.handleQuit(socket, true);
     });
 
-    socket.on(SOCKET_IDS.CONNECT, data => {
+    socket.on('CONNECT', data => {
       this.handleConnect(socket, data);
     });
 
@@ -139,8 +139,8 @@ class SocketHandler {
     try {
 
       const currentSocketId = socket.id;
-      const { userId } = data;
       console.log("connect is ", data);
+      const { userId } = data;
       const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
 
