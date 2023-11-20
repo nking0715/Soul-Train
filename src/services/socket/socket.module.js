@@ -138,6 +138,7 @@ class SocketHandler {
   handleConnect(socket, data) {
     const currentSocketId = socket.id;
     const { userId } = data;
+    console.log("connect is ", data);
     const userInfo = this.users[userId];
     const currentTime = Math.floor(Date.now());
 
