@@ -136,42 +136,47 @@ class SocketHandler {
   }
 
   handleConnect(socket, data) {
-    const currentSocketId = socket.id;
-    const { userId } = data;
-    console.log("connect is ", data);
-    const userInfo = this.users[userId];
-    const currentTime = Math.floor(Date.now());
+    try {
 
-    this.sockets[currentSocketId] = {
-      userId,
-      roomId: 0,
-      socket,
-    };
+      const currentSocketId = socket.id;
+      const { userId } = data;
+      console.log("connect is ", data);
+      const userInfo = this.users[userId];
+      const currentTime = Math.floor(Date.now());
 
-    if (!isEmpty(userInfo)) { // user already joined before.
-      if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
-        const currentRoomId = userInfo.roomId;
-        const roomInfo = this.rooms[currentRoomId];
-        const opponentUserId = roomInfo.players.playerA == userId ? roomInfo.players.playerB : roomInfo.players.playerA;
-        this.users[userId].socket = socket;
-        this.users[userId].isOnline = true;
+      this.sockets[currentSocketId] = {
+        userId,
+        roomId: 0,
+        socket,
+      };
 
-        if (this.users[opponentUserId].isOnline == true) {
-          // recover his prev roomInfo
-          socket.emit(SOCKET_IDS.RECOVER, {
-            ...roomInfo,
-            playerA: roomInfo.players.playerA,
-            playerB: roomInfo.players.playerB,
-          });
+      if (!isEmpty(userInfo)) { // user already joined before.
+        if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
+          const currentRoomId = userInfo.roomId;
+          const roomInfo = this.rooms[currentRoomId];
+          const opponentUserId = roomInfo.players.playerA == userId ? roomInfo.players.playerB : roomInfo.players.playerA;
+          this.users[userId].socket = socket;
+          this.users[userId].isOnline = true;
 
-          this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
-        } else {
+          if (this.users[opponentUserId].isOnline == true) {
+            // recover his prev roomInfo
+            socket.emit(SOCKET_IDS.RECOVER, {
+              ...roomInfo,
+              playerA: roomInfo.players.playerA,
+              playerB: roomInfo.players.playerB,
+            });
+
+            this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
+          } else {
+          }
+        } else if (userInfo.isOnline == true) {
+          console.log(userId, " already joined.");
         }
-      } else if (userInfo.isOnline == true) {
-        console.log(userId, " already joined.");
+      } else {
+        this.handleEnterLobby(socket, { userId });
       }
-    } else {
-      this.handleEnterLobby(socket, { userId });
+    } catch (e) {
+      console.log('connect error is ', e);
     }
   }
 
