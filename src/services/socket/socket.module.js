@@ -32,7 +32,7 @@ class SocketHandler {
       this.handleQuit(socket, true);
     });
 
-    socket.on('CONNECT', data => {
+    socket.on(SOCKET_IDS.CONNECT, data => {
       this.handleConnect(socket, data);
     });
 
