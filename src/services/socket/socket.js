@@ -118,7 +118,7 @@ class SocketHandler {
         const token1 = generateAccessToken(channelName, 1);
         const token2 = generateAccessToken(channelName, 2);
 
-        socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
+        socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
           ...this.rooms.running[this.roomId],
           me: { userId, token: token1 },
           channelName,
@@ -126,7 +126,7 @@ class SocketHandler {
           starter
         });
 
-        this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
+        this.sockets[room.players[oppoisteUserId].socketId].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
           ...this.rooms.running[this.roomId],
           me: { userId: oppoisteUserId },
           opponent: { userId },

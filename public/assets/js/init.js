@@ -1,4 +1,5 @@
-const socket = io('ws://dev.soultrain.app:3000/');
+// const socket = io('ws://dev.soultrain.app:3000/');
+const socket = io('http://localhost:3000/');
 
 let countdownInterval = {};
 let countdownIntervalForLost = {};
@@ -28,7 +29,11 @@ socket.on(SOCKET_PROC.OPPONENT_DISCONNECTED, (data) => {
 
 const enter = () => {
   const userId = document.getElementById("input").value;
-  socket.emit(SOCKET_PROC.CONNECT, { userId });
+  if(userId == '1') {
+    socket.emit(SOCKET_PROC.CONNECT, { userId, userName: 'bury', userProfileURL: 'ddasdf' });
+  } else {
+    socket.emit(SOCKET_PROC.CONNECT, { userId, userName: 'pavel', userProfileURL: 'pavelddoko' });
+  }
 
   // find the prev room info
   socket.on(SOCKET_PROC.RECOVER, (data) => {
@@ -44,7 +49,9 @@ const enter = () => {
     timerElement.innerText = 'Opponent has restored the network';
   });
 
-  socket.on(SOCKET_PROC.WAIT_BATTLE, (remainingTime) => {
+
+
+  socket.on(SOCKET_PROC.WAIT_OPPONENT, (remainingTime) => {
     console.log(`Remaining Time: ${remainingTime} seconds`);
     const timerElement = document.getElementById('timer');
 
@@ -60,7 +67,8 @@ const enter = () => {
     }, 1000);
   });
 
-  socket.on(SOCKET_PROC.CONNECT_SUCCESS, (data) => {
+
+  socket.on(SOCKET_PROC.GET_BATTLE_INFO, (data) => {
     clearInterval(countdownInterval);
 
     const starterElement = document.getElementById('starter');

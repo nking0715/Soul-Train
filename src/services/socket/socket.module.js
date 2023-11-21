@@ -1,3 +1,4 @@
+const { getProfile } = require('../../controllers/profileController');
 const { generateRandomChannelName, generateAccessToken } = require('../../helper/agora.helper');
 const { selectRandomUser } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
@@ -51,14 +52,6 @@ class SocketHandler {
       let playerB = userList[randomIndexB];
       userList.splice(randomIndexB, 1);
 
-      let room = {
-        roomId: this.roomId,
-        players: {
-          playerA,
-          playerB
-        }
-      }
-      this.rooms[this.roomId++] = room;
       this.lobbyUserList = userList;
 
       const starter = selectRandomUser(playerA, playerB);
@@ -66,26 +59,38 @@ class SocketHandler {
       // start the battle
       clearInterval(this.timeoutId);
       const channelName = generateRandomChannelName();
-      const token1 = generateAccessToken(channelName, 1);
-      const token2 = generateAccessToken(channelName, 2);
+      const tokenA = generateAccessToken(channelName, 1);
+      const tokenB = generateAccessToken(channelName, 2);
 
-      this.users[playerA].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
-        ...room,
+      let room = {
+        roomId: this.roomId,
         playerA,
-        channelName,
-        token: token1,
         playerB,
-        starter
+        channelName,
+        starter,
+        tokenA,
+        tokenB
+      }
+
+      this.rooms[this.roomId++] = room;
+
+
+      this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
+        ...room,
+        token: tokenA,
+        opponentUserId: playerB,
+        opponentUserName: this.users[playerB].userName,
+        opponentProfileURL: this.users[playerB].userProfileURL
       });
 
-      this.users[playerB].socket.emit(SOCKET_IDS.CONNECT_SUCCESS, {
+      this.users[playerB].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
         ...room,
-        playerA,
-        channelName,
-        token: token2,
-        playerB,
-        starter
+        token: tokenB,
+        opponentUserId: playerA,
+        opponentUserName: this.users[playerA].userName,
+        opponentProfileURL: this.users[playerA].userProfileURL
       });
+
       this.users[playerA].roomId = room.roomId;
       this.users[playerB].roomId = room.roomId;
       this.users[playerA].isOnline = true;
@@ -98,7 +103,7 @@ class SocketHandler {
   handleEnterLobby(socket, data) {
     const currentSocketId = socket.id;
     // get userId from socket request
-    const { userId } = data;
+    const { userId, userName, userProfileURL } = data;
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
       // this userId is duplicated
@@ -109,10 +114,13 @@ class SocketHandler {
     this.lobbyUserList.push(userId);
 
     // init data
-    this.users[userId] = { socket, roomId: null, isOnline: true };
+    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL };
+
+    console.log('init user info is ', this.users[userId]);
+
     // set userId of this socket
     this.sockets[currentSocketId].userId = userId;
-    socket.emit(SOCKET_IDS.WAIT_BATTLE, 30000);
+    socket.emit(SOCKET_IDS.WAIT_OPPONENT, 30000);
   }
 
   handleQuit(socket, isConnected = false) {
@@ -122,7 +130,7 @@ class SocketHandler {
     const userId = this.sockets[currentSocketId]?.userId;
 
     if (this.rooms[roomId]) {
-      const opponentUserId = this.rooms[roomId].players.playerA == userId ? this.rooms[roomId].players.playerB : this.rooms[roomId].players.playerA;
+      const opponentUserId = this.rooms[roomId].playerA == userId ? this.rooms[roomId].playerB : this.rooms[roomId].playerA;
       this.users[userId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
       isConnected && this.users[opponentUserId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
       const opponentSocketId = this.users[opponentUserId].socket.id;
@@ -139,8 +147,8 @@ class SocketHandler {
     try {
 
       const currentSocketId = socket.id;
-      console.log("connect is ", data);
-      const { userId } = data;
+      const { userId, userName, userProfileURL } = data;
+      console.log("connect is userName", userName);
       const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
 
@@ -154,7 +162,7 @@ class SocketHandler {
         if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
           const currentRoomId = userInfo.roomId;
           const roomInfo = this.rooms[currentRoomId];
-          const opponentUserId = roomInfo.players.playerA == userId ? roomInfo.players.playerB : roomInfo.players.playerA;
+          const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
           this.users[userId].socket = socket;
           this.users[userId].isOnline = true;
 
@@ -162,8 +170,8 @@ class SocketHandler {
             // recover his prev roomInfo
             socket.emit(SOCKET_IDS.RECOVER, {
               ...roomInfo,
-              playerA: roomInfo.players.playerA,
-              playerB: roomInfo.players.playerB,
+              playerA: roomInfo.playerA,
+              playerB: roomInfo.playerB,
             });
 
             this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
@@ -173,7 +181,7 @@ class SocketHandler {
           console.log(userId, " already joined.");
         }
       } else {
-        this.handleEnterLobby(socket, { userId });
+        this.handleEnterLobby(socket, { userId, userName, userProfileURL });
       }
     } catch (e) {
       console.log('connect error is ', e);
@@ -192,7 +200,7 @@ class SocketHandler {
       const currentRoomId = currentUserId ? this.users[currentUserId].roomId : null;
 
       if (currentRoomId != null) {
-        const opponentUserId = this.rooms[currentRoomId].players.playerA == currentUserId ? this.rooms[currentRoomId].players.playerB : this.rooms[currentRoomId].players.playerA;
+        const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
         if (this.users[opponentUserId].isOnline) {
           this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
             time: 30000
