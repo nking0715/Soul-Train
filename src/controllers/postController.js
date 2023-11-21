@@ -76,12 +76,13 @@ exports.createPost = async (req, res) => {
                     const newFileName = key_prefix + fileExtension;
                     const file_on_s3 = await uploadFileToS3(uploadedContent, newFileName, bucketPath);
                     contentLink = file_on_s3.location;
+                    console.log(contentType);
                     rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
                     let thumbnailurl = '';
                     if (contentType == 'image') {
                         thumbnailurl = (await uploadImageThumbnailToS3(contentLink, key_prefix)).Location;
                     } else if (contentType == 'video') {
-                        thumbnailurl = (await uploadVideoThumbnailToS3(contentLink, key_prefix)).Location;
+                        thumbnailurl = await uploadVideoThumbnailToS3(contentLink, key_prefix);
                     }
                     const newAsset = new Asset({
                         userId: userId,
@@ -711,21 +712,21 @@ exports.discoverPosts = async (req, res) => {
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
                     assets: {
-                $map: {
-                    input: {
-                        $filter: {
-                            input: "$assetDetails",
+                        $map: {
+                            input: {
+                                $filter: {
+                                    input: "$assetDetails",
+                                    as: "asset",
+                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+                                }
+                            },
                             as: "asset",
-                            cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+                            in: {
+                                url: "$$asset.url",
+                                thumbnail: "$$asset.thumbnail"
+                            }
                         }
                     },
-                    as: "asset",
-                    in: {
-                        url: "$$asset.url",
-                        thumbnail: "$$asset.thumbnail"
-                    }
-                }
-            },
                 }
             },
             {
