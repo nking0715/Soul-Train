@@ -113,9 +113,9 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         // Optional: Clean up the temporary file
         fs.unlinkSync(tempFilePath);
 
-        return uploadResponse;
+        return uploadResponse.Location;
     } catch (err) {
         console.error('Error in uploadVideoThumbnailToS3:', err);
-        throw err;
+        return "s3://soul-train-bucket/Post/chess.png";
     }
 };

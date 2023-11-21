@@ -1,5 +1,3 @@
-const { Rekognition } = require('aws-sdk');
-
 const AWS = require('aws-sdk');
 
 AWS.config.update({
@@ -63,17 +61,21 @@ async function moderateVideo(filePath) {
   };
 
   const { JobId } = await rekognition.startContentModeration(params).promise();
+  console.log(JobId);
   let moderationResponse;
   do {
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 5 seconds
     moderationResponse = await rekognition.getContentModeration({ JobId }).promise();
+    console.log(moderationResponse);
   } while (moderationResponse.JobStatus === 'IN_PROGRESS');
 
+  console.log(moderationResponse);
   if (moderationResponse.JobStatus === 'FAILED') {
     return { success: false, reason: 'Moderation failed' };
   }
 
   const labels = moderationResponse.ModerationLabels.map((label) => label.ParentName).filter(Boolean);
   const foundForbiddenLabels = labels.filter((label) => forbiddenLabels.includes(label));
+  console.log("foundForbiddenLabels: ",foundForbiddenLabels);
   return { success: foundForbiddenLabels.length === 0, reason: foundForbiddenLabels };
 }
