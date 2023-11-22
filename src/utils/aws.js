@@ -5,6 +5,8 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const tmp = require('tmp');
 const path = require('path');
+const { promisify } = require('util');
+const pipeline = promisify(require('stream').pipeline);
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -77,12 +79,14 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
             Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
             Key: key
         }).createReadStream();
+        const tempVideoPath = tmp.tmpNameSync({ postfix: '.mp4' });
+        await pipeline(videoStream, fs.createWriteStream(tempVideoPath));
 
         console.log('videoStream', videoStream);
 
         // Generate the thumbnail
         await new Promise((resolve, reject) => {
-            ffmpeg(videoStream)
+            ffmpeg(tempVideoPath)
                 .screenshots({
                     timestamps: [1],
                     filename: tempFilePath,
