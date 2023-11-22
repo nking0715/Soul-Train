@@ -203,7 +203,10 @@ class SocketHandler {
         const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
         if (this.users[opponentUserId].isOnline) {
           this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
-            time: 30000
+            time: 30000,
+            opponentUserId: currentUserId,
+            opponentUserName: this.users[currentUserId].userName,
+            opponentProfileURL: this.users[currentUserId].userProfileURL
           });
         } else {
           // get out from room
