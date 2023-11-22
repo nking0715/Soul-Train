@@ -82,7 +82,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         const tempVideoPath = tmp.tmpNameSync({ postfix: '.mp4' });
         await pipeline(videoStream, fs.createWriteStream(tempVideoPath));
 
-        console.log('videoStream', videoStream);
+        console.log('tempVideoPath', tempVideoPath);
 
         // Generate the thumbnail
         await new Promise((resolve, reject) => {
