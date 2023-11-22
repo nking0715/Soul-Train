@@ -5,6 +5,8 @@ const http = require('http');
 const httpProxy = require('http-proxy');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
+const admin = require('firebase-admin');
+const serviceAccount = require('./credentials/google-services.json');
 const authMiddleware = require('./middlewares/authMiddleware');
 const userRoutes = require('./routes/userRoutes');
 const agoraRoutes = require('./routes/agoraRoutes');
@@ -36,6 +38,9 @@ const io = require('socket.io')(server, {
   }
 });
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 const SocketHandler = require('./services/socket/socket.module');
 new SocketHandler(io);
