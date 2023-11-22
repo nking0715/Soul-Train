@@ -79,6 +79,7 @@ class SocketHandler {
         ...room,
         token: tokenA,
         opponentUserId: playerB,
+        opponentArtistName: this.users[playerB].userName,
         opponentUserName: this.users[playerB].userName,
         opponentProfileURL: this.users[playerB].userProfileURL
       });
@@ -88,6 +89,7 @@ class SocketHandler {
         token: tokenB,
         opponentUserId: playerA,
         opponentUserName: this.users[playerA].userName,
+        opponentArtistName: this.users[playerB].userArtistName,
         opponentProfileURL: this.users[playerA].userProfileURL
       });
 
@@ -103,7 +105,7 @@ class SocketHandler {
   handleEnterLobby(socket, data) {
     const currentSocketId = socket.id;
     // get userId from socket request
-    const { userId, userName, userProfileURL } = data;
+    const { userId, userName, userProfileURL, userArtistName } = data;
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
       // this userId is duplicated
@@ -114,7 +116,7 @@ class SocketHandler {
     this.lobbyUserList.push(userId);
 
     // init data
-    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL };
+    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName };
 
     console.log('init user info is ', this.users[userId]);
 
@@ -147,7 +149,7 @@ class SocketHandler {
     try {
 
       const currentSocketId = socket.id;
-      const { userId, userName, userProfileURL } = data;
+      const { userId, userName, userProfileURL, userArtistName } = data;
       console.log("connect is userName", userName);
       const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
@@ -181,7 +183,7 @@ class SocketHandler {
           console.log(userId, " already joined.");
         }
       } else {
-        this.handleEnterLobby(socket, { userId, userName, userProfileURL });
+        this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
       }
     } catch (e) {
       console.log('connect error is ', e);
