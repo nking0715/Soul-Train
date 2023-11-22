@@ -64,15 +64,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         const newFileName = keyPrefix + '_thumbnail.jpg';
 
         // Create a temporary file for the thumbnail
-        const tempFilePath = tmp.tmpNameSync({ postfix: '.jpg' });
-        const tempDir = path.dirname(tempFilePath);
-        if (!fs.existsSync(tempDir)) {
-            console.error("Directory does not exist:", tempDir);
-        } else {
-            console.log("Directory exists:", tempDir);
-        }
-
-        console.log('tempFilePath', tempFilePath);
+        const tempFilePath = `./${newFileName}`;
 
         // Get the video stream from S3
         const videoStream = s3.getObject({
@@ -81,8 +73,6 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         }).createReadStream();
         const tempVideoPath = tmp.tmpNameSync({ postfix: '.mp4' });
         await pipeline(videoStream, fs.createWriteStream(tempVideoPath));
-
-        console.log('tempVideoPath', tempVideoPath);
 
         // Generate the thumbnail
         await new Promise((resolve, reject) => {
@@ -116,6 +106,7 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
 
         // Optional: Clean up the temporary file
         fs.unlinkSync(tempFilePath);
+        fs.unlinkSync(tempVideoPath);
 
         return uploadResponse.Location;
     } catch (err) {

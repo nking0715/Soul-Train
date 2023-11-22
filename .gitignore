@@ -9,3 +9,4 @@ package-lock.json
 src/controllers/sendMail/
 
 src/credentials
+src/utils/testThumbnail.js
