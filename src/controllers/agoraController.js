@@ -1,7 +1,9 @@
 const { RtcTokenBuilder, RtcRole } = require('agora-token');
 const Channel = require('../models/channel');
 const User = require('../models/user');
+const FcmToken = require('../models/fcmToken');
 const socketManager = require('../utils/socket');
+const { sendPushNotification } = require('../utils/notification');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
@@ -10,7 +12,8 @@ const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 exports.createChannel = async (req, res) => {
     try {
         const { channelType, audienceType } = req.body;
-        const channel = await Channel.findOne({ userId: req.user.id });
+        const userId = req.user.id;
+        const channel = await Channel.findOne({ userId: userId });
 
         // Check if the request is valid
         if (isEmpty(channelType)) {
@@ -36,12 +39,32 @@ exports.createChannel = async (req, res) => {
             channelName: channelName,
             uid: [0]
         });
-        console.log(newChannel);
-        newChannel.save();
 
+        const user = await User.findOne({ _id: userId }).select('follower artistName');
+        const fcmTokenList = await FcmToken.find({ userId: { $in: user.follower } });
+        if (!isEmpty(fcmTokenList)) {
+            let fcmTokens = [];
+            fcmTokenList.map((fcmToken) => {
+                fcmTokens.push(fcmToken.token);
+            });
+            data = {
+                type: 'Live Streaming',
+                value: newChannel._id.toString()
+            }
+            notification = {
+                title: 'Live Stream Started!',
+                body: `${user.artistName} is starting a live stream, check it out!`
+            }
+            const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
+            if (!sendNotificationResult) {
+                return res.status(500).json({ success: false, message: 'Notification was not sent.' });
+            }
+        }
+        await newChannel.save();
         return res.status(200).json({ success: true, token: token, channelName: channelName });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        console.log('Error in createChannel: ', error);
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 };
 
@@ -60,7 +83,7 @@ exports.getChannels = async (req, res) => {
 
             const channels = await Channel.find({
                 userId: { $in: channelUserIDs }
-            }).populate('userId','username profilePicture');
+            }).populate('userId', 'username profilePicture');
 
             return res.status(200).json({ success: true, channels: channels });
         } else {
@@ -73,9 +96,9 @@ exports.getChannels = async (req, res) => {
             const channels = await Channel.find({
                 audienceType: "all",
                 userId: { $nin: channelUserIDs }
-            }).populate('userId','username profilePicture');
+            }).populate('userId', 'username profilePicture');
             return res.status(200).json({ success: true, channels: channels });
-        }        
+        }
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
@@ -115,9 +138,9 @@ exports.joinChannel = async (req, res) => {
 };
 
 exports.deleteChannel = async (req, res) => {
-    userId = req.user.id;
+    const userId = req.user.id;
     try {
-        await Channel.deleteOne({ userId: req.user.id });
+        await Channel.deleteOne({ userId: userId });
         return res.status(200).json({ success: true, message: 'Channel successfully removed.' });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
