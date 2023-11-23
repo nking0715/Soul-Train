@@ -26,7 +26,8 @@ exports.createChannel = async (req, res) => {
         }
 
         const channelName = generateRandomChannelName();
-        const token = generateAccessToken(channelName, 0);
+        const role = RtcRole.PUBLISHER;
+        const token = generateAccessToken(channelName, role, 0);
 
         const newChannel = new Channel({
             userId: req.user.id,
@@ -104,7 +105,8 @@ exports.joinChannel = async (req, res) => {
         channel.uid.push(uid); // Pushing the new UID to the array
         await channel.save(); // Saving the channel document with the new UID
 
-        const token = generateAccessToken(channelName, uid);
+        const role = RtcRole.SUBSCRIBER;
+        const token = generateAccessToken(channelName, role, 0);
 
         return res.status(200).json({ success: true, token: token, uid: uid, channelName: channelName });
     } catch (error) {
@@ -167,9 +169,7 @@ const generateRandomChannelName = (length = 12) => {
 };
 
 // Generate access token for Agora
-const generateAccessToken = (channelName, uid) => {
-    const role = RtcRole.PUBLISHER;
-
+const generateAccessToken = (channelName, role, uid) => {
     // Calculate privilege expire time
     const expireTime = 3600;
     const currentTime = Math.floor(Date.now() / 1000);
