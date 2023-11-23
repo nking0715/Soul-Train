@@ -150,7 +150,7 @@ class SocketHandler {
 
       const currentSocketId = socket.id;
       const { userId, userName, userProfileURL, userArtistName } = data;
-      console.log("connect is userName", userName);
+      console.log("connect is userName", userId,userName);
       const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
 
