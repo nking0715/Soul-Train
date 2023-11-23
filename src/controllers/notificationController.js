@@ -1,6 +1,4 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../credentials/google-services.json');
-const User = require('../models/user');
 const FcmToken = require('../models/fcmToken');
 
 exports.registerToken = async (req, res) => {
@@ -40,21 +38,19 @@ exports.removeToken = async (req, res) => {
   }
 };
 
-exports.pushNotifications = async (req, res) => {
+exports.testPushNotifications = async (req, res) => {
   try {
-    const { title, body, topic } = req.body;
-    let tokens = [];
-    const fcmTokens = await FcmToken.find().select('token');
-    fcmTokens.map(fcmToken => {
-      tokens.push(fcmToken.token);
-    })
-    await admin.messaging().subscribeToTopic(tokens, topic);
+    const { token, title, body, type, value } = req.body;
     const message = {
       notification: {
         title: title,
         body: body,
       },
-      topic: topic,
+      data: {
+        type: type,
+        value: value
+      },
+      token: token
     };
     await admin.messaging().send(message);
     return res.status(200).json({ status: true, message: 'Successfully pushed notification.' });
