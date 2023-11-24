@@ -204,6 +204,8 @@ class SocketHandler {
     const socketInfo = this.sockets[currentSocketId];
     if (!socketInfo) return;
     const currentUserId = this.sockets[currentSocketId].userId;
+    console.log("disconnnect userName: ", this.users[currentUserId].userName);
+    
     if (currentUserId) {
       this.users[currentUserId].isOnline = false;
       const currentTime = Math.floor(Date.now());
@@ -213,6 +215,9 @@ class SocketHandler {
       if (currentRoomId != null) {
         const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
         if (this.users[opponentUserId].isOnline) {
+          console.log('provides opponent api');
+          console.log('opponent is ', this.users[currentUserId].userName);
+
           this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
             time: 30000,
             opponentUserId: currentUserId,
