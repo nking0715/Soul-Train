@@ -159,8 +159,10 @@ class SocketHandler {
       console.log('userList ', this.lobbyUserList);
       console.log("connect is currentSocketId ", currentSocketId);
       console.log("connect is userName ", userName);
-      const userInfo = this.users[userId];
-      console.log("exist connect is userName ", userInfo.userName);
+      if (!isEmpty(this.users[userId])) { // user already joined before.
+        const userInfo = this.users[userId];
+        console.log("exist connect is userName ", userInfo.userName);
+      }
       console.log(" ");
 
       const currentTime = Math.floor(Date.now());
