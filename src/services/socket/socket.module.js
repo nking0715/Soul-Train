@@ -44,6 +44,11 @@ class SocketHandler {
     socket.on("disconnect", () => {
       this.handleDisconnect(socket, );
     });
+
+    socket.on("offline", (userId) => {
+      console.log('user is offline')
+      this.handleDisconnect(socket, );
+    });
   }
 
   handleCreateRooms() {
