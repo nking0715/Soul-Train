@@ -37,7 +37,7 @@ class SocketHandler {
       this.handleConnect(socket, data);
     });
 
-    socket.on(SOCKET_IDS.USER_DISCONNECT, data => {
+    socket.on(SOCKET_IDS.USER_DISCONNECT, () => {
       this.handleDisconnect(socket);
     });
 
