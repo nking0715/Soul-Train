@@ -75,7 +75,7 @@ class SocketHandler {
       this.rooms[this.roomId++] = room;
 
       console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
-      console.log("GET_INFO: opponent userName", this.users[playerA].userName);
+      console.log("GET_INFO: opponent userName", this.users[playerB].userName);
       console.log("GET_INFO: opponent userArtistName", this.users[playerB].userArtistName);
       console.log("");
       console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
