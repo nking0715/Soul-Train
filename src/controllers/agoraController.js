@@ -49,7 +49,8 @@ exports.createChannel = async (req, res) => {
             });
             data = {
                 type: 'Live Streaming',
-                value: newChannel._id.toString()
+                channelId: newChannel._id.toString(),
+                channelName: newChannel.channelName
             }
             notification = {
                 title: 'Live Stream Started!',
