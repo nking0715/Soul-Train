@@ -28,6 +28,7 @@ socket.on(SOCKET_PROC.OPPONENT_DISCONNECTED, (data) => {
 
 const enter = () => {
   const userId = document.getElementById("input").value;
+  socket.emit(SOCKET_PROC.CONNECT, { userId, userName: 'bury', userProfileURL: 'ddasdf' });
 
   // find the prev room info
   socket.on(SOCKET_PROC.RECOVER, (data) => {
