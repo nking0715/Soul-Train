@@ -168,34 +168,35 @@ class SocketHandler {
         roomId: 0,
         socket,
       };
+      this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
 
-      if (!isEmpty(userInfo)) { // user already joined before.
+      // if (!isEmpty(userInfo)) { // user already joined before.
 
-        const currentRoomId = userInfo.roomId;
-        const roomInfo = this.rooms[currentRoomId];
-        const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
-        this.users[userId].socket = socket;
-        this.users[userId].isOnline = true;
+      //   const currentRoomId = userInfo.roomId;
+      //   const roomInfo = this.rooms[currentRoomId];
+      //   const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
+      //   this.users[userId].socket = socket;
+      //   this.users[userId].isOnline = true;
 
-        if (this.users[opponentUserId].isOnline == true) {
-          // recover his prev roomInfo
-          socket.emit(SOCKET_IDS.RECOVER, {
-            ...roomInfo,
-            playerA: roomInfo.playerA,
-            playerB: roomInfo.playerB,
-          });
+      //   if (this.users[opponentUserId].isOnline == true) {
+      //     // recover his prev roomInfo
+      //     socket.emit(SOCKET_IDS.RECOVER, {
+      //       ...roomInfo,
+      //       playerA: roomInfo.playerA,
+      //       playerB: roomInfo.playerB,
+      //     });
 
-          this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
-        } else {
-        }
-        if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
+      //     this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
+      //   } else {
+      //   }
+      //   if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
 
-        } else if (userInfo.isOnline == true) {
-          console.log(userId, " already joined.");
-        }
-      } else {
-        this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
-      }
+      //   } else if (userInfo.isOnline == true) {
+      //     console.log(userId, " already joined.");
+      //   }
+      // } else {
+      //   this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
+      // }
     } catch (e) {
       console.log('connect error is ', e);
     }
