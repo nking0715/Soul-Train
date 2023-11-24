@@ -56,6 +56,9 @@ exports.createChannel = async (req, res) => {
                 title: 'Live Stream Started!',
                 body: `${user.artistName} is starting a live stream, check it out!`
             }
+            console.log('fcmTokens: ', fcmTokens);
+            console.log('data: ', data);
+            console.log('notification: ', notification);
             const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
