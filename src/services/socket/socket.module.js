@@ -89,7 +89,7 @@ class SocketHandler {
         token: tokenB,
         opponentUserId: playerA,
         opponentUserName: this.users[playerA].userName,
-        opponentArtistName: this.users[playerB].userArtistName,
+        opponentArtistName: this.users[playerA].userArtistName,
         opponentProfileURL: this.users[playerA].userProfileURL
       });
 
