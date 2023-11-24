@@ -1,5 +1,4 @@
-// const socket = io('ws://dev.soultrain.app:3000/');
-const socket = io('http://localhost:3000/');
+const socket = io('ws://dev.soultrain.app:3000/');
 
 let countdownInterval = {};
 let countdownIntervalForLost = {};
@@ -29,11 +28,6 @@ socket.on(SOCKET_PROC.OPPONENT_DISCONNECTED, (data) => {
 
 const enter = () => {
   const userId = document.getElementById("input").value;
-  if(userId == '1') {
-    socket.emit(SOCKET_PROC.CONNECT, { userId, userName: 'bury', userProfileURL: 'ddasdf' });
-  } else {
-    socket.emit(SOCKET_PROC.CONNECT, { userId, userName: 'pavel', userProfileURL: 'pavelddoko' });
-  }
 
   // find the prev room info
   socket.on(SOCKET_PROC.RECOVER, (data) => {
