@@ -79,8 +79,8 @@ class SocketHandler {
         ...room,
         token: tokenA,
         opponentUserId: playerB,
-        opponentArtistName: this.users[playerB].userName,
         opponentUserName: this.users[playerB].userName,
+        opponentArtistName: this.users[playerB].userArtistName,
         opponentProfileURL: this.users[playerB].userProfileURL
       });
 
@@ -117,8 +117,6 @@ class SocketHandler {
 
     // init data
     this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName };
-
-    console.log('init user info is ', this.users[userId]);
 
     // set userId of this socket
     this.sockets[currentSocketId].userId = userId;
