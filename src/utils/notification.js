@@ -16,6 +16,7 @@ exports.sendPushNotification = async (tokens, data, notification) => {
                 data,
                 notification
             };
+            console.log(message);
             await admin.messaging().send(message);
         }
         return true;
