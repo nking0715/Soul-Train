@@ -1,4 +1,4 @@
-const socket = io('ws://dev.soultrain.app:3000/');
+const socket = io('https://dev.soultrain.app');
 
 let countdownInterval = {};
 let countdownIntervalForLost = {};
