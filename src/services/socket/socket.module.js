@@ -156,11 +156,13 @@ class SocketHandler {
 
       const currentSocketId = socket.id;
       const { userId, userName, userProfileURL, userArtistName } = data;
-      console.log("connect is userId, name ", userId, userName);
-      console.log("connect is userArtistName ", userArtistName);
+      console.log('userList ', this.lobbyUserList);
+      console.log("connect is currentSocketId ", currentSocketId);
+      console.log("connect is userName ", userName);
+      const userInfo = this.users[userId];
+      console.log("connect is userInfo ", userInfo);
       console.log(" ");
 
-      const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
 
       this.sockets[currentSocketId] = {
