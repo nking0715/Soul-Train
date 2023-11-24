@@ -74,6 +74,14 @@ class SocketHandler {
 
       this.rooms[this.roomId++] = room;
 
+      console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
+      console.log("GET_INFO: opponent userName", this.users[playerA].userName);
+      console.log("GET_INFO: opponent userArtistName", this.users[playerB].userArtistName);
+      console.log("");
+      console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
+      console.log("GET_INFO: opponent userName", this.users[playerA].userName);
+      console.log("GET_INFO: opponent userArtistName", this.users[playerA].userArtistName);
+
 
       this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
         ...room,
@@ -148,7 +156,10 @@ class SocketHandler {
 
       const currentSocketId = socket.id;
       const { userId, userName, userProfileURL, userArtistName } = data;
-      console.log("connect is userName", userId,userName);
+      console.log("connect is userId, name ", userId, userName);
+      console.log("connect is userArtistName ", userArtistName);
+      console.log(" ");
+
       const userInfo = this.users[userId];
       const currentTime = Math.floor(Date.now());
 
