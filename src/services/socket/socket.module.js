@@ -158,7 +158,7 @@ class SocketHandler {
       const { userId, userName, userProfileURL, userArtistName } = data;
       console.log('userList ', this.lobbyUserList);
       console.log("connect is currentSocketId ", currentSocketId);
-      console.log("connect is userName ", userName);
+      console.log("connect is userName ", userId, userName);
       if (!isEmpty(this.users[userId])) { // user already joined before.
         const userInfo = this.users[userId];
         console.log("exist connect is userName ", userInfo.userName);
