@@ -168,10 +168,7 @@ class SocketHandler {
       console.log('userList ', this.lobbyUserList);
       console.log("connect is currentSocketId ", currentSocketId);
       console.log("connect is userName ", userId, userName);
-      if (!isEmpty(this.users[userId])) { // user already joined before.
-        const userInfo = this.users[userId];
-        console.log("exist connect is userName ", userInfo.userName);
-      }
+
       console.log(" ");
 
       const currentTime = Math.floor(Date.now());
@@ -181,6 +178,7 @@ class SocketHandler {
         roomId: 0,
         socket,
       };
+      const userInfo = this.users[userId];
       if (!isEmpty(userInfo)) { // user already joined before.
         console.log(`${userId} online status is ${userInfo.isOnline}`);
         if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
