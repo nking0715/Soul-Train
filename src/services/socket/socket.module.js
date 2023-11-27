@@ -182,7 +182,9 @@ class SocketHandler {
         socket,
       };
       if (!isEmpty(userInfo)) { // user already joined before.
+        console.log(`${userId} online status is ${userInfo.isOnline}`);
         if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
+          
           const currentRoomId = userInfo.roomId;
           const roomInfo = this.rooms[currentRoomId];
           const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
