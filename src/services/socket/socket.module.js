@@ -51,9 +51,32 @@ class SocketHandler {
     });
   }
 
+  
+  cleanLobby() {
+    const currentTime = new Date();
+
+    Object.keys(this.users).forEach((userId) => {
+      const user = this.users[userId];
+      const timeDifferenceInSeconds = Math.floor((currentTime - user.enterLobbyTime) / 1000);
+  
+      if (timeDifferenceInSeconds > 30) {
+        // Disconnect the user
+        // user.socket.emit( );
+        // user.socket.disconnect(true); // Disconnect the socket
+
+        delete this.users[userId]; // Remove the user from the users dictionary
+        this.lobbyUserList = this.lobbyUserList.filter((id) => id !== userId); // Remove from lobbyUserList
+      }
+    });
+  }
+
   handleCreateRooms() {
+    // clean lobbyUserList before create rooms.
+    this.cleanLobby();
+
     let userList = this.lobbyUserList;
     while (this.lobbyUserList.length >= 2) {
+      console.log("lobbyUserList", this.lobbyUserList);
       let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
       let playerA = userList[randomIndexA];
       userList.splice(randomIndexA, 1);
@@ -123,6 +146,10 @@ class SocketHandler {
     const currentSocketId = socket.id;
     // get userId from socket request
     const { userId, userName, userProfileURL, userArtistName } = data;
+    // Get the current time
+    const enterLobbyTime = new Date();
+    console.log("enterLobbyTime: ", enterLobbyTime);
+
     // validate of this userId is not duplicated
     if (Object.keys(this.users).indexOf(userId) >= 0) {
       // this userId is duplicated
@@ -132,8 +159,10 @@ class SocketHandler {
     // add the user to the lobby space
     this.lobbyUserList.push(userId);
 
+
+
     // init data
-    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName };
+    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
 
     // set userId of this socket
     this.sockets[currentSocketId].userId = userId;
@@ -182,7 +211,7 @@ class SocketHandler {
       if (!isEmpty(userInfo)) { // user already joined before.
         console.log(`${userId} online status is ${userInfo.isOnline}`);
         if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
-          
+
           const currentRoomId = userInfo.roomId;
           const roomInfo = this.rooms[currentRoomId];
           const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
@@ -212,14 +241,16 @@ class SocketHandler {
   }
 
   handleDisconnect(socket, data) {
-    const { userId } = data;
-    console.log("disconnect param userId: ", userId);
-    console.log("disconnnect userName: ", this.users[currentUserId].userName);
+    if (data) {
+      const { userId } = data;
+      console.log("disconnect param userId: ", userId);
+    }
 
     const currentSocketId = socket.id;
     const socketInfo = this.sockets[currentSocketId];
     if (!socketInfo) return;
     const currentUserId = this.sockets[currentSocketId].userId;
+    console.log("disconnnect userName: ", this.users[currentUserId].userName);
 
     if (currentUserId) {
       this.users[currentUserId].isOnline = false;
@@ -254,6 +285,7 @@ class SocketHandler {
 
     delete this.sockets[currentSocketId];
   }
+
 }
 
 module.exports = SocketHandler;

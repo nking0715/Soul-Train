@@ -1,5 +1,7 @@
-const socket = io('https://dev.soultrain.app');
+const socket = io('http://localhost:3000/');
 
+
+// this is frontend side for socket game app
 let countdownInterval = {};
 let countdownIntervalForLost = {};
 
