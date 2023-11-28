@@ -77,14 +77,15 @@ class SocketHandler {
       // clean lobbyUserList before create rooms.
       this.cleanLobby();
       let userList = this.lobbyUserList;
+      console.log("this.lobbyUserList is ", this.lobbyUserList);
       while (this.lobbyUserList.length >= 2) {
-        console.log("lobbyUserList", this.lobbyUserList);
         let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
         let playerA = userList[randomIndexA];
         userList.splice(randomIndexA, 1);
         let randomIndexB = Math.floor(Math.random() * 100) % userList.length;
         let playerB = userList[randomIndexB];
         userList.splice(randomIndexB, 1);
+        console.log("update lobbyUserList", userList);
 
         this.lobbyUserList = userList;
 
@@ -155,8 +156,6 @@ class SocketHandler {
       const { userId, userName, userProfileURL, userArtistName } = data;
       // Get the current time
       const enterLobbyTime = new Date();
-      console.log("enterLobbyTime: ", enterLobbyTime);
-
       // validate of this userId is not duplicated
       if (Object.keys(this.users).indexOf(userId) >= 0) {
         // this userId is duplicated
@@ -268,7 +267,6 @@ class SocketHandler {
       if (!socketInfo) return;
       const currentUserId = this.sockets[currentSocketId].userId;
       if (currentUserId) {
-        console.log('current User id ', currentUserId);
         this.users[currentUserId].isOnline = false;
         const currentTime = Math.floor(Date.now());
         this.users[currentUserId].availableTime = currentTime + 30 * 1000;
@@ -276,10 +274,7 @@ class SocketHandler {
 
         if (!currentRoomId) {
           const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
-          console.log('opponentUserId is ', opponentUserId);
-          if (this.users[opponentUserId]?.isOnline) {
-            console.log('provides opponent api');
-            console.log('opponent is ', this.users[currentUserId].userName);
+          if (this.users[opponentUserId] && this.users[opponentUserId]?.isOnline) {
 
             this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
               time: 30000,
