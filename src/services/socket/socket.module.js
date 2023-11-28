@@ -266,11 +266,12 @@ class SocketHandler {
       const socketInfo = this.sockets[currentSocketId];
       if (!socketInfo) return;
       const currentUserId = this.sockets[currentSocketId].userId;
-      if (currentUserId) {
-        this.users[currentUserId].isOnline = false;
+      const currentUserInfo = this.users[currentUserId];      
+      if (currentUserId && currentUserInfo) {        
+        currentUserInfo.isOnline = false;
         const currentTime = Math.floor(Date.now());
-        this.users[currentUserId].availableTime = currentTime + 30 * 1000;
-        const currentRoomId = currentUserId ? this.users[currentUserId].roomId : null;
+        currentUserInfo.availableTime = currentTime + 30 * 1000;
+        const currentRoomId = currentUserId ? currentUserInfo.roomId : null;
 
         if (!currentRoomId) {
           const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
@@ -279,8 +280,8 @@ class SocketHandler {
             this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
               time: 30000,
               opponentUserId: currentUserId,
-              opponentUserName: this.users[currentUserId].userName,
-              opponentProfileURL: this.users[currentUserId].userProfileURL
+              opponentUserName: currentUserInfo.userName,
+              opponentProfileURL: currentUserInfo.userProfileURL
             });
           } else {
             // get out from room
