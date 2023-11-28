@@ -250,8 +250,6 @@ class SocketHandler {
     const socketInfo = this.sockets[currentSocketId];
     if (!socketInfo) return;
     const currentUserId = this.sockets[currentSocketId].userId;
-    console.log("disconnnect userName: ", this.users[currentUserId].userName);
-
     if (currentUserId) {
       this.users[currentUserId].isOnline = false;
       const currentTime = Math.floor(Date.now());
