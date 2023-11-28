@@ -12,6 +12,7 @@ const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
 const { isValidEmail } = require('../helper/validateEmail.helper');
 const nodeFbLogin = require('node-fb-login');
+const FcmToken = require('../models/fcmToken');
 
 require('dotenv').config();
 
@@ -20,14 +21,13 @@ exports.register = async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      console.log(errors.array());
+      return res.status(400).json({ success: false, message: 'Validation Error' });
     }
 
     let user = await User.findOne({ email: req.body.email });
     if (user) {
-      return res.status(400).json({
-        message: 'User already exists'
-      });
+      return res.status(400).json({ success: false, message: 'User already exists' });
     } else {
       user = new User(req.body);
 
@@ -42,8 +42,7 @@ exports.register = async (req, res) => {
         text: `Your validation code is: ${validationCode}`,
       };
 
-      const messageId = await sendMail(options);
-      console.log('Message sent successfully:', messageId);
+      await sendMail(options);
 
       await user.save();
       req.session.userId = user._id;
@@ -51,29 +50,35 @@ exports.register = async (req, res) => {
       return res.status(200).json({ success: true, message: 'Validation code successfully sent to the user' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.log('Error in register: ', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
 exports.verifyValidationCode = async (req, res) => {
   try {
-    const { validationCode, email } = req.body;
+    const { validationCode, email, fcmToken, deviceInfo } = req.body;
     const user = await User.findOne({ email: email });
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
     if (user.validationCode != validationCode || user.codeExpiry < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired validation code' });
+      return res.status(400).json({ success: false, message: 'Invalid or expired validation code' });
     }
 
     user.emailVerified = true;
-    await user.save();
     // Generate a JWT token
     const token = authService.generateToken(user);
+
+    const userId = user._id;
+    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    await newToken.save();
+    await user.save();
     // Return the token to the client
-    return res.status(200).json({ token });
+    return res.status(200).json({ success: true, token });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    console.log('Error in register: ', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
 
@@ -95,47 +100,52 @@ exports.resendVerificationCode = async (req, res) => {
 
     const options = {
       to: user.email,
-      from: 'noreply@soultrain.app',
+      from: 'no-reply@soultrain.app',
       subject: 'Validation Code',
       text: `Your validation code is: ${validationCode}`,
     };
 
-    const messageId = await sendMail(options);
-    console.log('Message sent successfully:', messageId);
+    await sendMail(options);
 
     await user.save();
     req.session.userId = user._id;
     return res.status(200).json({ success: true, message: 'Validation code successfully sent to the user' });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.log('Error in resendVerificationCode: ', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 }
 
 exports.login = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) return res.status(400).json({ message: "User doesn't exist!" });
+    const { email, password, fcmToken, deviceInfo } = req.body;
+    const user = await User.findOne({ email: email });
+    if (!user) return res.status(400).json({ success: false, message: "User doesn't exist!" });
 
-    const validPassword = await bcrypt.compare(req.body.password, user.password ? user.password : "");
-    if (!validPassword) return res.status(400).json({ message: "Wrong password" });
-    if (!user.emailVerified) return res.status(400).json({ message: 'Please verify your email' });
+    const validPassword = await bcrypt.compare(password, user.password ? user.password : "");
+    if (!validPassword) return res.status(400).json({ success: false, message: "Wrong password" });
+    if (!user.emailVerified) return res.status(400).json({ success: false, message: 'Please verify your email' });
     req.session.userId = user._id;
 
     // Generate a JWT token
     const token = authService.generateToken(user);
+
+    const userId = user._id;
+    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    await newToken.save();
+
     // Return the token to the client
-    res.status(200).json({ token });
+    return res.status(200).json({ success: true, token });
 
   } catch (error) {
-    console.log("Login Error ", error);
-    res.status(500).json({ message: error.message });
+    console.log("Error in login: ", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 exports.googleLogin = async (req, res) => {
-  const idToken = req.body.idToken;
-
   try {
+    const { idToken, fcmToken, deviceInfo } = req.body;
     const decodedToken = jwt_decode(idToken);
     const email = decodedToken.email;
     const name = decodedToken.name;
@@ -156,17 +166,23 @@ exports.googleLogin = async (req, res) => {
     } else {
       // Generate a JWT token
       const token = authService.generateToken(user);
+
+      const userId = user._id;
+      const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+      await newToken.save();
+
       // Return the token to the client
       return res.status(200).json({ success: true, token });
     }
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message })
+    console.log("Error in googleLogin: ", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 exports.addArtistName = async (req, res) => {
-  const artistName = req.body.artistName;
   try {
+    const { artistName, fcmToken, deviceInfo } = req.body;
     let user = await User.findOne({ _id: req.session.userId });
     if (isEmpty(user)) {
       return res.status(400).json({ success: false, message: "User not found" })
@@ -175,22 +191,28 @@ exports.addArtistName = async (req, res) => {
       return res.status(400).json({ success: false, message: "This user already has an artist name." });
     }
     user.artistName = artistName;
-    await user.save();
     // Generate a JWT token
     const token = authService.generateToken(user);
+
+    const userId = user._id;
+    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    await newToken.save();
+
+    await user.save();
     // Return the token to the client
     return res.status(200).json({ success: true, token });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message })
+    console.log("Error in addArtistName: ", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 exports.facebookLogin = async (req, res) => {
-  const { accessToken } = req.body;
-  if (!accessToken) {
-    return res.status(400).json({ success: false, message: 'Facebook access token is required.' });
-  }
   try {
+    const { accessToken, fcmToken, deviceInfo } = req.body;
+    if (!accessToken) {
+      return res.status(400).json({ success: false, message: 'Facebook access token is required.' });
+    }
     const data = await nodeFbLogin.getUserProfile({
       accessToken: accessToken,
       fields: ["id", "name", "email"]
@@ -200,7 +222,6 @@ exports.facebookLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Failed to fetch user details from Facebook.' });
     }
 
-    console.log("data ", data)
     const name = data.name;
     const email = data.email;
 
@@ -221,22 +242,32 @@ exports.facebookLogin = async (req, res) => {
     } else {
       // Generate a JWT token
       const token = authService.generateToken(user);
+
+      const userId = user._id;
+      const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+      await newToken.save();
+
       // Return the token to the client
       return res.status(200).json({ success: true, token });
     }
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    console.log("Error in addArtistName: ", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
-exports.logout = (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      return res.status(500).json({ message: 'Failed to logout.' });
-    }
+exports.logout = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const fcmToken = req.body.fcmToken;
+    await FcmToken.findOneAndDelete({ userId, token: fcmToken });
+    req.session.destroy();
     res.clearCookie('sid');  // Assuming the session cookie name is 'sid', adjust if different
-    res.status(200).json({ message: 'Logged out successfully.' });
-  });
+    return res.status(200).json({ success: true, message: 'Logged out successfully.' });
+  } catch (error) {
+    console.log('Error in logout: ', error.message);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
 };
 
 exports.searchDancers = async (req, res) => {
