@@ -51,147 +51,163 @@ class SocketHandler {
     });
   }
 
-  
+
   cleanLobby() {
-    const currentTime = new Date();
+    try {
+      const currentTime = new Date();
+      Object.keys(this.users).forEach((userId) => {
+        const user = this.users[userId];
+        const timeDifferenceInSeconds = Math.floor((currentTime - user.enterLobbyTime) / 1000);
 
-    Object.keys(this.users).forEach((userId) => {
-      const user = this.users[userId];
-      const timeDifferenceInSeconds = Math.floor((currentTime - user.enterLobbyTime) / 1000);
-  
-      if (timeDifferenceInSeconds > 30) {
-        // Disconnect the user
-        // user.socket.emit( );
-        // user.socket.disconnect(true); // Disconnect the socket
+        if (timeDifferenceInSeconds > 30 || !user.isOnline) {
+          console.log('unnessary user is ', userId);
+          // Disconnect the user
+          delete this.users[userId]; // Remove the user from the users dictionary
+          this.lobbyUserList = this.lobbyUserList.filter((id) => id !== userId); // Remove from lobbyUserList
+        }
+      });
+    } catch (e) {
+      console.log('cleanLobby error is ', e);
+    }
 
-        delete this.users[userId]; // Remove the user from the users dictionary
-        this.lobbyUserList = this.lobbyUserList.filter((id) => id !== userId); // Remove from lobbyUserList
-      }
-    });
   }
 
   handleCreateRooms() {
-    // clean lobbyUserList before create rooms.
-    this.cleanLobby();
+    try {
+      // clean lobbyUserList before create rooms.
+      this.cleanLobby();
+      let userList = this.lobbyUserList;
+      while (this.lobbyUserList.length >= 2) {
+        console.log("lobbyUserList", this.lobbyUserList);
+        let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
+        let playerA = userList[randomIndexA];
+        userList.splice(randomIndexA, 1);
+        let randomIndexB = Math.floor(Math.random() * 100) % userList.length;
+        let playerB = userList[randomIndexB];
+        userList.splice(randomIndexB, 1);
 
-    let userList = this.lobbyUserList;
-    while (this.lobbyUserList.length >= 2) {
-      console.log("lobbyUserList", this.lobbyUserList);
-      let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
-      let playerA = userList[randomIndexA];
-      userList.splice(randomIndexA, 1);
-      let randomIndexB = Math.floor(Math.random() * 100) % userList.length;
-      let playerB = userList[randomIndexB];
-      userList.splice(randomIndexB, 1);
+        this.lobbyUserList = userList;
 
-      this.lobbyUserList = userList;
+        const starter = selectRandomUser(playerA, playerB);
 
-      const starter = selectRandomUser(playerA, playerB);
+        // start the battle
+        clearInterval(this.timeoutId);
+        const channelName = generateRandomChannelName();
+        const tokenA = generateAccessToken(channelName, 1);
+        const tokenB = generateAccessToken(channelName, 2);
 
-      // start the battle
-      clearInterval(this.timeoutId);
-      const channelName = generateRandomChannelName();
-      const tokenA = generateAccessToken(channelName, 1);
-      const tokenB = generateAccessToken(channelName, 2);
+        let room = {
+          roomId: this.roomId,
+          playerA,
+          playerB,
+          channelName,
+          starter,
+          tokenA,
+          tokenB
+        }
 
-      let room = {
-        roomId: this.roomId,
-        playerA,
-        playerB,
-        channelName,
-        starter,
-        tokenA,
-        tokenB
+        this.rooms[this.roomId++] = room;
+
+        console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
+        console.log("GET_INFO: opponent userName", this.users[playerB].userName);
+        console.log("GET_INFO: opponent userArtistName", this.users[playerB].userArtistName);
+        console.log("");
+        console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
+        console.log("GET_INFO: opponent userName", this.users[playerA].userName);
+        console.log("GET_INFO: opponent userArtistName", this.users[playerA].userArtistName);
+
+
+        this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
+          ...room,
+          token: tokenA,
+          opponentUserId: playerB,
+          opponentUserName: this.users[playerB].userName,
+          opponentArtistName: this.users[playerB].userArtistName,
+          opponentProfileURL: this.users[playerB].userProfileURL
+        });
+
+        this.users[playerB].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
+          ...room,
+          token: tokenB,
+          opponentUserId: playerA,
+          opponentUserName: this.users[playerA].userName,
+          opponentArtistName: this.users[playerA].userArtistName,
+          opponentProfileURL: this.users[playerA].userProfileURL
+        });
+
+        this.users[playerA].roomId = room.roomId;
+        this.users[playerB].roomId = room.roomId;
+        this.users[playerA].isOnline = true;
+        this.users[playerB].isOnline = true;
+        this.users[playerA].availableTime = 0;
+        this.users[playerB].availableTime = 0;
       }
-
-      this.rooms[this.roomId++] = room;
-
-      console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
-      console.log("GET_INFO: opponent userName", this.users[playerB].userName);
-      console.log("GET_INFO: opponent userArtistName", this.users[playerB].userArtistName);
-      console.log("");
-      console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
-      console.log("GET_INFO: opponent userName", this.users[playerA].userName);
-      console.log("GET_INFO: opponent userArtistName", this.users[playerA].userArtistName);
-
-
-      this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
-        ...room,
-        token: tokenA,
-        opponentUserId: playerB,
-        opponentUserName: this.users[playerB].userName,
-        opponentArtistName: this.users[playerB].userArtistName,
-        opponentProfileURL: this.users[playerB].userProfileURL
-      });
-
-      this.users[playerB].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
-        ...room,
-        token: tokenB,
-        opponentUserId: playerA,
-        opponentUserName: this.users[playerA].userName,
-        opponentArtistName: this.users[playerA].userArtistName,
-        opponentProfileURL: this.users[playerA].userProfileURL
-      });
-
-      this.users[playerA].roomId = room.roomId;
-      this.users[playerB].roomId = room.roomId;
-      this.users[playerA].isOnline = true;
-      this.users[playerB].isOnline = true;
-      this.users[playerA].availableTime = 0;
-      this.users[playerB].availableTime = 0;
+    } catch (e) {
+      console.log('handleCreateRooms error is ', e);
     }
+
   }
 
   handleEnterLobby(socket, data) {
-    const currentSocketId = socket.id;
-    // get userId from socket request
-    const { userId, userName, userProfileURL, userArtistName } = data;
-    // Get the current time
-    const enterLobbyTime = new Date();
-    console.log("enterLobbyTime: ", enterLobbyTime);
+    try {
+      const currentSocketId = socket.id;
+      // get userId from socket request
+      const { userId, userName, userProfileURL, userArtistName } = data;
+      // Get the current time
+      const enterLobbyTime = new Date();
+      console.log("enterLobbyTime: ", enterLobbyTime);
 
-    // validate of this userId is not duplicated
-    if (Object.keys(this.users).indexOf(userId) >= 0) {
-      // this userId is duplicated
-      socket.emit(SOCKET_IDS.USERID_DUPLICATED);
-      return;
+      // validate of this userId is not duplicated
+      if (Object.keys(this.users).indexOf(userId) >= 0) {
+        // this userId is duplicated
+        socket.emit(SOCKET_IDS.USERID_DUPLICATED);
+        return;
+      }
+      // add the user to the lobby space
+      this.lobbyUserList.push(userId);
+
+
+
+      // init data
+      this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
+
+      // set userId of this socket
+      this.sockets[currentSocketId].userId = userId;
+      socket.emit(SOCKET_IDS.WAIT_OPPONENT, 30000);
+    } catch (e) {
+      console.log('handleCreateRooms error is ', e);
     }
-    // add the user to the lobby space
-    this.lobbyUserList.push(userId);
-
-
-
-    // init data
-    this.users[userId] = { socket, roomId: null, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
-
-    // set userId of this socket
-    this.sockets[currentSocketId].userId = userId;
-    socket.emit(SOCKET_IDS.WAIT_OPPONENT, 30000);
   }
 
   handleQuit(socket, isConnected = false) {
-    const currentSocketId = socket.id;
+    try {
+      const currentSocketId = socket.id;
+      const roomId = this.sockets[currentSocketId]?.roomId;
+      const userId = this.sockets[currentSocketId]?.userId;
 
-    const roomId = this.sockets[currentSocketId]?.roomId;
-    const userId = this.sockets[currentSocketId]?.userId;
+      if (this.rooms[roomId]) {
+        const opponentUserId = this.rooms[roomId].playerA == userId ? this.rooms[roomId].playerB : this.rooms[roomId].playerA;
+        this.users[userId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
+        isConnected && this.users[opponentUserId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
+        const opponentInfo = this.users[opponentUserId];
+        if(opponentInfo) {
+          const opponentSocketId = opponentInfo.socket.id;
+          delete this.sockets[opponentSocketId];
+        }
 
-    if (this.rooms[roomId]) {
-      const opponentUserId = this.rooms[roomId].playerA == userId ? this.rooms[roomId].playerB : this.rooms[roomId].playerA;
-      this.users[userId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
-      isConnected && this.users[opponentUserId].socket.emit(SOCKET_IDS.QUIT_SUCCESS);
-      const opponentSocketId = this.users[opponentUserId].socket.id;
+        delete this.sockets[currentSocketId];
 
-      delete this.sockets[currentSocketId];
-      delete this.sockets[opponentSocketId];
-
-      delete this.users[userId];
-      delete this.users[opponentUserId];
+        delete this.users[userId];
+        delete this.users[opponentUserId];
+      }
+    } catch (e) {
+      console.log('handleQuit error is ', e);
     }
+
   }
 
   handleConnect(socket, data) {
     try {
-
       const currentSocketId = socket.id;
       const { userId, userName, userProfileURL, userArtistName } = data;
       console.log('userList ', this.lobbyUserList);
@@ -236,52 +252,58 @@ class SocketHandler {
         this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
       }
     } catch (e) {
-      console.log('connect error is ', e);
+      console.log('handleConnect error is ', e);
     }
   }
 
   handleDisconnect(socket, data) {
-    if (data) {
-      const { userId } = data;
-      console.log("disconnect param userId: ", userId);
-    }
-
-    const currentSocketId = socket.id;
-    const socketInfo = this.sockets[currentSocketId];
-    if (!socketInfo) return;
-    const currentUserId = this.sockets[currentSocketId].userId;
-    if (currentUserId) {
-      this.users[currentUserId].isOnline = false;
-      const currentTime = Math.floor(Date.now());
-      this.users[currentUserId].availableTime = currentTime + 30 * 1000;
-      const currentRoomId = currentUserId ? this.users[currentUserId].roomId : null;
-
-      if (currentRoomId != null) {
-        const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
-        if (this.users[opponentUserId].isOnline) {
-          console.log('provides opponent api');
-          console.log('opponent is ', this.users[currentUserId].userName);
-
-          this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
-            time: 30000,
-            opponentUserId: currentUserId,
-            opponentUserName: this.users[currentUserId].userName,
-            opponentProfileURL: this.users[currentUserId].userProfileURL
-          });
-        } else {
-          // get out from room
-          this.handleQuit(socket);
-        }
-      } else {
-        delete this.users[currentUserId];
+    try {
+      if (data) {
+        const { userId } = data;
+        console.log("disconnect param userId: ", userId);
       }
+
+      const currentSocketId = socket.id;
+      const socketInfo = this.sockets[currentSocketId];
+      if (!socketInfo) return;
+      const currentUserId = this.sockets[currentSocketId].userId;
+      if (currentUserId) {
+        console.log('current User id ', currentUserId);
+        this.users[currentUserId].isOnline = false;
+        const currentTime = Math.floor(Date.now());
+        this.users[currentUserId].availableTime = currentTime + 30 * 1000;
+        const currentRoomId = currentUserId ? this.users[currentUserId].roomId : null;
+
+        if (!currentRoomId) {
+          const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
+          console.log('opponentUserId is ', opponentUserId);
+          if (this.users[opponentUserId]?.isOnline) {
+            console.log('provides opponent api');
+            console.log('opponent is ', this.users[currentUserId].userName);
+
+            this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
+              time: 30000,
+              opponentUserId: currentUserId,
+              opponentUserName: this.users[currentUserId].userName,
+              opponentProfileURL: this.users[currentUserId].userProfileURL
+            });
+          } else {
+            // get out from room
+            this.handleQuit(socket);
+          }
+        } else {
+          delete this.users[currentUserId];
+        }
+      }
+
+      const indexUser = this.lobbyUserList.indexOf(currentUserId);
+      this.lobbyUserList.splice(indexUser, 1);
+
+
+      delete this.sockets[currentSocketId];
+    } catch (e) {
+      console.log('handleDisconnect error is ', e);
     }
-
-    const indexUser = this.lobbyUserList.indexOf(currentUserId);
-    this.lobbyUserList.splice(indexUser, 1);
-
-
-    delete this.sockets[currentSocketId];
   }
 
 }
