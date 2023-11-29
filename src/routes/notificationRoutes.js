@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
-const { registerToken, updateToken, removeToken, testPushNotifications } = require('../controllers/notificationController');
+const { registerToken, updateToken, removeToken, updateNotification, getBadgeStatus, getListOfNotifications, testPushNotifications } = require('../controllers/notificationController');
 
 router.post('/registerToken', registerToken);
 router.post('/updateToken', updateToken);
 router.post('/removeToken', removeToken);
+router.post('/updateNotification', updateNotification);
+router.post('/getBadgeStatus', getBadgeStatus);
+router.post('/getListOfNotifications', getListOfNotifications);
 router.post('/pushNotifications', testPushNotifications);
 
 module.exports = router;

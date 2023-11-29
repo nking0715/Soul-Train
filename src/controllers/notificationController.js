@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const FcmToken = require('../models/fcmToken');
+const Notification = require('../models/notification');
 
 exports.registerToken = async (req, res) => {
   try {
@@ -37,6 +38,71 @@ exports.removeToken = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server Error" });
   }
 };
+
+exports.updateNotification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const notificationId = req.body.notificationId;
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    // Remove the userId from usersToRead
+    await Notification.updateOne(
+      { _id: notificationId },
+      { $pull: { usersToRead: userId } }
+    );
+    // Check if usersToRead is now empty
+    const updatedNotification = await Notification.findById(notificationId);
+    if (updatedNotification.usersToRead.length === 0) {
+      // If no users left to read, delete the notification
+      await Notification.deleteOne({ _id: notificationId });
+    }
+    return res.status(200).json({ success: true, message: 'Notification updated' });
+  } catch (error) {
+    console.log('Error in updateNotification: ', error.message);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+}
+
+exports.getBadgeStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Search for notifications where userId is in usersToRead
+    const notifications = await Notification.find({ usersToRead: { $in: [userId] } });
+
+    // Check if any notifications are found
+    const hasUnreadNotifications = notifications.length > 0;
+
+    return res.status(200).json({
+      success: true,
+      hasUnreadNotifications: hasUnreadNotifications
+    });
+  } catch (error) {
+    console.log('Error in getBadgeStatus: ', error.message);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+}
+
+exports.getListOfNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Search for notifications where userId is in usersToRead
+    const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
+      .select('data notification');
+    // Remove userId from usersToRead for each notification
+    await Promise.all(notifications.map(notification => {
+      return Notification.updateOne(
+        { _id: notification._id },
+        { $pull: { usersToRead: userId } }
+      );
+    }));
+    return res.status(200).json({ success: true, notifications });
+  } catch (error) {
+    console.log('Error in getListOfNotifications: ', error.message);
+    return res.status(500).json({ success: false, message: 'Server Error' });
+  }
+}
 
 exports.testPushNotifications = async (req, res) => {
   try {

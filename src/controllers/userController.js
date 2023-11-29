@@ -258,7 +258,7 @@ exports.facebookLogin = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.session.userId;
     const fcmToken = req.body.fcmToken;
     await FcmToken.findOneAndDelete({ userId, token: fcmToken });
     req.session.destroy();
