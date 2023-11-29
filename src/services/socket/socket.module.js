@@ -110,9 +110,6 @@ class SocketHandler {
 
         this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
           ...room,
-          roomId: room.roomId,
-          starter: room.starter,
-          channelName: room.channelName,
           opponentUserId: playerB,
           opponentUserName: this.users[playerB].userName,
           opponentArtistName: this.users[playerB].userArtistName,
