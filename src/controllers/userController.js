@@ -71,6 +71,9 @@ exports.verifyValidationCode = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
+    if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
+      return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
+    }
     const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
     await user.save();
@@ -131,6 +134,9 @@ exports.login = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
+    if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
+      return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
+    }
     const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
 
@@ -168,6 +174,9 @@ exports.googleLogin = async (req, res) => {
       const token = authService.generateToken(user);
 
       const userId = user._id;
+      if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
+        return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
+      }
       const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
 
@@ -195,6 +204,9 @@ exports.addArtistName = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
+    if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
+      return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
+    }
     const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
 
@@ -244,6 +256,9 @@ exports.facebookLogin = async (req, res) => {
       const token = authService.generateToken(user);
 
       const userId = user._id;
+      if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
+        return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
+      }
       const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
 
