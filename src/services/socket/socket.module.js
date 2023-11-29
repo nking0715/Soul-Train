@@ -109,10 +109,10 @@ class SocketHandler {
         console.log("GET_INFO: opponent userId", this.users[playerA].userId);
 
         this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
+          ...room,
           roomId: room.roomId,
           starter: room.starter,
           channelName: room.channelName,
-          token: tokenA,
           opponentUserId: playerB,
           opponentUserName: this.users[playerB].userName,
           opponentArtistName: this.users[playerB].userArtistName,
@@ -120,10 +120,7 @@ class SocketHandler {
         });
 
         this.users[playerB].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
-          roomId: room.roomId,
-          starter: room.starter,
-          channelName: room.channelName,
-          token: tokenB,
+          ...room,
           opponentUserId: playerA,
           opponentUserName: this.users[playerA].userName,
           opponentArtistName: this.users[playerA].userArtistName,
