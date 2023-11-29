@@ -15,11 +15,11 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Comment'
     }],
-    tags: {
+    tags: [{
         type: String,
         trim: true,
         default: ""
-    },
+    }],
     caption: {
         type: String,
         trim: true,
