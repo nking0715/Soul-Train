@@ -14,7 +14,7 @@ class SocketHandler {
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
-    this.loopTime = 15000;
+    this.loopTime = 30000;
     setInterval(this.handleCreateRooms.bind(this), this.loopTime);
     io.on("connection", (socket) => {
       this.handleConnection(socket);
@@ -52,7 +52,7 @@ class SocketHandler {
       Object.keys(this.users).forEach((userId) => {
         const user = this.users[userId];
         const timeDifferenceInSeconds = Math.floor((currentTime - user.enterLobbyTime) / 1000);
-        if (timeDifferenceInSeconds > 30 && !user.isStarted) {
+        if (timeDifferenceInSeconds > 60 && !user.isStarted) {
           // need to notice to the frontend side.
           console.log('unnessary user is ', userId);
           // Disconnect the user
@@ -159,7 +159,7 @@ class SocketHandler {
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
       // set userId of this socket
       this.sockets[currentSocketId].userId = userId;
-      socket.emit(SOCKET_IDS.WAIT_OPPONENT, 30000);
+      socket.emit(SOCKET_IDS.WAIT_OPPONENT, 60000);
     } catch (e) {
       console.log('handleCreateRooms error is ', e);
     }
@@ -223,7 +223,7 @@ class SocketHandler {
           }
         } else if (userInfo.availableTime < currentTime && userInfo.isOnline == false) {
           // User is trying to join after 30 sec again because he lost his network last match.
-          console.log('user is trying to join now after 30 sec');
+          console.log('user is trying to join now after 60 sec');
           delete this.users[userId];
           this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
         } else {
@@ -253,7 +253,7 @@ class SocketHandler {
       if (currentUserId && currentUserInfo) {
         currentUserInfo.isOnline = false;
         const currentTime = Math.floor(Date.now());
-        currentUserInfo.availableTime = currentTime + 30 * 1000;
+        currentUserInfo.availableTime = currentTime + 60 * 1000;
         const currentRoomId = currentUserId ? currentUserInfo.roomId : null;
 
         if (currentRoomId !== null) {
@@ -262,7 +262,7 @@ class SocketHandler {
           console.log("disconnect opponentUserId is ", opponentUserId);
           if (this.users[opponentUserId] && this.users[opponentUserId]?.isOnline) {
             this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
-              time: 30000,
+              time: 60000,
               opponentUserId: currentUserId,
               opponentUserName: currentUserInfo.userName,
               opponentProfileURL: currentUserInfo.userProfileURL
