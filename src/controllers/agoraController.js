@@ -2,6 +2,7 @@ const { RtcTokenBuilder, RtcRole } = require('agora-token');
 const Channel = require('../models/channel');
 const User = require('../models/user');
 const FcmToken = require('../models/fcmToken');
+const Notification = require('../models/notification');
 const socketManager = require('../utils/socket');
 const { sendPushNotification } = require('../utils/notification');
 require('dotenv').config();
@@ -41,28 +42,33 @@ exports.createChannel = async (req, res) => {
         });
 
         const user = await User.findOne({ _id: userId }).select('follower artistName');
-        const fcmTokenList = await FcmToken.find({ userId: { $in: user.follower } });
+        const followers = user.follower;
+        const fcmTokenList = await FcmToken.find({ userId: { $in: followers || [] } });
         if (!isEmpty(fcmTokenList)) {
-            let fcmTokens = [];
+            const fcmTokens = [];
             fcmTokenList.map((fcmToken) => {
                 fcmTokens.push(fcmToken.token);
             });
-            data = {
+            const data = {
                 type: 'Live Streaming',
                 channelId: newChannel._id.toString(),
                 channelName: newChannel.channelName
             }
-            notification = {
+            const notification = {
                 title: 'Live Stream Started!',
                 body: `${user.artistName} is starting a live stream, check it out!`
             }
-            console.log('fcmTokens: ', fcmTokens);
-            console.log('data: ', data);
-            console.log('notification: ', notification);
+            const newNotification = new Notification({
+                usersToRead: followers,
+                data: data,
+                notification: notification
+            });
+            data.notificationId = newNotification._id;
             const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
             }
+            await newNotification.save();
         }
         await newChannel.save();
         return res.status(200).json({ success: true, token: token, channelName: channelName });
