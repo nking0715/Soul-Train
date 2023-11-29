@@ -71,7 +71,7 @@ exports.verifyValidationCode = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
-    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
     await user.save();
     // Return the token to the client
@@ -131,7 +131,7 @@ exports.login = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
-    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
 
     // Return the token to the client
@@ -168,7 +168,7 @@ exports.googleLogin = async (req, res) => {
       const token = authService.generateToken(user);
 
       const userId = user._id;
-      const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
 
       // Return the token to the client
@@ -195,7 +195,7 @@ exports.addArtistName = async (req, res) => {
     const token = authService.generateToken(user);
 
     const userId = user._id;
-    const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
     await newToken.save();
 
     await user.save();
@@ -244,7 +244,7 @@ exports.facebookLogin = async (req, res) => {
       const token = authService.generateToken(user);
 
       const userId = user._id;
-      const newToken = new FcmToken({ userId, fcmToken, deviceInfo });
+      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
 
       // Return the token to the client
@@ -258,7 +258,8 @@ exports.facebookLogin = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    const { userId, fcmToken } = req.body;
+    const { fcmToken } = req.body;
+    const userId = req.session.userId;
     await FcmToken.findOneAndDelete({ userId, token: fcmToken });
     req.session.destroy();
     res.clearCookie('sid');  // Assuming the session cookie name is 'sid', adjust if different
