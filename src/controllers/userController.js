@@ -258,8 +258,7 @@ exports.facebookLogin = async (req, res) => {
 
 exports.logout = async (req, res) => {
   try {
-    const userId = req.session.userId;
-    const fcmToken = req.body.fcmToken;
+    const { userId, fcmToken } = req.body;
     await FcmToken.findOneAndDelete({ userId, token: fcmToken });
     req.session.destroy();
     res.clearCookie('sid');  // Assuming the session cookie name is 'sid', adjust if different
