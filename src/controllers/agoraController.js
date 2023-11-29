@@ -63,7 +63,7 @@ exports.createChannel = async (req, res) => {
                 data: data,
                 notification: notification
             });
-            data.notificationId = newNotification._id;
+            data.notificationId = newNotification._id.toString();
             const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
