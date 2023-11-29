@@ -7,8 +7,8 @@ router.post('/registerToken', registerToken);
 router.post('/updateToken', updateToken);
 router.post('/removeToken', removeToken);
 router.post('/updateNotification', updateNotification);
-router.post('/getBadgeStatus', getBadgeStatus);
-router.post('/getListOfNotifications', getListOfNotifications);
+router.get('/getBadgeStatus', getBadgeStatus);
+router.get('/getListOfNotifications', getListOfNotifications);
 router.post('/pushNotifications', testPushNotifications);
 
 module.exports = router;
