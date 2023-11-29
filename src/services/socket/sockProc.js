@@ -1,5 +1,6 @@
 module.exports = {
     CONNECT: 'CONNECT',
+    RECONNECT: 'RECONNECT',
     RECOVER: 'RECOVER',
     CONTINUE: 'CONTINUE',
     WAIT_BATTLE: 'WAIT_BATTLE',

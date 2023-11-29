@@ -37,6 +37,10 @@ class SocketHandler {
       this.handleConnect(socket, data);
     });
 
+    socket.on(SOCKET_IDS.RECONNECT, data => {
+      this.handleReConnect(socket, data);
+    });
+
     socket.on(SOCKET_IDS.USER_DISCONNECT, data => {
       this.handleDisconnect(socket, data);
     });
@@ -150,11 +154,12 @@ class SocketHandler {
       if (Object.keys(this.users).indexOf(userId) >= 0) {
         // this userId is duplicated
         console.log('USERID_DUPLICATED', userId);
-        socket.emit(SOCKET_IDS.USERID_DUPLICATED);
-        return;
+        // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
+        // return;
+      } else {
+        this.lobbyUserList.push(userId);
       }
       // add the user to the lobby space
-      this.lobbyUserList.push(userId);
       // init data
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
       // set userId of this socket
@@ -190,11 +195,20 @@ class SocketHandler {
 
   handleConnect(socket, data) {
     try {
-      const currentSocketId = socket.id;
       const { userId, userName, userProfileURL, userArtistName } = data;
       console.log('userList ', this.lobbyUserList);
       console.log("connect is userInfo ", userId, userName);
+      this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
+    } catch (e) {
+      console.log('handleConnect error is ', e);
+    }
+  }
 
+  handleReConnect(socket, data) {
+    try {
+      const currentSocketId = socket.id;
+      const { userId, userName, userProfileURL, userArtistName } = data;
+      console.log("reconnect is userInfo ", userId, userName);
       const currentTime = Math.floor(Date.now());
       this.sockets[currentSocketId] = {
         userId,
@@ -230,8 +244,6 @@ class SocketHandler {
           // need a new API for frontend side.
           console.log(userId, " already joined.");
         }
-      } else {
-        this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
       }
     } catch (e) {
       console.log('handleConnect error is ', e);
