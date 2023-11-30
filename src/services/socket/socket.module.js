@@ -106,11 +106,11 @@ class SocketHandler {
 
         this.rooms[this.roomId++] = room;
 
-        console.log("GET_INFO: current userId", playerA, this.users[playerA].userId);
-        console.log("GET_INFO: opponent userId", this.users[playerB].userId);
+        console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
+        console.log("GET_INFO: opponent userInfo", this.users[playerB].userId, this.users[playerB].userName);
         console.log("");
-        console.log("GET_INFO: current userId", playerB, this.users[playerB].userId);
-        console.log("GET_INFO: opponent userId", this.users[playerA].userId);
+        console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
+        console.log("GET_INFO: opponent userInfo", this.users[playerA].userId, this.users[playerA].userName);
 
         this.users[playerA].socket.emit(SOCKET_IDS.GET_BATTLE_INFO, {
           ...room,
