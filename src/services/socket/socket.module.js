@@ -150,13 +150,13 @@ class SocketHandler {
       // Get the current time
       const enterLobbyTime = new Date();
       // validate of this userId is not duplicated
-      console.log('this.lobbyUserList ', this.lobbyUserList, userId);
+      console.log('old.lobbyUserList ', this.lobbyUserList, userId);
       if (!this.lobbyUserList.includes(userId)) {
         this.lobbyUserList.push(userId);
       } else {
         console.log('USER is already in the lobby now', userId);
       }
-      console.log('this.lobbyUserList ', this.lobbyUserList, userId);
+      console.log('next.lobbyUserList ', this.lobbyUserList, userId);
 
       // init data
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userId, userName, userProfileURL, userArtistName, enterLobbyTime };
