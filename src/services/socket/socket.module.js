@@ -220,31 +220,19 @@ class SocketHandler {
       if (!isEmpty(userInfo)) { // user already joined before.
         console.log(`${userId} online status is ${userInfo.isOnline}`);
         // He lost his network and tries to join again now.
-        if (userInfo.availableTime >= currentTime && userInfo.isOnline == false) {
-          console.log("user is trying to join again", userId);
-          const currentRoomId = userInfo.roomId;
-          const roomInfo = this.rooms[currentRoomId];
-          const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
-          this.users[userId].socket = socket;
-          this.users[userId].isOnline = true;
-          if (this.users[opponentUserId].isOnline == true) {
-            // recover his prev roomInfo
-            socket.emit(SOCKET_IDS.RECOVER, {
-              ...roomInfo,
-              playerA: roomInfo.playerA,
-              playerB: roomInfo.playerB,
-            });
-            this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
-          }
-        } else if (userInfo.availableTime < currentTime && userInfo.isOnline == false) {
-          // User is trying to join after 30 sec again because he lost his network last match.
-          console.log('user is trying to join now after 60 sec');
-          delete this.users[userId];
-          this.handleEnterLobby(socket, { userId, userName, userProfileURL, userArtistName });
-        } else {
-          // need a new API for frontend side.
-          console.log(userId, " already joined.");
-        }
+        console.log("user is trying to join again", userId, userInfo.availableTime);
+        const currentRoomId = userInfo.roomId;
+        const roomInfo = this.rooms[currentRoomId];
+        const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
+        this.users[userId].socket = socket;
+        this.users[userId].isOnline = true;
+        // recover his prev roomInfo
+        socket.emit(SOCKET_IDS.RECOVER, {
+          ...roomInfo,
+          playerA: roomInfo.playerA,
+          playerB: roomInfo.playerB,
+        });
+        this.users[opponentUserId].socket.emit(SOCKET_IDS.CONTINUE, {});
       }
     } catch (e) {
       console.log('handleConnect error is ', e);
