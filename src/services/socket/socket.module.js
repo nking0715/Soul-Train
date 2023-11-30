@@ -161,7 +161,7 @@ class SocketHandler {
       }
       // add the user to the lobby space
       // init data
-      this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userName, userProfileURL, userArtistName, enterLobbyTime };
+      this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userId, userName, userProfileURL, userArtistName, enterLobbyTime };
       // set userId of this socket
       this.sockets[currentSocketId].userId = userId;
       socket.emit(SOCKET_IDS.WAIT_OPPONENT, 60000);
