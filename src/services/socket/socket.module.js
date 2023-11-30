@@ -14,7 +14,7 @@ class SocketHandler {
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
-    this.loopTime = 30000;
+    this.loopTime = 160000;
     setInterval(this.handleCreateRooms.bind(this), this.loopTime);
     io.on("connection", (socket) => {
       this.handleConnection(socket);
