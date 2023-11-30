@@ -222,7 +222,7 @@ class SocketHandler {
         const currentRoomId = userInfo.roomId;
         const roomInfo = this.rooms[currentRoomId];
         console.log("user is trying to join again", userId, userInfo.availableTime, currentRoomId);
-        console.log("roomInfo join again", roomInfo);
+        console.log("roomInfo join again", roomInfo.playerA, roomInfo.playerB);
         const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
         this.users[userId].socket = socket;
         this.users[userId].isOnline = true;
