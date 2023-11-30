@@ -270,7 +270,7 @@ class SocketHandler {
             });
           } else {
             // get out from room
-            this.handleQuit(socket);
+            // this.handleQuit(socket);
           }
         } else {
           // delete this.users[currentUserId];
