@@ -150,10 +150,10 @@ class SocketHandler {
       // Get the current time
       const enterLobbyTime = new Date();
       // validate of this userId is not duplicated
-      if (Object.keys(this.users).indexOf(userId) >= 0) {
+      
+      if (this.lobbyUserList.indexOf(userId) >= 0) {
         // this userId is duplicated
-        console.log('USERID_DUPLICATED', userId);
-        this.lobbyUserList.push(userId);
+        console.log('USER is already in the lobby now', userId);
         // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
         // return;
       } else {
