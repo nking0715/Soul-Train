@@ -150,17 +150,14 @@ class SocketHandler {
       // Get the current time
       const enterLobbyTime = new Date();
       // validate of this userId is not duplicated
-      this.lobbyUserList.push(userId);
-      console.log('aasdfdf is ', this.lobbyUserList.push(userId));
-      // if (this.lobbyUserList.indexOf(userId) >= 0) {
-      //   // this userId is duplicated
-      //   console.log('USER is already in the lobby now', userId);
-      //   // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
-      //   // return;
-      // } else {
-      //   this.lobbyUserList.push(userId);
-      // }
-      // add the user to the lobby space
+      console.log('this.lobbyUserList ', this.lobbyUserList, userId);
+      if (!this.lobbyUserList.includes(userId)) {
+        this.lobbyUserList.push(userId);
+      } else {
+        console.log('USER is already in the lobby now', userId);
+      }
+      console.log('this.lobbyUserList ', this.lobbyUserList, userId);
+
       // init data
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userId, userName, userProfileURL, userArtistName, enterLobbyTime };
       // set userId of this socket
@@ -277,8 +274,9 @@ class SocketHandler {
           // delete this.users[currentUserId];
         }
       }
-      const indexUser = this.lobbyUserList.indexOf(currentUserId);
-      this.lobbyUserList.splice(indexUser, 1);
+      // const indexUser = this.lobbyUserList.indexOf(currentUserId);
+      // this.lobbyUserList.splice(indexUser, 1);
+
       delete this.sockets[currentSocketId];
     } catch (e) {
       console.log('handleDisconnect error is ', e);
