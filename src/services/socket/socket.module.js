@@ -150,15 +150,16 @@ class SocketHandler {
       // Get the current time
       const enterLobbyTime = new Date();
       // validate of this userId is not duplicated
-      
-      if (this.lobbyUserList.indexOf(userId) >= 0) {
-        // this userId is duplicated
-        console.log('USER is already in the lobby now', userId);
-        // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
-        // return;
-      } else {
-        this.lobbyUserList.push(userId);
-      }
+      this.lobbyUserList.push(userId);
+      console.log('aasdfdf is ', this.lobbyUserList.push(userId));
+      // if (this.lobbyUserList.indexOf(userId) >= 0) {
+      //   // this userId is duplicated
+      //   console.log('USER is already in the lobby now', userId);
+      //   // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
+      //   // return;
+      // } else {
+      //   this.lobbyUserList.push(userId);
+      // }
       // add the user to the lobby space
       // init data
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userId, userName, userProfileURL, userArtistName, enterLobbyTime };
