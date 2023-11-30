@@ -220,9 +220,10 @@ class SocketHandler {
       if (!isEmpty(userInfo)) { // user already joined before.
         console.log(`${userId} online status is ${userInfo.isOnline}`);
         // He lost his network and tries to join again now.
-        console.log("user is trying to join again", userId, userInfo.availableTime);
         const currentRoomId = userInfo.roomId;
         const roomInfo = this.rooms[currentRoomId];
+        console.log("user is trying to join again", userId, userInfo.availableTime, currentRoomId);
+        console.log("roomInfo join again", roomInfo);
         const opponentUserId = roomInfo.playerA == userId ? roomInfo.playerB : roomInfo.playerA;
         this.users[userId].socket = socket;
         this.users[userId].isOnline = true;
