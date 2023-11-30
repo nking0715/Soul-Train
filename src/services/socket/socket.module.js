@@ -60,7 +60,6 @@ class SocketHandler {
           // need to notice to the frontend side.
           console.log('unnessary user is ', userId);
           // Disconnect the user
-          delete this.users[userId]; // Remove the user from the users dictionary
           this.lobbyUserList = this.lobbyUserList.filter((id) => id !== userId); // Remove from lobbyUserList
         }
       });
@@ -274,7 +273,7 @@ class SocketHandler {
             this.handleQuit(socket);
           }
         } else {
-          delete this.users[currentUserId];
+          // delete this.users[currentUserId];
         }
       }
       const indexUser = this.lobbyUserList.indexOf(currentUserId);
