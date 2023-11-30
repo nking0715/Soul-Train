@@ -154,6 +154,7 @@ class SocketHandler {
       if (Object.keys(this.users).indexOf(userId) >= 0) {
         // this userId is duplicated
         console.log('USERID_DUPLICATED', userId);
+        this.lobbyUserList.push(userId);
         // socket.emit(SOCKET_IDS.USERID_DUPLICATED);
         // return;
       } else {
