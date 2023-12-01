@@ -41,12 +41,14 @@ class SocketHandler {
       this.handleReConnect(socket, data);
     });
 
+    // user leave event 
     socket.on(SOCKET_IDS.USER_DISCONNECT, data => {
-      this.handleDisconnect(socket, data);
+      this.handleLeave(socket, data);
     });
 
+    // network disconnect
     socket.on("disconnect", () => {
-      this.handleDisconnect(socket,);
+      this.handleDisconnect(socket);
     });
   }
 
@@ -237,13 +239,54 @@ class SocketHandler {
     }
   }
 
-  handleDisconnect(socket, data) {
+  handleLeave(socket, data) {
     try {
-      if (data) {
-        const { userId } = data;
-        console.log("disconnect param userId: ", userId);
-      }
+      // user lost his network, data is [], but user click the back button.
+      const { userId } = data;
+      console.log("disconnect param userId: ", userId);
 
+      const currentSocketId = socket.id;
+      const socketInfo = this.sockets[currentSocketId];
+      if (!socketInfo) return;
+      const currentUserId = this.sockets[currentSocketId].userId;
+      const currentUserInfo = this.users[currentUserId];
+      if (currentUserId && currentUserInfo) {
+        currentUserInfo.isOnline = false;
+        const currentTime = Math.floor(Date.now());
+        currentUserInfo.availableTime = currentTime + 60 * 1000;
+        const currentRoomId = currentUserId ? currentUserInfo.roomId : null;
+
+        if (currentRoomId !== null) {
+          console.log("leave currentRoomId is ", currentRoomId);
+          const opponentUserId = this.rooms[currentRoomId].playerA == currentUserId ? this.rooms[currentRoomId].playerB : this.rooms[currentRoomId].playerA;
+          console.log("leave opponentUserId is ", opponentUserId);
+          if (this.users[opponentUserId] && this.users[opponentUserId]?.isOnline) {
+            this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
+              isLeave: true,
+              time: 60000,
+              opponentUserId: currentUserId,
+              opponentUserName: currentUserInfo.userName,
+              opponentProfileURL: currentUserInfo.userProfileURL
+            });
+          } else {
+            // get out from room
+            // this.handleQuit(socket);
+          }
+        } else {
+          // delete this.users[currentUserId];
+        }
+      }
+      // const indexUser = this.lobbyUserList.indexOf(currentUserId);
+      // this.lobbyUserList.splice(indexUser, 1);
+      delete this.sockets[currentSocketId];
+    } catch (e) {
+      console.log('handleDisconnect error is ', e);
+    }
+  }
+
+
+  handleDisconnect(socket) {
+    try {
       const currentSocketId = socket.id;
       const socketInfo = this.sockets[currentSocketId];
       if (!socketInfo) return;
@@ -261,6 +304,7 @@ class SocketHandler {
           console.log("disconnect opponentUserId is ", opponentUserId);
           if (this.users[opponentUserId] && this.users[opponentUserId]?.isOnline) {
             this.users[opponentUserId].socket.emit(SOCKET_IDS.OPPONENT_DISCONNECTED, {
+              isLeave: false,
               time: 60000,
               opponentUserId: currentUserId,
               opponentUserName: currentUserInfo.userName,
@@ -276,7 +320,6 @@ class SocketHandler {
       }
       // const indexUser = this.lobbyUserList.indexOf(currentUserId);
       // this.lobbyUserList.splice(indexUser, 1);
-
       delete this.sockets[currentSocketId];
     } catch (e) {
       console.log('handleDisconnect error is ', e);
