@@ -92,8 +92,8 @@ class SocketHandler {
         // start the battle
         clearInterval(this.timeoutId);
         const channelName = generateRandomChannelName();
-        const tokenA = generateAccessToken(channelName, 1);
-        const tokenB = generateAccessToken(channelName, 2);
+        const tokenA = generateAccessToken(channelName, 0);
+        const tokenB = generateAccessToken(channelName, 0);
 
         let room = {
           roomId: this.roomId,
