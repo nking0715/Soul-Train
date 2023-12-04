@@ -93,7 +93,7 @@ class SocketHandler {
         clearInterval(this.timeoutId);
         const channelName = generateRandomChannelName();
         const tokenA = generateAccessToken(channelName, 0);
-        const tokenB = generateAccessToken(channelName, 0);
+        const tokenB = generateAccessToken(channelName, 1);
 
         let room = {
           roomId: this.roomId,
