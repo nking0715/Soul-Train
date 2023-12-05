@@ -12,17 +12,3 @@ exports.generateRandomChannelName = (length = 12) => {
     }
     return result;
 };
-
-// Generate access token for Agora
-exports.generateAccessToken = (channelName, uid) => {
-    const role = RtcRole.PUBLISHER;
-
-    // Calculate privilege expire time
-    const expireTime = 3600;
-    const currentTime = Math.floor(Date.now() / 1000);
-    const privilegeExpireTime = currentTime + expireTime;
-
-    // Build and return the token
-    const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
-    return token;
-};

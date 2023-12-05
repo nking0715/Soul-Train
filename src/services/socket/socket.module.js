@@ -3,6 +3,7 @@ const { generateRandomChannelName, generateAccessToken } = require('../../helper
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
+const { RtcTokenBuilder, RtcRole } = require('agora-token');
 
 class SocketHandler {
 
@@ -95,8 +96,10 @@ class SocketHandler {
         // start the battle
         clearInterval(this.timeoutId);
         let channelName = generateRandomChannelName();
-        let tokenA = generateAccessToken(channelName, starterDefaultUID);
-        let tokenB = generateAccessToken(channelName, opponentDefaultUID);
+        let roleA = RtcRole.PUBLISHER;
+        let roleB = RtcRole.SUBSCRIBER;
+        let tokenA = generateAccessToken(channelName, roleA, starterDefaultUID);
+        let tokenB = generateAccessToken(channelName, roleB, opponentDefaultUID);
         let musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
@@ -107,8 +110,8 @@ class SocketHandler {
           musicURL,
           channelName,
           starter,
-          tokenA,
-          tokenB
+          tokenA, // starter token
+          tokenB  // opponent token
         }
 
         console.log("musicURL is ", musicURL);
