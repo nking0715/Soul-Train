@@ -75,8 +75,8 @@ class SocketHandler {
     try {
       // clean lobbyUserList before create rooms.
       this.handleCleanLobby();
-      let starterDefaultUID = 0;
-      let opponentDefaultUID = 1;
+      let starterDefaultUID = 1;
+      let opponentDefaultUID = 2;
       let userList = this.lobbyUserList;
       console.log("this.lobbyUserList is ", this.lobbyUserList);
       while (this.lobbyUserList.length >= 2) {
@@ -87,7 +87,7 @@ class SocketHandler {
         let playerB = userList[randomIndexB];
         userList.splice(randomIndexB, 1);
         console.log("update lobbyUserList", userList);
-
+        console.log('channelName is ', channelName);
         this.lobbyUserList = userList;
 
         let starter = selectRandomUser(playerA, playerB);
@@ -96,10 +96,9 @@ class SocketHandler {
         // start the battle
         clearInterval(this.timeoutId);
         let channelName = generateRandomChannelName();
-        let roleA = RtcRole.PUBLISHER;
-        let roleB = RtcRole.SUBSCRIBER;
-        let tokenA = generateAccessToken(channelName, roleA, starterDefaultUID);
-        let tokenB = generateAccessToken(channelName, roleB, opponentDefaultUID);
+        let defaultRole = RtcRole.PUBLISHER;
+        let tokenA = generateAccessToken(channelName, defaultRole, starterDefaultUID);
+        let tokenB = generateAccessToken(channelName, defaultRole, opponentDefaultUID);
         let musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
