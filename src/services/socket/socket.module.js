@@ -87,7 +87,6 @@ class SocketHandler {
         let playerB = userList[randomIndexB];
         userList.splice(randomIndexB, 1);
         console.log("update lobbyUserList", userList);
-        console.log('channelName is ', channelName);
         this.lobbyUserList = userList;
 
         let starter = selectRandomUser(playerA, playerB);
@@ -96,6 +95,8 @@ class SocketHandler {
         // start the battle
         clearInterval(this.timeoutId);
         let channelName = generateRandomChannelName();
+        console.log('channelName is ', channelName);
+
         let defaultRole = RtcRole.PUBLISHER;
         let tokenA = generateAccessToken(channelName, defaultRole, starterDefaultUID);
         let tokenB = generateAccessToken(channelName, defaultRole, opponentDefaultUID);
