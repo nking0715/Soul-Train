@@ -1,6 +1,6 @@
 const { getProfile } = require('../../controllers/profileController');
 const { generateRandomChannelName, generateAccessToken } = require('../../helper/agora.helper');
-const { selectRandomUser } = require('../../helper/socket.helper');
+const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
 
@@ -94,17 +94,19 @@ class SocketHandler {
         const channelName = generateRandomChannelName();
         const tokenA = generateAccessToken(channelName, 0);
         const tokenB = generateAccessToken(channelName, 1);
-
+        const musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
           playerA,
           playerB,
+          musicURL,
           channelName,
           starter,
           tokenA,
           tokenB
         }
 
+        console.log("musicURL is ", musicURL);
         this.rooms[this.roomId++] = room;
 
         console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
