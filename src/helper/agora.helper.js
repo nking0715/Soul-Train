@@ -21,6 +21,8 @@ exports.generateAccessToken = (channelName, role, uid) => {
     const privilegeExpireTime = currentTime + expireTime;
 
     // Build and return the token
+    console.log("token is ", APP_ID, channelName, uid);
+
     const token = RtcTokenBuilder.buildTokenWithUid(APP_ID, APP_CERTIFICATE, channelName, uid, role, privilegeExpireTime);
     return token;
 };
