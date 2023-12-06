@@ -77,8 +77,6 @@ class SocketHandler {
       this.handleCleanLobby();
       let starterDefaultUID = 1;
       let opponentDefaultUID = 2;
-      let channelName = generateRandomChannelName();
-      console.log('channelName is ', channelName);
       let userList = this.lobbyUserList;
       console.log("this.lobbyUserList is ", this.lobbyUserList);
       while (this.lobbyUserList.length >= 2) {
@@ -95,11 +93,11 @@ class SocketHandler {
         // start the battle
         clearInterval(this.timeoutId);
         let channelName = generateRandomChannelName();
-        console.log('channelName is ', channelName);
 
         let role = RtcRole.PUBLISHER;
         let tokenA = generateAccessToken(channelName, role, starterDefaultUID);
         let tokenB = generateAccessToken(channelName, role, opponentDefaultUID);
+        console.log('channelName is ', channelName);
         console.log('tokenA is ', tokenA);
         console.log('tokenB is ', tokenB);
 
