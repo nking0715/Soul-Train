@@ -75,8 +75,8 @@ class SocketHandler {
     try {
       // clean lobbyUserList before create rooms.
       this.handleCleanLobby();
-      let starterDefaultUID = 0;
-      let opponentDefaultUID = 0;
+      let starterDefaultUID = 1;
+      let opponentDefaultUID = 2;
       let userList = this.lobbyUserList;
       console.log("this.lobbyUserList is ", this.lobbyUserList);
       while (this.lobbyUserList.length >= 2) {
@@ -95,10 +95,9 @@ class SocketHandler {
         let channelName = generateRandomChannelName();
         console.log('channelName is ', channelName);
 
-        let roleA = RtcRole.PUBLISHER;
-        let roleB = RtcRole.SUBSCRIBER;
-        let tokenA = generateAccessToken(channelName, roleA, starterDefaultUID);
-        let tokenB = generateAccessToken(channelName, roleB, opponentDefaultUID);
+        let role = RtcRole.PUBLISHER;
+        let tokenA = generateAccessToken(channelName, role, starterDefaultUID);
+        let tokenB = generateAccessToken(channelName, role, opponentDefaultUID);
         let musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
