@@ -95,7 +95,7 @@ class SocketHandler {
         let channelName = generateRandomChannelName();
         console.log('channelName is ', channelName);
 
-        let role = RtcRole.PUBLISHER;
+        let roleA = RtcRole.PUBLISHER;
         let roleB = RtcRole.SUBSCRIBER;
         let tokenA = generateAccessToken(channelName, roleA, starterDefaultUID);
         let tokenB = generateAccessToken(channelName, roleB, opponentDefaultUID);
