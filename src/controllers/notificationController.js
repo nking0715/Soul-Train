@@ -90,13 +90,7 @@ exports.getListOfNotifications = async (req, res) => {
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
       .select('data notification');
-    // Remove userId from usersToRead for each notification
-    await Promise.all(notifications.map(notification => {
-      return Notification.updateOne(
-        { _id: notification._id },
-        { $pull: { usersToRead: userId } }
-      );
-    }));
+    
     return res.status(200).json({ success: true, notifications });
   } catch (error) {
     console.log('Error in getListOfNotifications: ', error.message);
