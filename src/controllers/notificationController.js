@@ -68,8 +68,15 @@ exports.updateNotification = async (req, res) => {
 exports.getBadgeStatus = async (req, res) => {
   try {
     const userId = req.user.id;
+    const checkPoint = req.query.time;
+    // Convert checkPoint to a Date object if it's not already
+    const checkPointDate = new Date(checkPoint);
+
     // Search for notifications where userId is in usersToRead
-    const notifications = await Notification.find({ usersToRead: { $in: [userId] } });
+    const notifications = await Notification.find({
+      usersToRead: { $in: [userId] },
+      createdAt: { $gt: checkPointDate }
+    });
 
     // Check if any notifications are found
     const hasUnreadNotifications = notifications.length > 0;
@@ -90,7 +97,7 @@ exports.getListOfNotifications = async (req, res) => {
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
       .select('data notification');
-    
+
     return res.status(200).json({ success: true, notifications });
   } catch (error) {
     console.log('Error in getListOfNotifications: ', error.message);
