@@ -70,7 +70,14 @@ exports.getBadgeStatus = async (req, res) => {
     const userId = req.user.id;
     const checkPoint = req.query.time;
     // Convert checkPoint to a Date object if it's not already
-    const checkPointDate = new Date(checkPoint);
+    let checkPointDate;
+
+    if (isEmpty(checkPoint)) {
+      checkPointDate = new Date('2023-01-01T00:00:00.000Z');
+    } else {
+      // Otherwise, convert checkPoint to a Date object
+      checkPointDate = new Date(checkPoint);
+    }
 
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({
@@ -96,7 +103,8 @@ exports.getListOfNotifications = async (req, res) => {
     const userId = req.user.id;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
-      .select('data notification');
+      .select('data notification')
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({ success: true, notifications });
   } catch (error) {
