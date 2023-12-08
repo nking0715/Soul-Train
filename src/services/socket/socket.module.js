@@ -1,12 +1,10 @@
-const { getProfile } = require('../../controllers/profileController');
-const { generateRandomChannelName, generateAccessToken } = require('../../helper/agora.helper');
+const { generateRandomChannelName, generateAccessToken, getRequireResourceId } = require('../../helper/agora.helper');
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
-const { RtcTokenBuilder, RtcRole } = require('agora-token');
+const { RtcRole } = require('agora-token');
 
 class SocketHandler {
-
   constructor(io) {
     this.io = io;
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
@@ -15,8 +13,10 @@ class SocketHandler {
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
-    this.loopTime = 16000;
-    setInterval(this.handleCreateRooms.bind(this), this.loopTime);
+    this.loopCreateTime = 15000;
+    this.loopLiveBattleTime = 5000;
+    setInterval(this.handleLiveBattle.bind(this), this.loopLiveBattleTime);
+    setInterval(this.handleCreateRooms.bind(this), this.loopCreateTime);
     io.on("connection", (socket) => {
       this.handleConnection(socket);
     });
@@ -71,6 +71,63 @@ class SocketHandler {
     }
   }
 
+  handleLiveBattle() {
+    const currentTime = new Date();
+
+    for (var i = 0; i < this.roomId; i++) {
+      let roomInfo = this.rooms[i];
+      const timeDifferenceInSeconds = Math.floor((currentTime - roomInfo.createdTime) / 1000);
+      if (timeDifferenceInSeconds == 15) { // Get ready point -- Live Battle
+        this.users[roomInfo.playerA].socket.emit(SOCKET_IDS.GET_READY_FRIST_DANCER, {
+          time: 5000
+        });
+        this.users[roomInfo.playerB].socket.emit(SOCKET_IDS.GET_READY_FRIST_DANCER, {
+          time: 5000
+        });
+      }
+
+      // after 5 seconds first user will start first
+      if (timeDifferenceInSeconds == 20) { // first user start battle -- Live Battle
+        this.users[roomInfo.playerA].socket.emit(SOCKET_IDS.START_FRIST_DANCER, {
+          time: 30000
+        });
+        this.users[roomInfo.playerB].socket.emit(SOCKET_IDS.START_FRIST_DANCER, {
+          time: 30000
+        });
+      }
+
+      // after 30 seconds first user battle finished, it means Get ready point for second user.
+      if (timeDifferenceInSeconds == 50) { // Get ready point -- Live Battle
+        this.users[roomInfo.playerA].socket.emit(SOCKET_IDS.GET_READY_SECOND_DANCER, {
+          time: 5000
+        });
+        this.users[roomInfo.playerB].socket.emit(SOCKET_IDS.GET_READY_SECOND_DANCER, {
+          time: 5000
+        });
+      }
+
+      // after 5 seconds second user will start then
+      if (timeDifferenceInSeconds == 55) { // second user start battle -- Live Battle
+        this.users[roomInfo.playerA].socket.emit(SOCKET_IDS.START_SECOND_DANCER, {
+          time: 30000
+        });
+        this.users[roomInfo.playerB].socket.emit(SOCKET_IDS.START_SECOND_DANCER, {
+          time: 30000
+        });
+      }
+
+      // after 30 seconds second user battle finished, it means already finished the whole battle
+      if (timeDifferenceInSeconds == 85) { // Get ready point -- Live Battle
+        this.users[roomInfo.playerA].socket.emit(SOCKET_IDS.FINISH_BATTLE, {
+          time: 5000
+        });
+        this.users[roomInfo.playerB].socket.emit(SOCKET_IDS.FINISH_BATTLE, {
+          time: 5000
+        });
+      }
+    }
+  }
+
   handleCreateRooms() {
     try {
       // clean lobbyUserList before create rooms.
@@ -111,11 +168,11 @@ class SocketHandler {
           musicURL,
           channelName,
           starter,
+          createdTime: new Date(),
           tokenA, // starter token
           tokenB  // opponent token
         }
 
-        console.log("musicURL is ", musicURL);
         this.rooms[this.roomId++] = room;
 
         console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
@@ -163,7 +220,6 @@ class SocketHandler {
       // Get the current time
       const enterLobbyTime = new Date();
       // validate of this userId is not duplicated
-      console.log('old.lobbyUserList ', this.lobbyUserList, userId);
       if (!this.lobbyUserList.includes(userId)) {
         this.lobbyUserList.push(userId);
       } else {
@@ -294,7 +350,6 @@ class SocketHandler {
       console.log('handleDisconnect error is ', e);
     }
   }
-
 
   handleDisconnect(socket) {
     try {

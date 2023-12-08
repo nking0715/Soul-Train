@@ -25,8 +25,63 @@ socket.on(SOCKET_PROC.OPPONENT_DISCONNECTED, (data) => {
       time -= 1000;
     }
   }, 1000);
-
 });
+
+
+socket.on(SOCKET_PROC.START_FRIST_DANCER, (data) => {
+  let time = data.time;
+  const timerElement = document.getElementById('timer');
+  clearInterval(countdownInterval);
+  let countdownInterval3 = setInterval(() => {
+    timerElement.innerText = `First user is dancing now: ${time / 1000} seconds`;
+    if (time <= 0) {
+      clearInterval(countdownInterval3); // Stop the countdown when time reaches 0
+      // timerElement.innerText = 'Are you ready to start?';
+    } else {
+      time -= 1000;
+    }
+  }, 1000);
+})
+
+socket.on(SOCKET_PROC.START_SECOND_DANCER, (data) => {
+  let time = data.time;
+  const timerElement = document.getElementById('timer');
+  clearInterval(countdownInterval);
+  let countdownInterval1 = setInterval(() => {
+    timerElement.innerText = `Second user is dancing now: ${time / 1000} seconds`;
+    console.log('ddd time is ', time);
+    if (time <= 0) {
+      clearInterval(countdownInterval1); // Stop the countdown when time reaches 0
+      timerElement.innerText = 'Successfully finished the battle.';
+    } else {
+      time -= 1000;
+    }
+  }, 1000);
+})
+
+socket.on(SOCKET_PROC.GET_READY_SECOND_DANCER, (data) => {
+  let time = data.time;
+  const timerElement = document.getElementById('timer');
+  clearInterval(countdownInterval);
+  let countdownInterval2 = setInterval(() => {
+    timerElement.innerText = `Second user will start after ${time / 1000} seconds`;
+    if (time <= 0) {
+      clearInterval(countdownInterval2); // Stop the countdown when time reaches 0
+      // timerElement.innerText = 'Are you ready to start?';
+    } else {
+      time -= 1000;
+    }
+  }, 1000);
+})
+
+socket.on(SOCKET_PROC.FINISH_BATTLE, (data) => {
+  const timerElement = document.getElementById('timer');
+  clearInterval(countdownInterval);
+  timerElement.innerText = `Successfully finished the battle.`;
+  clearInterval(countdownInterval);
+})
+
+
 
 const reconnect = () => {
   const userId = document.getElementById("input").value;
@@ -112,9 +167,86 @@ const enter = () => {
     }, 1000);
   });
 
+  socket.on(SOCKET_PROC.GET_READY_FRIST_DANCER, (data) => {
+    let time = data.time;
+    const timerElement = document.getElementById('timer');
+    countdownInterval = setInterval(() => {
+      timerElement.innerText = `First user will start after ${time / 1000} seconds`;
+      if (time <= 0) {
+        clearInterval(countdownInterval); // Stop the countdown when time reaches 0
+        // timerElement.innerText = 'Are you ready to start?';
+      } else {
+        time -= 1000;
+      }
+    }, 1000);
+  })
+
+  socket.on(SOCKET_PROC.GET_READY_SECOND_DANCER, (data) => {
+    let time = data.time;
+    const timerElement = document.getElementById('timer');
+    countdownInterval = setInterval(() => {
+      timerElement.innerText = `Second user will start after ${time / 1000} seconds`;
+      if (time <= 0) {
+        clearInterval(countdownInterval); // Stop the countdown when time reaches 0
+        // timerElement.innerText = 'Are you ready to start?';
+      } else {
+        time -= 1000;
+      }
+    }, 1000);
+  })
+
+
+  socket.on(SOCKET_PROC.START_FRIST_DANCER, (data) => {
+    let time = data.time;
+    const timerElement = document.getElementById('timer');
+    countdownInterval = setInterval(() => {
+      timerElement.innerText = `First user is dancing now: ${time / 1000} seconds`;
+      if (time <= 0) {
+        clearInterval(countdownInterval); // Stop the countdown when time reaches 0
+        // timerElement.innerText = 'Are you ready to start?';
+      } else {
+        time -= 1000;
+      }
+    }, 1000);
+  })
+
+  socket.on(SOCKET_PROC.START_SECOND_DANCER, (data) => {
+    let time = data.time;
+    const timerElement = document.getElementById('timer');
+    countdownInterval = setInterval(() => {
+      timerElement.innerText = `Second user is dancing now: ${time / 1000} seconds`;
+      if (time <= 0) {
+        clearInterval(countdownInterval); // Stop the countdown when time reaches 0
+        // timerElement.innerText = 'Are you ready to start?';
+      } else {
+        time -= 1000;
+      }
+    }, 1000);
+  })
 
   socket.on(SOCKET_PROC.GET_BATTLE_INFO, (data) => {
     clearInterval(countdownInterval);
+    let time = 0;
+    let countdownInterval4 = setInterval(() => {
+      if (time >= 0 && time <= 5000) {
+        timerElement.innerText = `Displaying the opponent for 5 seconds: ${time / 1000} seconds`;
+      }
+
+      if (time >= 5000 && time <= 10000) {
+        timerElement.innerText = `Displaying the role for 5 seconds: ${(time - 5000) / 1000} seconds`;
+      }
+
+      if (time >= 10000 && time <= 15000) {
+        timerElement.innerText = `Displaying the spin for 5 seconds: ${(time - 10000) / 1000} seconds`;
+      }
+
+      if (time >= 15000) {
+        clearInterval(countdownInterval4); // Stop the countdown when time reaches 0
+        // timerElement.innerText = 'Are you ready to start?';
+      } else {
+        time += 1000;
+      }
+    }, 1000);
 
     const starterElement = document.getElementById('starter');
     const timerElement = document.getElementById('timer');
