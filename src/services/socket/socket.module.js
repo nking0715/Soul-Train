@@ -1,4 +1,4 @@
-const { generateRandomChannelName, generateAccessToken, getRequireResourceId } = require('../../helper/agora.helper');
+const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording } = require('../../helper/agora.helper');
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
@@ -10,6 +10,7 @@ class SocketHandler {
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
     this.rooms = {};
     this.lobbyUserList = [];
+    this.channelList = [];
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
@@ -41,6 +42,11 @@ class SocketHandler {
     socket.on(SOCKET_IDS.RECONNECT, data => {
       this.handleReConnect(socket, data);
     });
+
+    socket.on(SOCKET_IDS.START_RECORDING, data => {
+      this.handleStartRecording(socket, data);
+    });
+
 
     // user leave event 
     socket.on(SOCKET_IDS.USER_DISCONNECT, data => {
@@ -128,14 +134,42 @@ class SocketHandler {
     }
   }
 
+  handleStartRecording(socket, data) {
+    try {
+      const currentSocketId = socket.id;
+      const { channelName } = data;
+      if (!this.channelList.includes(channelName)) {
+        this.channelList.push(channelName);
+      } else {
+        console.log('channel is already started the recording', channelName);
+        return;
+      }
+
+      let recordingDefaultUID = 3;
+      let recordingToken = generateAccessToken(channelName, RtcRole.SUBSCRIBER, recordingDefaultUID);
+      getRequireResourceId(channelName, recordingDefaultUID).then(resourceId => {
+        startRecording(resourceId, channelName, recordingDefaultUID, recordingToken).then(res => {
+          console.log("start recording data is ", res);
+        });
+      });
+    } catch (e) {
+      console.log('handleCreateRooms error is ', e);
+    }
+
+  }
+
   handleCreateRooms() {
     try {
       // clean lobbyUserList before create rooms.
       this.handleCleanLobby();
       let starterDefaultUID = 1;
       let opponentDefaultUID = 2;
+
       let userList = this.lobbyUserList;
       console.log("this.lobbyUserList is ", this.lobbyUserList);
+
+      // recording feature
+
       while (this.lobbyUserList.length >= 2) {
         let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
         let playerA = userList[randomIndexA];
@@ -155,9 +189,6 @@ class SocketHandler {
         let tokenA = generateAccessToken(channelName, role, starterDefaultUID);
         let tokenB = generateAccessToken(channelName, role, opponentDefaultUID);
         console.log('channelName is ', channelName);
-        console.log('tokenA is ', tokenA);
-        console.log('tokenB is ', tokenB);
-
         let musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
@@ -196,6 +227,8 @@ class SocketHandler {
           opponentArtistName: this.users[playerA].userArtistName,
           opponentProfileURL: this.users[playerA].userProfileURL
         });
+
+
 
         this.users[playerA].roomId = room.roomId;
         this.users[playerB].roomId = room.roomId;
