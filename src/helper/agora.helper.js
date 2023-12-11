@@ -88,7 +88,7 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
             }
         } catch (error) {
             console.error('Error:', error.message);
-            reject(error);
+            reject(error.message);
         }
     });
 };
