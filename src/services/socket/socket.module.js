@@ -138,6 +138,7 @@ class SocketHandler {
     try {
       const currentSocketId = socket.id;
       const { channelName } = data;
+      console.log('startRecording api');
       if (!this.channelList.includes(channelName)) {
         this.channelList.push(channelName);
       } else {
