@@ -31,7 +31,7 @@ async function moderateImage(filePath) {
   const params = {
     Image: {
       S3Object: {
-        Bucket: 'soul-train-bucket',
+        Bucket: process.env.AWS_BUCKET_NAME,
         Name: filePath,
       },
     },
@@ -50,10 +50,11 @@ async function moderateImage(filePath) {
 }
 
 async function moderateVideo(filePath) {
+  console.log('filePath: ', filePath);
   const params = {
     Video: {
       S3Object: {
-        Bucket: 'soul-train-bucket',
+        Bucket: process.env.AWS_BUCKET_NAME,
         Name: filePath,
       },
     },
@@ -62,20 +63,23 @@ async function moderateVideo(filePath) {
 
   const { JobId } = await rekognition.startContentModeration(params).promise();
   console.log(JobId);
+  const maxAttempts = 10;
+  let attempts = 0;
   let moderationResponse;
   do {
     await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 5 seconds
     moderationResponse = await rekognition.getContentModeration({ JobId }).promise();
     console.log(moderationResponse);
-  } while (moderationResponse.JobStatus === 'IN_PROGRESS');
+    attempts++;
+  } while (moderationResponse.JobStatus === 'IN_PROGRESS' && attempts < maxAttempts);
 
   console.log(moderationResponse);
-  if (moderationResponse.JobStatus === 'FAILED') {
+  if (moderationResponse.JobStatus === 'FAILED' || attempts >= maxAttempts) {
     return { success: false, reason: 'Moderation failed' };
   }
 
   const labels = moderationResponse.ModerationLabels.map((label) => label.ParentName).filter(Boolean);
   const foundForbiddenLabels = labels.filter((label) => forbiddenLabels.includes(label));
-  console.log("foundForbiddenLabels: ",foundForbiddenLabels);
+  console.log("foundForbiddenLabels: ", foundForbiddenLabels);
   return { success: foundForbiddenLabels.length === 0, reason: foundForbiddenLabels };
 }
