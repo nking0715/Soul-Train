@@ -170,16 +170,6 @@ class SocketHandler {
       console.log("this.lobbyUserList is ", this.lobbyUserList);
 
       // recording feature
-      let recordingDefaultUID = 4294967295;
-      let recordingToken = generateAccessToken('3NwCZv06EsPy', RtcRole.SUBSCRIBER, recordingDefaultUID);
-      getRequireResourceId('3NwCZv06EsPy', recordingDefaultUID).then(resourceId => {
-        console.log("resource id is ", resourceId);
-        console.log("recordingToken is ", recordingToken);
-        startRecording(resourceId, '3NwCZv06EsPy', recordingDefaultUID, recordingToken).then(res => {
-          console.log("start recording data is ", res);
-        });
-      });
-
       while (this.lobbyUserList.length >= 2) {
         let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
         let playerA = userList[randomIndexA];
