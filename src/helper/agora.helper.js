@@ -52,7 +52,7 @@ exports.getRequireResourceId = (channelName, uid) => {
                 reject('No data received');
             }
         } catch (error) {
-            console.error('Error acquiring resource ID:', error);
+            console.error('Error acquiring resource ID:', error.message);
             reject(error);
         }
     });
