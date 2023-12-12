@@ -29,18 +29,78 @@ exports.uploadFileToS3 = async (file, newFileName, filepath) => {
     return { location: uploadedFile.Location, newFileName };
 }
 
+exports.uploadFileToS3Multipart = async (file, newFileName) => {
+    // Step 1: Initiate multipart upload
+    const createUploadResponse = await s3.createMultipartUpload({
+        Bucket: `${process.env.AWS_BUCKET_NAME}`,
+        Key: newFileName,
+        ContentType: file.mimetype,
+        ACL: 'public-read'
+    }).promise();
+
+    const uploadId = createUploadResponse.UploadId;
+
+    try {
+        // Step 2: Upload parts
+        const partSize = 5 * 1024 * 1024; // 1 MB per part
+        const parts = splitFileIntoParts(file.data, partSize);
+        const uploadPromises = parts.map((part, index) => uploadPart(s3, part, index + 1, uploadId, newFileName));
+
+        const uploadedParts = await Promise.all(uploadPromises);
+
+        // Step 3: Complete multipart upload
+        const completeUploadResponse = await s3.completeMultipartUpload({
+            Bucket: `${process.env.AWS_BUCKET_NAME}`,
+            Key: newFileName,
+            UploadId: uploadId,
+            MultipartUpload: { Parts: uploadedParts }
+        }).promise();
+
+        console.log('completeUploadResponse: ', completeUploadResponse);
+
+        return { location: completeUploadResponse.Location, newFileName };
+    } catch (error) {
+        // Step 4: Abort multipart upload on failure
+        await s3.abortMultipartUpload({
+            Bucket: `${process.env.AWS_BUCKET_NAME}`,
+            Key: newFileName,
+            UploadId: uploadId
+        }).promise();
+        throw error;
+    }
+};
+
+const uploadPart = async (s3, partData, partNumber, uploadId, fileName) => {
+    const response = await s3.uploadPart({
+        Bucket: `${process.env.AWS_BUCKET_NAME}`,
+        Key: fileName,
+        PartNumber: partNumber,
+        UploadId: uploadId,
+        Body: partData
+    }).promise();
+
+    return { ETag: response.ETag, PartNumber: partNumber };
+}
+
+const splitFileIntoParts = (fileData, partSize) => {
+    const parts = [];
+    for (let i = 0; i < fileData.length; i += partSize) {
+        const part = fileData.slice(i, i + partSize);
+        parts.push(part);
+    }
+    return parts;
+}
+
+
 exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
     const filePath = "Post";
     const newFileName = keyPrefix + '_thumbnail.jpg';
-    const parsedUrl = new URL(s3Url);
-    const pathSegments = parsedUrl.pathname.split('/');
-    const key = pathSegments.pop();
     const objectData = await s3.getObject({
-        Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
-        Key: key
+        Bucket: `${process.env.AWS_BUCKET_NAME}`,
+        Key: s3Url
     }).promise();
     const resizedBuffer = await sharp(objectData.Body)
-        .resize(300, 180)
+        .resize(null, 180)
         .toBuffer();
     const promise = s3.upload({
         Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
@@ -56,9 +116,7 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
 
 exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
     try {
-        const url = new URL(videoPath);
-        const pathSegments = url.pathname.split('/');
-        const key = pathSegments.pop();
+        console.log('videoPath: ', videoPath);
         const filePath = 'Post';
         const newFileName = keyPrefix + '_thumbnail.jpg';
 
@@ -67,8 +125,8 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
 
         // Get the video stream from S3
         const videoStream = s3.getObject({
-            Bucket: `${process.env.AWS_BUCKET_NAME}/${filePath}`,
-            Key: key
+            Bucket: `${process.env.AWS_BUCKET_NAME}`,
+            Key: videoPath
         }).createReadStream();
         const tempVideoPath = tmp.tmpNameSync({ postfix: '.mp4' });
         await pipeline(videoStream, fs.createWriteStream(tempVideoPath));
@@ -77,9 +135,9 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         await new Promise((resolve, reject) => {
             ffmpeg(tempVideoPath)
                 .screenshots({
-                    timestamps: [1],
+                    timestamps: ['50%'],
                     filename: tempFilePath,
-                    size: '320x180'
+                    size: '?x180'
                 })
                 .on('end', () => {
                     console.log('Thumbnail generation finished.');

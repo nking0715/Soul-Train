@@ -4,7 +4,7 @@ const Post = require('../models/post');
 const Comment = require('../models/comment');
 const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
-const { uploadFileToS3, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
+const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
 
@@ -27,7 +27,7 @@ const imageMimeToExt = {
     // ... add other types as needed
 };
 
-exports.createPost = async (req, res) => {
+exports.createPost = async (req, res) => {    
     try {
         let contentLink, rekognitionResult = '';
         const bucketPath = "Post";
@@ -73,17 +73,20 @@ exports.createPost = async (req, res) => {
                         return res.status(400).json({ success: false, message: "File size exceeds limit." });
                     }
                     const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
-                    const newFileName = key_prefix + fileExtension;
-                    const file_on_s3 = await uploadFileToS3(uploadedContent, newFileName, bucketPath);
+                    const newFileName = bucketPath + '/' + key_prefix + fileExtension;                    
+                    const file_on_s3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+                    console.time('processDuration');                    
                     contentLink = file_on_s3.location;
-                    console.log(contentType);
-                    rekognitionResult = await moderateContent(`${bucketPath}/${file_on_s3.newFileName}`, contentType);
+                    console.log(contentLink);
+                    rekognitionResult = await moderateContent(newFileName, contentType);
+                    console.timeEnd('processDuration');
                     let thumbnailurl = '';
                     if (contentType == 'image') {
-                        thumbnailurl = (await uploadImageThumbnailToS3(contentLink, key_prefix)).Location;
+                        thumbnailurl = (await uploadImageThumbnailToS3(newFileName, key_prefix)).Location;
                     } else if (contentType == 'video') {
-                        thumbnailurl = await uploadVideoThumbnailToS3(contentLink, key_prefix);
+                        thumbnailurl = await uploadVideoThumbnailToS3(newFileName, key_prefix);
                     }
+                    
                     const newAsset = new Asset({
                         userId: userId,
                         url: contentLink,
@@ -199,7 +202,7 @@ exports.createPost = async (req, res) => {
                         saveList: 0
                     }
                 }
-            ]);
+            ]);            
             return res.status(200).json({ success: true, first50Posts: posts });
         } else {
             return res.status(400).json({ success: false, message: "Invalid Request!" })
