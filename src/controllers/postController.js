@@ -2,11 +2,14 @@ const User = require('../models/user');
 const Asset = require('../models/asset');
 const Post = require('../models/post');
 const Comment = require('../models/comment');
+const FcmToken = require('../models/fcmToken');
+const Notification = require('../models/notification');
 const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
 const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
+const { sendPushNotification } = require('../utils/notification');
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
@@ -52,7 +55,7 @@ const processUploadedContent = async (uploadedContent, userId) => {
     const fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
     const thumbnailUrl = await uploadThumbnailToS3(newFileName, keyPrefix, contentType);
 
-    return { fileOnS3, thumbnailUrl, rekognitionResult, contentType };
+    return { fileOnS3, thumbnailUrl, newFileName, contentType };
 }
 
 // Additional function for thumbnail uploading
@@ -157,6 +160,7 @@ const fetchFirst50Posts = async (userId) => {
 
 exports.createPost = async (req, res) => {
     try {
+        console.time('processDuration');
         const userId = req.user.id;
         const { tags, caption } = req.body;
         const files = req.files;
@@ -171,38 +175,79 @@ exports.createPost = async (req, res) => {
         }
 
         let assets = [];
+        let fileNames = [];
         const uploadedContents = Array.isArray(files.files) ? files.files : [files.files];
 
         for (const uploadedContent of uploadedContents) {
-            try {
-                const { fileOnS3, thumbnailUrl, rekognitionResult, contentType } = await processUploadedContent(uploadedContent, userId);
 
-                const newAsset = new Asset({
-                    userId: userId,
-                    url: fileOnS3.location,
-                    thumbnail: thumbnailUrl,
-                    category: "post",
-                    contentType: contentType,
-                    blocked: rekognitionResult.success ? false : true
-                })
-                await newAsset.save();
-                assets.push(newAsset);
+            const { fileOnS3, thumbnailUrl, newFileName, contentType } = await processUploadedContent(uploadedContent, userId);
 
-                if (rekognitionResult.success == false) {
-                    console.log(rekognitionResult.reason);
-                    return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
-                }
-            } catch (error) {
-                console.log("upload content Error ", error)
-                return res.status(500).json({ success: false, message: error.message });
-            }
+
+            const newAsset = new Asset({
+                userId: userId,
+                url: fileOnS3.location,
+                thumbnail: thumbnailUrl,
+                category: "post",
+                contentType: contentType,
+                // blocked: rekognitionResult.success ? false : true
+            })
+            await newAsset.save();
+            assets.push(newAsset);
+            fileNames.push(newFileName);
+
+            /* if (rekognitionResult.success == false) {
+                console.log(rekognitionResult.reason);
+                return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+            } */
         }
 
         const newPost = new Post({ author: userId, assets, tags, caption, });
         await newPost.save();
 
-        const first50Posts = await fetchFirst50Posts(userId);
-        return res.status(200).json({ success: true, first50Posts });
+        res.status(200).json({ success: true, newPost });
+        console.timeEnd('processDuration');
+        // Start content moderation for all assets simultaneously using newFileNames
+        const moderationResults = await Promise.all(
+            fileNames.map((newFileName, index) =>
+                moderateContent(newFileName, assets[index].contentType))
+        );
+
+        // Check if any content moderation failed
+        let postBlocked = moderationResults.some(result => !result.success);
+
+        // Update each asset with the moderation result
+        moderationResults.forEach((result, index) => {
+            Asset.findByIdAndUpdate(assets[index]._id, { blocked: !result.success }).exec();
+        });
+
+        if (postBlocked) {
+            // Update the post's blocked status if any moderation failed
+            await Post.findByIdAndUpdate(newPost._id, { blocked: true });
+            const fcmToken = await FcmToken.findOne({ userId: userId });
+            if (!isEmpty(fcmToken)) {
+                const data = {
+                    type: 'Post Flagged',
+                    postId: newPost._id.toString()
+                }
+                const notification = {
+                    title: 'The post was flagged as inappropriate.',
+                    body: `Your post was rejected due to inappropriate content.`
+                }
+                const newNotification = new Notification({
+                    usersToRead: [userId],
+                    data: data,
+                    notification: notification
+                });
+                data.notificationId = newNotification._id.toString();
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                if (!sendNotificationResult) {
+                    return res.status(500).json({ success: false, message: 'Notification was not sent.' });
+                }
+                await newNotification.save();
+            }
+        } else {
+            await Post.findByIdAndUpdate(newPost._id, { blocked: false });
+        }
 
     } catch (error) {
         console.log("upload content Error ", error)
@@ -227,6 +272,7 @@ exports.getPost = async (req, res) => {
                     $expr: {
                         $and: [
                             { $eq: [{ $toString: "$author" }, userToSearch] },
+                            { $ne: ["$blocked", true] }
                         ]
                     }
                 }
@@ -505,6 +551,7 @@ exports.getSavedPost = async (req, res) => {
                     $expr: {
                         $and: [
                             { $in: [{ $toObjectId: userId }, "$saveList"] },
+                            { $ne: ["$blocked", true] }
                         ]
                     }
                 }
@@ -647,7 +694,8 @@ exports.discoverPosts = async (req, res) => {
             {
                 $match: {
                     'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
-                    author: { $nin: followedUserIds }, // Original author filtering logic                    
+                    author: { $nin: followedUserIds }, // Original author filtering logic         
+                    blocked: { $ne: true }
                 }
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
@@ -765,7 +813,7 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { author: { $in: followedUserIds } } },
+            { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents

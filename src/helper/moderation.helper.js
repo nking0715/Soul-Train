@@ -65,14 +65,12 @@ async function moderateVideo(filePath) {
   const maxAttempts = 5;
   let attempts = 0;
   let moderationResponse;
-  console.time('processDuration');
   do {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
     moderationResponse = await rekognition.getContentModeration({ JobId }).promise();
     console.log(moderationResponse);
     attempts++;
-  } while (moderationResponse.JobStatus === 'IN_PROGRESS' && attempts < maxAttempts);
-  console.timeEnd('processDuration');
+  } while (moderationResponse.JobStatus === 'IN_PROGRESS' && attempts < maxAttempts);  
   console.log(moderationResponse);
   if (moderationResponse.JobStatus === 'FAILED' || attempts >= maxAttempts) {
     return { success: false, reason: 'Moderation failed' };
