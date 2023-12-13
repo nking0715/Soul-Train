@@ -1,12 +1,14 @@
 const User = require('../models/user');
 const Asset = require('../models/asset');
+const FcmToken = require('../models/fcmToken');
+const Notification = require('../models/notification');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
-
+const { sendPushNotification } = require('../utils/notification');
 
 const videoMimeToExt = {
     'video/mp4': '.mp4',
@@ -369,10 +371,31 @@ exports.followManage = async (req, res) => {
             const dancerIndex = dancer.follower.indexOf(userId)
             dancer.follower.splice(dancerIndex, 1);
         } else {
-            user.following.push(dancerId)
-            dancer.follower.push(userId)
+            user.following.push(dancerId);
+            dancer.follower.push(userId);
+            const fcmToken = await FcmToken.findOne({ userId: dancerId });
+            if (!isEmpty(fcmToken)) {
+                const data = {
+                    type: 'Follow User',
+                    userId: dancerId
+                }
+                const notification = {
+                    title: 'A user followed you.',
+                    body: `${dancer.artistName} started to follow you.`
+                }
+                const newNotification = new Notification({
+                    usersToRead: [dancerId],
+                    data: data,
+                    notification: notification
+                });
+                data.notificationId = newNotification._id.toString();
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                if (!sendNotificationResult) {
+                    return res.status(500).json({ success: false, message: 'Notification was not sent.' });
+                }
+                await newNotification.save();
+            }
         }
-
         await user.save();
         await dancer.save();
 
