@@ -160,16 +160,28 @@ exports.deleteChannel = async (req, res) => {
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
     try {
-        const io = socketManager.getIO();
-        io.emit('content-moderation', {
-            contentUrl,
-            status,
-            userId,
-            addedAt,
-            contentId,
-            reason,
-            metaData
-        });
+        /* const fcmToken = await FcmToken.findOne({ userId: userId });
+        if (!isEmpty(fcmToken)) {
+            const data = {
+                type: 'Post Flagged',
+                postId: newPost._id.toString()
+            }
+            const notification = {
+                title: 'The post was flagged as inappropriate.',
+                body: `Your post was rejected due to inappropriate content.`
+            }
+            const newNotification = new Notification({
+                usersToRead: [userId],
+                data: data,
+                notification: notification
+            });
+            data.notificationId = newNotification._id.toString();
+            const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+            if (!sendNotificationResult) {
+                return res.status(500).json({ success: false, message: 'Notification was not sent.' });
+            }
+            await newNotification.save();
+        } */
         return res.status(200).json({ success: true, message: 'Webhook processed' });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
