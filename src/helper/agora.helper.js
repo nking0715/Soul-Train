@@ -7,6 +7,10 @@ const APP_ID = process.env.APP_ID;
 const APP_CERTIFICATE = process.env.APP_CERTIFICATE;
 const CUSTONER_KEY = process.env.CUSTONER_KEY;
 const CUSTONER_SECRET = process.env.CUSTONER_SECRET;
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
+const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
+const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME;
+
 
 exports.generateRandomChannelName = (length = 12) => {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -53,10 +57,32 @@ exports.getRequireResourceId = (channelName, uid) => {
             }
         } catch (error) {
             console.error('Error acquiring resource ID:', error.message);
-            reject(error);
+            reject(error.message);
         }
     });
 };
+
+exports.getRecordingStatus = (resourceid, sid, mode) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const response = await axios.get(`https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceid}/sid/${sid}/mode/${mode}/query`, {
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`,
+                    'Content-Type': 'application/json;charset=utf-8'
+                }
+            });
+            if (response.data) {
+                resolve(response.data); // Resolves with the resource ID
+            } else {
+                reject('No recording status');
+            }
+        } catch (error) {
+            console.error('Error recording status:', error.message);
+            reject(error.message);
+        }
+    });
+};
+
 
 exports.startRecording = (resourceId, channelName, uid, token) => {
     return new Promise(async (resolve, reject) => {
@@ -65,11 +91,34 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {
-            cname: channelName,
-            uid: uid,
-            clientRequest: {
-                token: token,
-                // ... additional request data
+            "cname": channelName,
+            "uid": uid.toString(),
+            "clientRequest": {
+                "token": token,
+                "recordingConfig": {
+                    "maxIdleTime": 30,
+                    "streamTypes": 2,
+                    "channelType": 0,
+                    "videoStreamType": 0,
+                    "subscribeVideoUids": [
+                        "123"
+                    ],
+                    "subscribeAudioUids": [
+                        "123"
+                    ],
+                    "subscribeUidGroup": 0
+                },
+                "storageConfig": {
+                    "accessKey": AWS_SECRET_ACCESS_KEY,
+                    "region": 0,
+                    "bucket": AWS_BUCKET_NAME,
+                    "secretKey": AWS_ACCESS_KEY_ID,
+                    "vendor": 1,
+                    "fileNamePrefix": [
+                        "directory1",
+                        "directory2"
+                    ]
+                }
             },
         };
 
