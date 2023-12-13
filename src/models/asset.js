@@ -22,6 +22,7 @@ const assetSchema = new mongoose.Schema({
     },
     blocked: {
         type: Boolean,
+        default: true
     },
     // ... any other video-related fields
 },
