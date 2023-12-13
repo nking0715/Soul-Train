@@ -62,7 +62,7 @@ async function moderateVideo(filePath) {
 
   const { JobId } = await rekognition.startContentModeration(params).promise();
   console.log(JobId);
-  const maxAttempts = 5;
+  const maxAttempts = 10;
   let attempts = 0;
   let moderationResponse;
   do {
