@@ -51,7 +51,6 @@ const processUploadedContent = async (uploadedContent, userId) => {
 
     const fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
     const thumbnailUrl = await uploadThumbnailToS3(newFileName, keyPrefix, contentType);
-    const rekognitionResult = await moderateContent(newFileName, contentType);
 
     return { fileOnS3, thumbnailUrl, rekognitionResult, contentType };
 }
@@ -72,7 +71,6 @@ const fetchFirst50Posts = async (userId) => {
                 $expr: {
                     $and: [
                         { $eq: [{ $toString: "$author" }, userId] },
-                        { $ne: ["$blocked", true] }
                     ]
                 }
             }
@@ -229,7 +227,6 @@ exports.getPost = async (req, res) => {
                     $expr: {
                         $and: [
                             { $eq: [{ $toString: "$author" }, userToSearch] },
-                            { $ne: ["$blocked", true] }
                         ]
                     }
                 }
@@ -508,7 +505,6 @@ exports.getSavedPost = async (req, res) => {
                     $expr: {
                         $and: [
                             { $in: [{ $toObjectId: userId }, "$saveList"] },
-                            { $ne: ["$blocked", true] }
                         ]
                     }
                 }
@@ -651,8 +647,7 @@ exports.discoverPosts = async (req, res) => {
             {
                 $match: {
                     'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
-                    author: { $nin: followedUserIds }, // Original author filtering logic
-                    blocked: { $ne: true }
+                    author: { $nin: followedUserIds }, // Original author filtering logic                    
                 }
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
@@ -770,7 +765,7 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
+            { $match: { author: { $in: followedUserIds } } },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
