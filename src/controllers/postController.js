@@ -32,9 +32,133 @@ const MAX_VIDEO_SIZE = 200000000; // 200MB
 const BUCKET_PATH = "Post";
 const FILE_MIME_TO_EXT = { ...imageMimeToExt, ...videoMimeToExt };
 
+// Modularized functions
+const processUploadedContent = async (uploadedContent, userId) => {
+    const fileExtension = FILE_MIME_TO_EXT[uploadedContent.mimetype];
+    if (!fileExtension) {
+        throw new Error('Unsupported file type');
+    }
+
+    const contentType = uploadedContent.mimetype.startsWith('image') ? "image" : "video";
+    const maxFileSizeBytes = contentType === "image" ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE;
+
+    if (uploadedContent.size > maxFileSizeBytes) {
+        throw new Error("File size exceeds limit.");
+    }
+
+    const keyPrefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
+    const newFileName = `${BUCKET_PATH}/${keyPrefix}${fileExtension}`;
+
+    const fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+    const thumbnailUrl = await uploadThumbnailToS3(newFileName, keyPrefix, contentType);
+    const rekognitionResult = await moderateContent(newFileName, contentType);
+
+    return { fileOnS3, thumbnailUrl, rekognitionResult, contentType };
+}
+
+// Additional function for thumbnail uploading
+const uploadThumbnailToS3 = async (fileName, keyPrefix, contentType) => {
+    if (contentType === 'image') {
+        return (await uploadImageThumbnailToS3(fileName, keyPrefix)).Location;
+    } else if (contentType === 'video') {
+        return await uploadVideoThumbnailToS3(fileName, keyPrefix);
+    }
+}
+
+const fetchFirst50Posts = async (userId) => {
+    return Post.aggregate([
+        {
+            $match: {
+                $expr: {
+                    $and: [
+                        { $eq: [{ $toString: "$author" }, userId] },
+                        { $ne: ["$blocked", true] }
+                    ]
+                }
+            }
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: 0 },
+        { $limit: 50 },
+        {
+            $lookup: {
+                from: "users", // Name of the user collection
+                localField: "author",
+                foreignField: "_id",
+                as: "userDetails"
+            }
+        },
+        {
+            $lookup: {
+                from: "assets", // Name of the assets collection
+                localField: "assets",
+                foreignField: "_id",
+                as: "assetDetails"
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                thumbnail: 1,
+                assets: {
+                    $map: {
+                        input: "$assetDetails",
+                        as: "asset",
+                        in: {
+                            url: "$$asset.url",
+                            thumbnail: "$$asset.thumbnail",
+                            contentType: "$$asset.contentType"
+                        }
+                    }
+                },
+                numberOfViews: 1,
+                numberOfLikes: 1,
+                numberOfComments: 1,
+                tags: 1,
+                caption: 1,
+                createdAt: 1,
+                likeList: 1,
+                saveList: 1,
+                likedByUser: {
+                    $cond: [
+                        {
+                            $and: [
+                                { $isArray: "$likeList" },
+                                { $in: [{ $toObjectId: userId }, "$likeList"] }
+                            ]
+                        },
+                        true,
+                        false
+                    ]
+                },
+                savedByUser: {
+                    $cond: [
+                        {
+                            $and: [
+                                { $isArray: "$saveList" },
+                                { $in: [{ $toObjectId: userId }, "$saveList"] }
+                            ]
+                        },
+                        true,
+                        false
+                    ]
+                },
+                username: { $arrayElemAt: ["$userDetails.username", 0] },
+                artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+            }
+        },
+        {
+            $project: {
+                likeList: 0,
+                saveList: 0
+            }
+        }
+    ]);
+}
+
 exports.createPost = async (req, res) => {
     try {
-        let contentLink, rekognitionResult = '';
         const userId = req.user.id;
         const { tags, caption } = req.body;
         const files = req.files;
@@ -53,47 +177,19 @@ exports.createPost = async (req, res) => {
 
         for (const uploadedContent of uploadedContents) {
             try {
-                // Get file extension
-                const fileExtension = FILE_MIME_TO_EXT[uploadedContent.mimetype];
-                let maxFileSizeBytes, contentType = '';
-
-                // Check if the file type is supported
-                if (!fileExtension) {
-                    return res.status(400).json({ success: false, message: 'Unsupported file type' });
-                }
-                if (uploadedContent.mimetype.startsWith('image')) {
-                    contentType = "image";
-                    maxFileSizeBytes = MAX_IMAGE_SIZE;
-                } else {
-                    contentType = "video";
-                    maxFileSizeBytes = MAX_VIDEO_SIZE;
-                }
-                if (uploadedContent.size > maxFileSizeBytes) {
-                    return res.status(400).json({ success: false, message: "File size exceeds limit." });
-                }
-                const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
-                const newFileName = BUCKET_PATH + '/' + key_prefix + fileExtension;
-                const file_on_s3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
-                contentLink = file_on_s3.location;
-                console.log(contentLink);
-                rekognitionResult = await moderateContent(newFileName, contentType);
-                let thumbnailurl = '';
-                if (contentType == 'image') {
-                    thumbnailurl = (await uploadImageThumbnailToS3(newFileName, key_prefix)).Location;
-                } else if (contentType == 'video') {
-                    thumbnailurl = await uploadVideoThumbnailToS3(newFileName, key_prefix);
-                }
+                const { fileOnS3, thumbnailUrl, rekognitionResult, contentType } = await processUploadedContent(uploadedContent, userId);
 
                 const newAsset = new Asset({
                     userId: userId,
-                    url: contentLink,
-                    thumbnail: thumbnailurl,
+                    url: fileOnS3.location,
+                    thumbnail: thumbnailUrl,
                     category: "post",
                     contentType: contentType,
                     blocked: rekognitionResult.success ? false : true
                 })
-                assets.push(newAsset);
                 await newAsset.save();
+                assets.push(newAsset);
+
                 if (rekognitionResult.success == false) {
                     console.log(rekognitionResult.reason);
                     return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
@@ -104,103 +200,11 @@ exports.createPost = async (req, res) => {
             }
         }
 
-        const newPost = new Post({
-            author: userId,
-            assets: assets,
-            tags: tags,
-            caption: caption,
-        });
-
+        const newPost = new Post({ author: userId, assets, tags, caption, });
         await newPost.save();
-        const posts = await Post.aggregate([
-            {
-                $match: {
-                    $expr: {
-                        $and: [
-                            { $eq: [{ $toString: "$author" }, userId] },
-                        ]
-                    }
-                }
-            },
-            { $sort: { createdAt: -1 } },
-            { $skip: 0 },
-            { $limit: 50 },
-            {
-                $lookup: {
-                    from: "users", // Name of the user collection
-                    localField: "author",
-                    foreignField: "_id",
-                    as: "userDetails"
-                }
-            },
-            {
-                $lookup: {
-                    from: "assets", // Name of the assets collection
-                    localField: "assets",
-                    foreignField: "_id",
-                    as: "assetDetails"
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    thumbnail: 1,
-                    assets: {
-                        $map: {
-                            input: "$assetDetails",
-                            as: "asset",
-                            in: {
-                                url: "$$asset.url",
-                                thumbnail: "$$asset.thumbnail",
-                                contentType: "$$asset.contentType"
-                            }
-                        }
-                    },
-                    numberOfViews: 1,
-                    numberOfLikes: 1,
-                    numberOfComments: 1,
-                    tags: 1,
-                    caption: 1,
-                    createdAt: 1,
-                    likeList: 1,
-                    saveList: 1,
-                    likedByUser: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $isArray: "$likeList" },
-                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
-                                ]
-                            },
-                            true,
-                            false
-                        ]
-                    },
-                    savedByUser: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $isArray: "$saveList" },
-                                    { $in: [{ $toObjectId: userId }, "$saveList"] }
-                                ]
-                            },
-                            true,
-                            false
-                        ]
-                    },
-                    username: { $arrayElemAt: ["$userDetails.username", 0] },
-                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
-                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                }
-            },
-            {
-                $project: {
-                    likeList: 0,
-                    saveList: 0
-                }
-            }
-        ]);
-        return res.status(200).json({ success: true, first50Posts: posts });
+
+        const first50Posts = await fetchFirst50Posts(userId);
+        return res.status(200).json({ success: true, first50Posts });
 
     } catch (error) {
         console.log("upload content Error ", error)
@@ -225,6 +229,7 @@ exports.getPost = async (req, res) => {
                     $expr: {
                         $and: [
                             { $eq: [{ $toString: "$author" }, userToSearch] },
+                            { $ne: ["$blocked", true] }
                         ]
                     }
                 }
@@ -501,7 +506,10 @@ exports.getSavedPost = async (req, res) => {
                 $match:
                 {
                     $expr: {
-                        $in: [{ $toObjectId: userId }, "$saveList"]
+                        $and: [
+                            { $in: [{ $toObjectId: userId }, "$saveList"] },
+                            { $ne: ["$blocked", true] }
+                        ]
                     }
                 }
             },
@@ -643,7 +651,8 @@ exports.discoverPosts = async (req, res) => {
             {
                 $match: {
                     'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
-                    author: { $nin: followedUserIds } // Original author filtering logic
+                    author: { $nin: followedUserIds }, // Original author filtering logic
+                    blocked: { $ne: true }
                 }
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
@@ -761,7 +770,7 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const result = await Post.aggregate([
-            { $match: { author: { $in: followedUserIds } } },
+            { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: per_pageConverted }, // Limit the number of documents
