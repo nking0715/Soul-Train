@@ -137,17 +137,17 @@ class SocketHandler {
   handleStartRecording(socket, data) {
     try {
       const { channelName } = data;
-      console.log('startRecording api');
-      if (!this.channelList.includes(channelName)) {
-        this.channelList.push(channelName);
+      console.log('startRecording api', channelName);
+      if (!this.channelList.includes(String(channelName))) {
+        this.channelList.push(String(channelName));
       } else {
         console.log('channel is already started the recording', channelName);
         return;
       }
-      let recordingDefaultUID = 3;
-      let recordingToken = generateAccessToken(channelName, RtcRole.SUBSCRIBER, recordingDefaultUID);
-      getRequireResourceId(channelName, recordingDefaultUID).then(resourceId => {
-        startRecording(resourceId, channelName, recordingDefaultUID, recordingToken).then(res => {
+      let recordingDefaultUID = 2;
+      let recordingToken = generateAccessToken(String(channelName), RtcRole.SUBSCRIBER, recordingDefaultUID);
+      getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
+        startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
           console.log("start recording data is ", res);
           getRecordingStatus(res.resourceId, res.sid, 'individual').then(res => {
             console.log("recording status is ", res);

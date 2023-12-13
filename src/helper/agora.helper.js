@@ -38,7 +38,7 @@ exports.generateAccessToken = (channelName, role, uid) => {
 exports.getRequireResourceId = (channelName, uid) => {
     return new Promise(async (resolve, reject) => {
         const requestBody = {
-            'cname': channelName,
+            'cname': String(channelName),
             'uid': String(uid),
             'clientRequest': {}
         };
