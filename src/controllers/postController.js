@@ -27,186 +27,181 @@ const imageMimeToExt = {
     // ... add other types as needed
 };
 
-exports.createPost = async (req, res) => {    
+const MAX_IMAGE_SIZE = 10000000; // 10MB
+const MAX_VIDEO_SIZE = 200000000; // 200MB
+const BUCKET_PATH = "Post";
+const FILE_MIME_TO_EXT = { ...imageMimeToExt, ...videoMimeToExt };
+
+exports.createPost = async (req, res) => {
     try {
         let contentLink, rekognitionResult = '';
-        const bucketPath = "Post";
-        const files = req.files;
         const userId = req.user.id;
         const { tags, caption } = req.body;
-        const user = await User.findOne({ _id: userId });
+        const files = req.files;
 
+        const user = await User.findOne({ _id: userId });
         if (isEmpty(user)) {
             return res.status(400).json({ message: 'User not found' });
         }
 
-        if (files && Object.keys(files).length > 0) {
-            let uploadedContents = [];
-            let assets = [];
-            if (Array.isArray(files.files)) {
-                // If it's already an array, spread it.
-                uploadedContents.push(...files.files);
-            } else if (files.files !== undefined && files.files !== null) {
-                // If it's not an array but is a single item, push the single item.
-                uploadedContents.push(files.files);
-            }
-            for (let i = 0; i < uploadedContents.length; i++) {
-                const uploadedContent = uploadedContents[i];
-                try {
-                    // Get file extension
-                    const contentMimeToExt = { ...imageMimeToExt, ...videoMimeToExt };
-                    const fileExtension = contentMimeToExt[uploadedContent.mimetype];
-                    let maxFileSizeBytes, contentType = '';
-
-                    // Check if the file type is supported
-                    if (!fileExtension) {
-                        return res.status(400).json({ success: false, message: 'Unsupported file type' });
-                    }
-                    if (uploadedContent.mimetype.startsWith('image')) {
-                        contentType = "image";
-                        maxFileSizeBytes = 10000000;
-                    } else {
-                        contentType = "video";
-                        maxFileSizeBytes = 200000000;
-                    }
-                    if (uploadedContent.size > maxFileSizeBytes) {
-                        return res.status(400).json({ success: false, message: "File size exceeds limit." });
-                    }
-                    const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
-                    const newFileName = bucketPath + '/' + key_prefix + fileExtension;                    
-                    const file_on_s3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
-                    console.time('processDuration');                    
-                    contentLink = file_on_s3.location;
-                    console.log(contentLink);
-                    rekognitionResult = await moderateContent(newFileName, contentType);
-                    console.timeEnd('processDuration');
-                    let thumbnailurl = '';
-                    if (contentType == 'image') {
-                        thumbnailurl = (await uploadImageThumbnailToS3(newFileName, key_prefix)).Location;
-                    } else if (contentType == 'video') {
-                        thumbnailurl = await uploadVideoThumbnailToS3(newFileName, key_prefix);
-                    }
-                    
-                    const newAsset = new Asset({
-                        userId: userId,
-                        url: contentLink,
-                        thumbnail: thumbnailurl,
-                        category: "post",
-                        contentType: contentType,
-                        blocked: rekognitionResult.success ? false : true
-                    })
-                    assets.push(newAsset);
-                    await newAsset.save();
-                    if (rekognitionResult.success == false) {
-                        console.log(rekognitionResult.reason);
-                        return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
-                    }
-                } catch (error) {
-                    console.log("upload content Error ", error)
-                    return res.status(500).json({ success: false, message: error.message });
-                }
-            }
-
-            const newPost = new Post({
-                author: userId,
-                assets: assets,
-                tags: tags,
-                caption: caption,
-            });
-
-            await newPost.save();
-            const posts = await Post.aggregate([
-                {
-                    $match: {
-                        $expr: {
-                            $and: [
-                                { $eq: [{ $toString: "$author" }, userId] },
-                            ]
-                        }
-                    }
-                },
-                { $sort: { createdAt: -1 } },
-                { $skip: 0 },
-                { $limit: 50 },
-                {
-                    $lookup: {
-                        from: "users", // Name of the user collection
-                        localField: "author",
-                        foreignField: "_id",
-                        as: "userDetails"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "assets", // Name of the assets collection
-                        localField: "assets",
-                        foreignField: "_id",
-                        as: "assetDetails"
-                    }
-                },
-                {
-                    $project: {
-                        _id: 1,
-                        thumbnail: 1,
-                        assets: {
-                            $map: {
-                                input: "$assetDetails",
-                                as: "asset",
-                                in: {
-                                    url: "$$asset.url",
-                                    thumbnail: "$$asset.thumbnail",
-                                    contentType: "$$asset.contentType"
-                                }
-                            }
-                        },
-                        numberOfViews: 1,
-                        numberOfLikes: 1,
-                        numberOfComments: 1,
-                        tags: 1,
-                        caption: 1,
-                        createdAt: 1,
-                        likeList: 1,
-                        saveList: 1,
-                        likedByUser: {
-                            $cond: [
-                                {
-                                    $and: [
-                                        { $isArray: "$likeList" },
-                                        { $in: [{ $toObjectId: userId }, "$likeList"] }
-                                    ]
-                                },
-                                true,
-                                false
-                            ]
-                        },
-                        savedByUser: {
-                            $cond: [
-                                {
-                                    $and: [
-                                        { $isArray: "$saveList" },
-                                        { $in: [{ $toObjectId: userId }, "$saveList"] }
-                                    ]
-                                },
-                                true,
-                                false
-                            ]
-                        },
-                        username: { $arrayElemAt: ["$userDetails.username", 0] },
-                        artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
-                        profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                    }
-                },
-                {
-                    $project: {
-                        likeList: 0,
-                        saveList: 0
-                    }
-                }
-            ]);            
-            return res.status(200).json({ success: true, first50Posts: posts });
-        } else {
-            return res.status(400).json({ success: false, message: "Invalid Request!" })
+        if (!files || Object.keys(files).length === 0) {
+            return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
+
+        let assets = [];
+        const uploadedContents = Array.isArray(files.files) ? files.files : [files.files];
+
+        for (const uploadedContent of uploadedContents) {
+            try {
+                // Get file extension
+                const fileExtension = FILE_MIME_TO_EXT[uploadedContent.mimetype];
+                let maxFileSizeBytes, contentType = '';
+
+                // Check if the file type is supported
+                if (!fileExtension) {
+                    return res.status(400).json({ success: false, message: 'Unsupported file type' });
+                }
+                if (uploadedContent.mimetype.startsWith('image')) {
+                    contentType = "image";
+                    maxFileSizeBytes = MAX_IMAGE_SIZE;
+                } else {
+                    contentType = "video";
+                    maxFileSizeBytes = MAX_VIDEO_SIZE;
+                }
+                if (uploadedContent.size > maxFileSizeBytes) {
+                    return res.status(400).json({ success: false, message: "File size exceeds limit." });
+                }
+                const key_prefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
+                const newFileName = BUCKET_PATH + '/' + key_prefix + fileExtension;
+                const file_on_s3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+                contentLink = file_on_s3.location;
+                console.log(contentLink);
+                rekognitionResult = await moderateContent(newFileName, contentType);
+                let thumbnailurl = '';
+                if (contentType == 'image') {
+                    thumbnailurl = (await uploadImageThumbnailToS3(newFileName, key_prefix)).Location;
+                } else if (contentType == 'video') {
+                    thumbnailurl = await uploadVideoThumbnailToS3(newFileName, key_prefix);
+                }
+
+                const newAsset = new Asset({
+                    userId: userId,
+                    url: contentLink,
+                    thumbnail: thumbnailurl,
+                    category: "post",
+                    contentType: contentType,
+                    blocked: rekognitionResult.success ? false : true
+                })
+                assets.push(newAsset);
+                await newAsset.save();
+                if (rekognitionResult.success == false) {
+                    console.log(rekognitionResult.reason);
+                    return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+                }
+            } catch (error) {
+                console.log("upload content Error ", error)
+                return res.status(500).json({ success: false, message: error.message });
+            }
+        }
+
+        const newPost = new Post({
+            author: userId,
+            assets: assets,
+            tags: tags,
+            caption: caption,
+        });
+
+        await newPost.save();
+        const posts = await Post.aggregate([
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: [{ $toString: "$author" }, userId] },
+                        ]
+                    }
+                }
+            },
+            { $sort: { createdAt: -1 } },
+            { $skip: 0 },
+            { $limit: 50 },
+            {
+                $lookup: {
+                    from: "users", // Name of the user collection
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            {
+                $lookup: {
+                    from: "assets", // Name of the assets collection
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                    assets: {
+                        $map: {
+                            input: "$assetDetails",
+                            as: "asset",
+                            in: {
+                                url: "$$asset.url",
+                                thumbnail: "$$asset.thumbnail",
+                                contentType: "$$asset.contentType"
+                            }
+                        }
+                    },
+                    numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
+                    tags: 1,
+                    caption: 1,
+                    createdAt: 1,
+                    likeList: 1,
+                    saveList: 1,
+                    likedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    savedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$saveList" },
+                                    { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    username: { $arrayElemAt: ["$userDetails.username", 0] },
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                }
+            },
+            {
+                $project: {
+                    likeList: 0,
+                    saveList: 0
+                }
+            }
+        ]);
+        return res.status(200).json({ success: true, first50Posts: posts });
+
     } catch (error) {
         console.log("upload content Error ", error)
         return res.status(500).json({ success: false, message: error.message });

@@ -50,7 +50,6 @@ async function moderateImage(filePath) {
 }
 
 async function moderateVideo(filePath) {
-  console.log('filePath: ', filePath);
   const params = {
     Video: {
       S3Object: {
@@ -63,16 +62,17 @@ async function moderateVideo(filePath) {
 
   const { JobId } = await rekognition.startContentModeration(params).promise();
   console.log(JobId);
-  const maxAttempts = 10;
+  const maxAttempts = 5;
   let attempts = 0;
   let moderationResponse;
+  console.time('processDuration');
   do {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // wait 5 seconds
     moderationResponse = await rekognition.getContentModeration({ JobId }).promise();
     console.log(moderationResponse);
     attempts++;
   } while (moderationResponse.JobStatus === 'IN_PROGRESS' && attempts < maxAttempts);
-
+  console.timeEnd('processDuration');
   console.log(moderationResponse);
   if (moderationResponse.JobStatus === 'FAILED' || attempts >= maxAttempts) {
     return { success: false, reason: 'Moderation failed' };
