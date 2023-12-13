@@ -42,7 +42,7 @@ exports.uploadFileToS3Multipart = async (file, newFileName) => {
 
     try {
         // Step 2: Upload parts
-        const partSize = 5 * 1024 * 1024; // 1 MB per part
+        const partSize = 5 * 1024 * 1024; // 5 MB per part
         const parts = splitFileIntoParts(file.data, partSize);
         const uploadPromises = parts.map((part, index) => uploadPart(s3, part, index + 1, uploadId, newFileName));
 
