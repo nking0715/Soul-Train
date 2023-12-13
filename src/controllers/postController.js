@@ -266,14 +266,16 @@ exports.getPost = async (req, res) => {
         const per_pageConverted = parseInt(per_page, 10);
         const skip = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
 
+        const conditions = [{ $eq: [{ $toString: "$author" }, userToSearch] }];
+        if (userToSearch !== req.user.id) {
+            conditions.push({ $ne: ["$blocked", true] });
+        }
+
         const posts = await Post.aggregate([
             {
                 $match: {
                     $expr: {
-                        $and: [
-                            { $eq: [{ $toString: "$author" }, userToSearch] },
-                            { $ne: ["$blocked", true] }
-                        ]
+                        $and: conditions
                     }
                 }
             },
@@ -319,6 +321,7 @@ exports.getPost = async (req, res) => {
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,
+                    blocked: 1,
                     likedByUser: {
                         $cond: [
                             {
