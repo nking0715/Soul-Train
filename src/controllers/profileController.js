@@ -366,10 +366,10 @@ exports.followManage = async (req, res) => {
 
         if (isEmpty(dancerId)) return res.status(400).json({ success: false, message: "Invalid Request!" });
 
-        let userId = req.user.id;
+        const userId = req.user.id;
 
-        let dancer = await User.findOne({ _id: dancerId });
-        let user = await User.findOne({ _id: userId })
+        const dancer = await User.findOne({ _id: dancerId });
+        const user = await User.findOne({ _id: userId })
 
         if (isEmpty(dancer) || isEmpty(user)) return res.status(404).json({ success: false, message: 'User Not found' });
 
@@ -386,7 +386,7 @@ exports.followManage = async (req, res) => {
             if (!isEmpty(fcmToken)) {
                 const data = {
                     type: 'Follow User',
-                    userId: userId.toString()
+                    followerId: userId.toString()
                 }
                 const notification = {
                     title: 'A user followed you.',
