@@ -149,12 +149,12 @@ class SocketHandler {
         const sid = this.channelInfoList[channelName].sid;
 
         getRecordingStatus(resourceId, sid, 'individual').then(res => {
-          console.log("recording status is ", res);
+          console.log("recording status is ", res.serverResponse);
         }).catch(err => {
           console.log("recording status is err", err);
         });
 
-        saveRecording(resourceId, String(channelName), recordingDefaultUID).then(res => {
+        saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
           console.log("save recording data is ", res);
         }).catch(err => {
           console.log("error save recording data is ", err);

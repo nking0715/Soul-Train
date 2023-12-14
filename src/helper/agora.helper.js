@@ -141,3 +141,38 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
         }
     });
 };
+
+
+exports.saveRecording = (resourceId, channelName, sid, uid) => {
+    return new Promise(async (resolve, reject) => {
+        const mode = 'individual'; // Or 'composite' as needed
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/${mode}/stop`;
+        const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
+
+        const requestData = {
+            "cname": (channelName).toString(),
+            "uid": uid.toString(),
+            "clientRequest": {
+                "async_stop": false
+            },
+        };
+
+        try {
+            const response = await axios.post(apiEndpoint, requestData, {
+                headers: {
+                    'Authorization': authorization,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.status === 200) {
+                resolve(response.data); // Resolve with response data
+            } else {
+                reject(`Failed to start recording. Status code: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+            reject(error.message);
+        }
+    });
+};
