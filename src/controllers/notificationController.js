@@ -50,14 +50,8 @@ exports.updateNotification = async (req, res) => {
     // Remove the userId from usersToRead
     await Notification.updateOne(
       { _id: notificationId },
-      { $pull: { usersToRead: userId } }
+      { $addToSet: { usersAlreadyRead: userId } }
     );
-    // Check if usersToRead is now empty
-    const updatedNotification = await Notification.findById(notificationId);
-    if (updatedNotification.usersToRead.length === 0) {
-      // If no users left to read, delete the notification
-      await Notification.deleteOne({ _id: notificationId });
-    }
     return res.status(200).json({ success: true, message: 'Notification updated' });
   } catch (error) {
     console.log('Error in updateNotification: ', error.message);
@@ -68,32 +62,19 @@ exports.updateNotification = async (req, res) => {
 exports.getBadgeStatus = async (req, res) => {
   try {
     const userId = req.user.id;
-    const checkPoint = req.query.time;
-    // Convert checkPoint to a Date object if it's not already
-    let checkPointDate;
 
-    if (isEmpty(checkPoint)) {
-      checkPointDate = new Date('2023-01-01T00:00:00.000Z');
-    } else {
-      // Otherwise, convert checkPoint to a Date object
-      checkPointDate = new Date(checkPoint);
-    }
-
-    // Search for notifications where userId is in usersToRead
-    const notifications = await Notification.find({
+    // Count notifications where userId is in usersToRead and not in usersAlreadyRead
+    const unreadCount = await Notification.countDocuments({
       usersToRead: { $in: [userId] },
-      createdAt: { $gt: checkPointDate }
+      usersAlreadyRead: { $nin: [userId] }
     });
-
-    // Check if any notifications are found
-    const hasUnreadNotifications = notifications.length > 0;
 
     return res.status(200).json({
       success: true,
-      hasUnreadNotifications: hasUnreadNotifications
+      hasUnreadNotifications: unreadCount > 0
     });
   } catch (error) {
-    console.log('Error in getBadgeStatus: ', error.message);
+    console.log('Error in getBadgeStatus: ', error.message, error.stack);
     return res.status(500).json({ success: false, message: 'Server Error' });
   }
 }
@@ -103,10 +84,20 @@ exports.getListOfNotifications = async (req, res) => {
     const userId = req.user.id;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
-      .select('data notification')
+      .select('data notification usersAlreadyRead')
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, notifications });
+    // Add isUnread boolean to each notification
+    const modifiedNotifications = notifications.map(notification => {
+      const isUnread = !notification.usersAlreadyRead.includes(userId);
+      return {
+        ...notification.toObject(), // Convert document to a plain object
+        isUnread // Add the new property
+      };
+    });
+
+    return res.status(200).json({ success: true, notifications: modifiedNotifications });
+
   } catch (error) {
     console.log('Error in getListOfNotifications: ', error.message);
     return res.status(500).json({ success: false, message: 'Server Error' });

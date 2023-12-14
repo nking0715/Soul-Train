@@ -5,6 +5,10 @@ const notificationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }],
+    usersAlreadyRead: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
     data: mongoose.Schema.Types.Mixed,
     notification: {
         title: { type: String },
