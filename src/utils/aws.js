@@ -7,6 +7,13 @@ const tmp = require('tmp');
 const { promisify } = require('util');
 const pipeline = promisify(require('stream').pipeline);
 
+let BUCKET_PATH;
+if (process.env.NODE_ENV == "live") {
+    BUCKET_PATH = process.env.LIVE_BUCKET_PATH
+} else {
+    BUCKET_PATH = process.env.DEV_BUCKET_PATH
+}
+
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -93,7 +100,7 @@ const splitFileIntoParts = (fileData, partSize) => {
 
 
 exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
-    const filePath = "Post";
+    const filePath = BUCKET_PATH;
     const newFileName = keyPrefix + '_thumbnail.jpg';
     const objectData = await s3.getObject({
         Bucket: `${process.env.AWS_BUCKET_NAME}`,
@@ -117,7 +124,7 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
 exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
     try {
         console.log('videoPath: ', videoPath);
-        const filePath = 'Post';
+        const filePath = BUCKET_PATH;
         const newFileName = keyPrefix + '_thumbnail.jpg';
 
         // Create a temporary file for the thumbnail
