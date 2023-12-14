@@ -398,7 +398,7 @@ exports.followManage = async (req, res) => {
                     notification: notification
                 });
                 data.notificationId = newNotification._id.toString();
-                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, notification);
                 if (!sendNotificationResult) {
                     return res.status(500).json({ success: false, message: 'Notification was not sent.' });
                 }
