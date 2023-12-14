@@ -377,7 +377,7 @@ exports.followManage = async (req, res) => {
             if (!isEmpty(fcmToken)) {
                 const data = {
                     type: 'Follow User',
-                    userId: dancerId
+                    userId: userId
                 }
                 const notification = {
                     title: 'A user followed you.',

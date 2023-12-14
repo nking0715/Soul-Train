@@ -32,7 +32,12 @@ const imageMimeToExt = {
 
 const MAX_IMAGE_SIZE = 10000000; // 10MB
 const MAX_VIDEO_SIZE = 200000000; // 200MB
-const BUCKET_PATH = "Post";
+let BUCKET_PATH;
+if (process.env.NODE_ENV == "live") {
+    BUCKET_PATH = process.env.LIVE_BUCKET_PATH
+} else {
+    BUCKET_PATH = process.env.DEV_BUCKET_PATH
+}
 const FILE_MIME_TO_EXT = { ...imageMimeToExt, ...videoMimeToExt };
 
 // Modularized functions
@@ -65,97 +70,6 @@ const uploadThumbnailToS3 = async (fileName, keyPrefix, contentType) => {
     } else if (contentType === 'video') {
         return await uploadVideoThumbnailToS3(fileName, keyPrefix);
     }
-}
-
-const fetchFirst50Posts = async (userId) => {
-    return Post.aggregate([
-        {
-            $match: {
-                $expr: {
-                    $and: [
-                        { $eq: [{ $toString: "$author" }, userId] },
-                    ]
-                }
-            }
-        },
-        { $sort: { createdAt: -1 } },
-        { $skip: 0 },
-        { $limit: 50 },
-        {
-            $lookup: {
-                from: "users", // Name of the user collection
-                localField: "author",
-                foreignField: "_id",
-                as: "userDetails"
-            }
-        },
-        {
-            $lookup: {
-                from: "assets", // Name of the assets collection
-                localField: "assets",
-                foreignField: "_id",
-                as: "assetDetails"
-            }
-        },
-        {
-            $project: {
-                _id: 1,
-                thumbnail: 1,
-                assets: {
-                    $map: {
-                        input: "$assetDetails",
-                        as: "asset",
-                        in: {
-                            url: "$$asset.url",
-                            thumbnail: "$$asset.thumbnail",
-                            contentType: "$$asset.contentType"
-                        }
-                    }
-                },
-                numberOfViews: 1,
-                numberOfLikes: 1,
-                numberOfComments: 1,
-                tags: 1,
-                caption: 1,
-                createdAt: 1,
-                likeList: 1,
-                saveList: 1,
-                likedByUser: {
-                    $cond: [
-                        {
-                            $and: [
-                                { $isArray: "$likeList" },
-                                { $in: [{ $toObjectId: userId }, "$likeList"] }
-                            ]
-                        },
-                        true,
-                        false
-                    ]
-                },
-                savedByUser: {
-                    $cond: [
-                        {
-                            $and: [
-                                { $isArray: "$saveList" },
-                                { $in: [{ $toObjectId: userId }, "$saveList"] }
-                            ]
-                        },
-                        true,
-                        false
-                    ]
-                },
-                username: { $arrayElemAt: ["$userDetails.username", 0] },
-                artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
-                profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-            }
-        },
-        {
-            $project: {
-                likeList: 0,
-                saveList: 0
-            }
-        }
-    ]);
 }
 
 exports.createPost = async (req, res) => {
