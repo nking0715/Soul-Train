@@ -293,7 +293,7 @@ exports.searchDancers = async (req, res) => {
   const start = (page - 1) * per_page; // Calculate the skip value
 
   const { searchText } = req.params;
-  const userId = req.user.id; // Assumed to be set somewhere in your code
+  const userId = req.user.id;
 
   if (isEmpty(searchText)) {
     return res.status(400).json({ success: false, message: "Invalid Request" });
