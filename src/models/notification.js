@@ -5,11 +5,7 @@ const notificationSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     }],
-    data: {
-        type: { type: String },
-        channelId: { type: String },
-        channelName: { type: String }
-    },
+    data: mongoose.Schema.Types.Mixed,
     notification: {
         title: { type: String },
         body: { type: String }

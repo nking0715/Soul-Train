@@ -2,14 +2,23 @@ const admin = require('firebase-admin');
 
 exports.sendPushNotification = async (tokens, data, notification) => {
     try {
-        const messages = tokens.map(token => ({
-            token,
-            data,
-            notification
-        }));
-        console.log(messages);
-        await admin.messaging().sendEach(messages);
-        return true;
+        if (Array.isArray(tokens)) {
+            const messages = tokens.map(token => ({
+                token,
+                data,
+                notification
+            }));
+            console.log(messages);
+            await admin.messaging().sendEach(messages);
+        } else {
+            const message = {
+                token: tokens,
+                data,
+                notification
+            };
+            console.log(message);
+            await admin.messaging().send(message);
+        }
     } catch (error) {
         console.log('Error in pushNotifications: ', error);
         return false;
