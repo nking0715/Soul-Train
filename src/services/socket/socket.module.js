@@ -1,4 +1,4 @@
-const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus } = require('../../helper/agora.helper');
+const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus, saveRecording } = require('../../helper/agora.helper');
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
@@ -10,6 +10,7 @@ class SocketHandler {
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
     this.rooms = {};
     this.lobbyUserList = [];
+    this.channelInfoList = {};
     this.channelList = [];
     this.users = {};
     this.roomId = 0;
@@ -47,6 +48,9 @@ class SocketHandler {
       this.handleStartRecording(socket, data);
     });
 
+    socket.on(SOCKET_IDS.SAVE_RECORDING, data => {
+      this.handleSaveRecording(socket, data);
+    });
 
     // user leave event 
     socket.on(SOCKET_IDS.USER_DISCONNECT, data => {
@@ -79,7 +83,6 @@ class SocketHandler {
 
   handleLiveBattle() {
     const currentTime = new Date();
-
     for (var i = 0; i < this.roomId; i++) {
       let roomInfo = this.rooms[i];
       const timeDifferenceInSeconds = Math.floor((currentTime - roomInfo.createdTime) / 1000);
@@ -134,6 +137,35 @@ class SocketHandler {
     }
   }
 
+  handleSaveRecording(socket, data) {
+    try {
+      const { channelName } = data;
+      console.log('saveRecording api', channelName);
+      let recordingDefaultUID = 2;
+      if (
+        this.channelInfoList[channelName]
+      ) {
+        const resourceId = this.channelInfoList[channelName].resourceId;
+        const sid = this.channelInfoList[channelName].sid;
+
+        getRecordingStatus(resourceId, sid, 'individual').then(res => {
+          console.log("recording status is ", res);
+        }).catch(err => {
+          console.log("recording status is err", err);
+        });
+
+        saveRecording(resourceId, String(channelName), recordingDefaultUID).then(res => {
+          console.log("save recording data is ", res);
+        }).catch(err => {
+          console.log("error save recording data is ", err);
+        });
+      }
+    } catch (e) {
+      console.log('handleCreateRooms error is ', e);
+    }
+  }
+
+
   handleStartRecording(socket, data) {
     try {
       const { channelName } = data;
@@ -149,6 +181,12 @@ class SocketHandler {
       getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
           console.log("start recording data is ", res);
+
+          channelInfoList[channelName] = {
+            resourceId: res.resourceId,
+            sid: res.sid,
+          };
+
           getRecordingStatus(res.resourceId, res.sid, 'individual').then(res => {
             console.log("recording status is ", res);
           }).catch(err => {
@@ -222,6 +260,8 @@ class SocketHandler {
           channelName,
           starter,
           createdTime: new Date(),
+          resourceId: '',  // recording info
+          sid: '',         // recording info          
           tokenA, // starter token
           tokenB  // opponent token
         }
