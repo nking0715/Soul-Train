@@ -182,7 +182,7 @@ class SocketHandler {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
           console.log("start recording data is ", res);
 
-          channelInfoList[channelName] = {
+          this.channelInfoList[channelName] = {
             resourceId: res.resourceId,
             sid: res.sid,
           };
