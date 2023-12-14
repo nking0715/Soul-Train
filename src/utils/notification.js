@@ -19,6 +19,7 @@ exports.sendPushNotification = async (tokens, data, notification) => {
             console.log(message);
             await admin.messaging().send(message);
         }
+        return true;
     } catch (error) {
         console.log('Error in pushNotifications: ', error);
         return false;
