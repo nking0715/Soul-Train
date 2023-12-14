@@ -390,7 +390,7 @@ exports.followManage = async (req, res) => {
                 }
                 const notification = {
                     title: 'A user followed you.',
-                    body: `${dancer.artistName} started to follow you.`
+                    body: `${user.artistName} started to follow you.`
                 }
                 const newNotification = new Notification({
                     usersToRead: [dancerId],
