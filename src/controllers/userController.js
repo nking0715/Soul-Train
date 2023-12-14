@@ -74,8 +74,12 @@ exports.verifyValidationCode = async (req, res) => {
     if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
       return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
     }
-    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-    await newToken.save();
+    const existingToken = await FcmToken.findOne({ token: fcmToken });
+    if (!existingToken) {
+      // Since the token doesn't exist, save the new one
+      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+      await newToken.save();
+    }
     await user.save();
     // Return the token to the client
     return res.status(200).json({ success: true, token });
@@ -137,8 +141,11 @@ exports.login = async (req, res) => {
     if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
       return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
     }
-    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-    await newToken.save();
+    if (!existingToken) {
+      // Since the token doesn't exist, save the new one
+      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+      await newToken.save();
+    }
 
     // Return the token to the client
     return res.status(200).json({ success: true, token });
@@ -177,8 +184,11 @@ exports.googleLogin = async (req, res) => {
       if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
         return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
       }
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      if (!existingToken) {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
 
       // Return the token to the client
       return res.status(200).json({ success: true, token });
@@ -207,8 +217,11 @@ exports.addArtistName = async (req, res) => {
     if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
       return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
     }
-    const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-    await newToken.save();
+    if (!existingToken) {
+      // Since the token doesn't exist, save the new one
+      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+      await newToken.save();
+    }
 
     await user.save();
     // Return the token to the client
@@ -259,8 +272,11 @@ exports.facebookLogin = async (req, res) => {
       if (isEmpty(fcmToken) || isEmpty(deviceInfo)) {
         return res.status(400).json({ success: false, message: 'FcmToken or DeviceInfo is invalid.' });
       }
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      if (!existingToken) {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
 
       // Return the token to the client
       return res.status(200).json({ success: true, token });
