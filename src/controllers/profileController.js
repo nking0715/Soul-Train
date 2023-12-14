@@ -29,6 +29,15 @@ const imageMimeToExt = {
     // ... add other types as needed
 };
 
+let PROFILE_PICTURE_BUCKET_PATH, COVER_PICTURE_BUCKETPATH;
+if (process.env.NODE_ENV == "live") {
+    PROFILE_PICTURE_BUCKET_PATH = process.env.LIVE_PROFILE_PICTURE_BUCKET_PATH;
+    COVER_PICTURE_BUCKETPATH = process.env.LIVE_COVER_PICTURE_BUCKETPATH;
+} else {
+    PROFILE_PICTURE_BUCKET_PATH = process.env.DEV_PROFILE_PICTURE_BUCKET_PATH
+    COVER_PICTURE_BUCKETPATH = process.env.DEV_COVER_PICTURE_BUCKETPATH;
+}
+
 exports.getProfile = async (req, res) => {
     try {
         let profile = await User.findOne({ _id: req.query.userId || req.user.id })
@@ -161,7 +170,7 @@ exports.uploadProfilePicture = async (req, res) => {
         const files = req.files;
         const userId = req.user.id;
         const user = await User.findOne({ _id: userId });
-        const bucketPath = 'ProfilePicture';
+        const bucketPath = PROFILE_PICTURE_BUCKET_PATH;
         const maxFileSizeBytes = 10000000;
         const contentType = "image";
         let contentLink, rekognitionResult = '';
@@ -217,7 +226,7 @@ exports.uploadCoverPicture = async (req, res) => {
         const files = req.files;
         const userId = req.user.id;
         const user = await User.findOne({ _id: userId });
-        const bucketPath = 'CoverPicture';
+        const bucketPath = COVER_PICTURE_BUCKETPATH;
         const maxFileSizeBytes = 10000000;
         const contentType = "image";
         let contentLink, rekognitionResult = '';
@@ -377,7 +386,7 @@ exports.followManage = async (req, res) => {
             if (!isEmpty(fcmToken)) {
                 const data = {
                     type: 'Follow User',
-                    userId: userId
+                    userId: userId.toString()
                 }
                 const notification = {
                     title: 'A user followed you.',
