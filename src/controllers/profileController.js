@@ -40,11 +40,11 @@ if (process.env.NODE_ENV == "live") {
 
 exports.getProfile = async (req, res) => {
     try {
-        let profile = await User.findOne({ _id: req.query.userId || req.user.id })
+        const user = await User.findOne({ _id: req.query.userId || req.user.id })
             .select('username artistName bio style  profilePicture coverPicture numberOfFollowers numberOfFollowings hasChangedArtistName emailVerified email phoneNumber');
         if (isEmpty(profile)) return res.status(400).json({ success: false, message: 'Profile not found' });
 
-        profile = profile.toObject();
+        let profile = user.toObject();
         // Remove private fields if the requester isn't the profile owner
         if (req.user.id !== profile._id.toString()) {
             delete profile.email;
@@ -400,7 +400,7 @@ exports.followManage = async (req, res) => {
                 data.notificationId = newNotification._id.toString();
                 const sendNotificationResult = await sendPushNotification(fcmToken.token, data, notification);
                 if (!sendNotificationResult) {
-                    return res.status(500).json({ success: false, message: 'Notification was not sent.' });
+                    console.log('Notification for follow user was not sent.');
                 }
                 await newNotification.save();
             }
