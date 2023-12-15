@@ -59,6 +59,7 @@ exports.createChannel = async (req, res) => {
             notification: notification
         });
         data.notificationId = newNotification._id.toString();
+        await newNotification.save();
         const fcmTokenList = await FcmToken.find({ userId: { $in: followers || [] } });
         if (!isEmpty(fcmTokenList)) {
             const fcmTokens = [];
@@ -68,8 +69,7 @@ exports.createChannel = async (req, res) => {
             const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
-            }
-            await newNotification.save();
+            }            
         }
         await newChannel.save();
         return res.status(200).json({ success: true, token: token, channelName: channelName });
