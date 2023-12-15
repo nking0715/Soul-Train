@@ -141,7 +141,7 @@ class SocketHandler {
     try {
       const { channelName } = data;
       console.log('saveRecording api', channelName);
-      let recordingDefaultUID = 2;
+      let recordingDefaultUID = 9999;
       if (
         this.channelInfoList[channelName]
       ) {
@@ -176,7 +176,7 @@ class SocketHandler {
         console.log('channel is already started the recording', channelName);
         return;
       }
-      let recordingDefaultUID = 2;
+      let recordingDefaultUID = 9999;
       let recordingToken = generateAccessToken(String(channelName), RtcRole.SUBSCRIBER, recordingDefaultUID);
       getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
