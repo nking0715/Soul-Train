@@ -316,12 +316,11 @@ exports.search = async (req, res) => {
     const start = (page - 1) * per_page; // Calculate the skip value
     const userId = req.user.id;
 
-    const totalCount = await User.countDocuments({
+    const numberOfAccounts = await User.countDocuments({
       _id: { $ne: userId },
       $or: [
         { username: { $regex: searchText, $options: "i" } },
         { artistName: { $regex: searchText, $options: "i" } },
-        { bio: { $regex: searchText, $options: "i" } },
       ]
     });
 
@@ -348,7 +347,7 @@ exports.search = async (req, res) => {
     return res.status(200).json({
       success: true, users: usersWithFollowStatus,
       meta: {
-        total: totalCount,
+        total: numberOfAccounts,
         page,
         per_page,
       },
