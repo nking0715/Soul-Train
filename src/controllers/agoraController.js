@@ -45,7 +45,8 @@ exports.createChannel = async (req, res) => {
         const followers = user.follower;
 
         const data = {
-            type: 'Live Streaming',
+            type: 'Live Streaming',            
+            publisher: userId.toString(),
             channelId: newChannel._id.toString(),
             channelName: newChannel.channelName
         }
