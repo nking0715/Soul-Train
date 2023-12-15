@@ -137,27 +137,27 @@ exports.createPost = async (req, res) => {
         if (postBlocked) {
             // Update the post's blocked status if any moderation failed
             await Post.findByIdAndUpdate(newPost._id, { blocked: true });
+            const data = {
+                type: 'Post Flagged',
+                postId: newPost._id.toString()
+            }
+            const notification = {
+                title: 'The post was flagged as inappropriate.',
+                body: `Your post was rejected due to inappropriate content.`
+            }
+            const newNotification = new Notification({
+                usersToRead: [userId],
+                data: data,
+                notification: notification
+            });
+            data.notificationId = newNotification._id.toString();
+            await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: userId });
             if (!isEmpty(fcmToken)) {
-                const data = {
-                    type: 'Post Flagged',
-                    postId: newPost._id.toString()
-                }
-                const notification = {
-                    title: 'The post was flagged as inappropriate.',
-                    body: `Your post was rejected due to inappropriate content.`
-                }
-                const newNotification = new Notification({
-                    usersToRead: [userId],
-                    data: data,
-                    notification: notification
-                });
-                data.notificationId = newNotification._id.toString();
                 const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
                 if (!sendNotificationResult) {
                     return res.status(500).json({ success: false, message: 'Notification was not sent.' });
                 }
-                await newNotification.save();
             }
         } else {
             await Post.findByIdAndUpdate(newPost._id, { blocked: false });
