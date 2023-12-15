@@ -384,7 +384,8 @@ exports.followManage = async (req, res) => {
             dancer.follower.push(userId);
             const data = {
                 type: 'Follow User',
-                followerId: userId.toString()
+                followerId: userId.toString(),
+                publisher: userId.toString(),
             }
             const notification = {
                 title: 'A user followed you.',

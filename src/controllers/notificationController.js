@@ -82,17 +82,32 @@ exports.getBadgeStatus = async (req, res) => {
 exports.getListOfNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { page, per_page } = req.query
+    if (isEmpty(page) || isEmpty(per_page)) {
+      return res.status(400).json({ success: false, message: "Invalid Request!" });
+    }
+    const pageConverted = parseInt(page, 10);
+    const per_pageConverted = parseInt(per_page, 10);
+    const skip = (pageConverted - 1) * per_pageConverted;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
-      .select('data notification usersAlreadyRead')
-      .sort({ createdAt: -1 });
+      .populate({
+        path: 'data.publisher',
+        model: 'User',
+        select: 'profilePicture'
+      })
+      .select('data notification usersAlreadyRead createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(per_pageConverted);
 
     // Add isUnread boolean to each notification
     const modifiedNotifications = notifications.map(notification => {
       const isUnread = !notification.usersAlreadyRead.includes(userId);
+      const { usersAlreadyRead, ...rest } = notification.toObject();
       return {
-        ...notification.toObject(), // Convert document to a plain object
-        isUnread // Add the new property
+        ...rest, // Convert document to a plain object
+        isUnread,
       };
     });
 

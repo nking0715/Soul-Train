@@ -139,7 +139,8 @@ exports.createPost = async (req, res) => {
             await Post.findByIdAndUpdate(newPost._id, { blocked: true });
             const data = {
                 type: 'Post Flagged',
-                postId: newPost._id.toString()
+                postId: newPost._id.toString(),
+                publisher: userId.toString()
             }
             const notification = {
                 title: 'The post was flagged as inappropriate.',
