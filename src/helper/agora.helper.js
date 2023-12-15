@@ -109,10 +109,10 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     "subscribeUidGroup": 0
                 },
                 "storageConfig": {
-                    "accessKey": AWS_SECRET_ACCESS_KEY,
+                    "accessKey": AWS_ACCESS_KEY_ID,
                     "region": 0,
                     "bucket": AWS_BUCKET_NAME,
-                    "secretKey": AWS_ACCESS_KEY_ID,
+                    "secretKey": AWS_SECRET_ACCESS_KEY,
                     "vendor": 1,
                     "fileNamePrefix": [
                         "matchmaking"
