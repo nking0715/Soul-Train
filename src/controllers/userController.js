@@ -305,58 +305,6 @@ exports.logout = async (req, res) => {
   }
 };
 
-exports.search = async (req, res) => {
-  try {
-    const { page, per_page, searchText, category } = req.query;
-
-    if (isEmpty(page) || isEmpty(per_page) || isEmpty(searchText) || isEmpty(category)) {
-      return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-
-    const start = (page - 1) * per_page; // Calculate the skip value
-    const userId = req.user.id;
-
-    const numberOfAccounts = await User.countDocuments({
-      _id: { $ne: userId },
-      $or: [
-        { username: { $regex: searchText, $options: "i" } },
-        { artistName: { $regex: searchText, $options: "i" } },
-      ]
-    });
-
-    const users = await User.find({
-      _id: { $ne: userId },
-      $or: [
-        { username: { $regex: searchText, $options: "i" } },
-        { artistName: { $regex: searchText, $options: "i" } },
-      ]
-    })
-      .select("profilePicture username artistName numberOfFollowers") // Also fetch the followers field
-      .skip(start)  // Skip the documents
-      .limit(per_page);  // Limit the number of documents
-
-    // Add a "followed" boolean to each user based on whether the current user follows them
-    const usersWithFollowStatus = users.map(user => {
-      const followed = user.follower.includes(userId);
-      return {
-        ...user._doc, // Spread the existing user fields
-        followed, // Add the "followed" status
-      };
-    });
-
-    return res.status(200).json({
-      success: true, users: usersWithFollowStatus,
-      meta: {
-        total: numberOfAccounts,
-        page,
-        per_page,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-}
-
 exports.resetReq = async (req, res) => {
   try {
     const { email } = req.body;

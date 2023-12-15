@@ -14,7 +14,8 @@ const profileRoutes = require('./routes/profileRoutes');
 const postRoutes = require('./routes/postRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const api = require('./routes/api-router');
-const webhookRoutes = require('./routes/webhook')
+const webhookRoutes = require('./routes/webhook');
+const searchRoutes = require('./routes/searchRoutes');
 const cors = require('cors');
 const fileUpload = require('express-fileupload');
 
@@ -91,6 +92,7 @@ app.use('/notification', notificationRoutes);
 
 // Api Router
 app.use('/api', api);
+app.use('/search', searchRoutes);
 
 // Agora routes
 app.use('/agora', agoraRoutes);
