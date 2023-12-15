@@ -382,27 +382,27 @@ exports.followManage = async (req, res) => {
         } else {
             user.following.push(dancerId);
             dancer.follower.push(userId);
+            const data = {
+                type: 'Follow User',
+                followerId: userId.toString()
+            }
+            const notification = {
+                title: 'A user followed you.',
+                body: `${user.artistName} started to follow you.`
+            }
+            const newNotification = new Notification({
+                usersToRead: [dancerId],
+                data: data,
+                notification: notification
+            });
+            data.notificationId = newNotification._id.toString();
+            await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: dancerId });
             if (!isEmpty(fcmToken)) {
-                const data = {
-                    type: 'Follow User',
-                    followerId: userId.toString()
-                }
-                const notification = {
-                    title: 'A user followed you.',
-                    body: `${user.artistName} started to follow you.`
-                }
-                const newNotification = new Notification({
-                    usersToRead: [dancerId],
-                    data: data,
-                    notification: notification
-                });
-                data.notificationId = newNotification._id.toString();
                 const sendNotificationResult = await sendPushNotification(fcmToken.token, data, notification);
                 if (!sendNotificationResult) {
                     console.log('Notification for follow user was not sent.');
                 }
-                await newNotification.save();
             }
         }
         await user.save();
