@@ -316,6 +316,15 @@ exports.search = async (req, res) => {
     const start = (page - 1) * per_page; // Calculate the skip value
     const userId = req.user.id;
 
+    const totalCount = await User.countDocuments({
+      _id: { $ne: userId },
+      $or: [
+        { username: { $regex: searchText, $options: "i" } },
+        { artistName: { $regex: searchText, $options: "i" } },
+        { bio: { $regex: searchText, $options: "i" } },
+      ]
+    });
+
     const users = await User.find({
       _id: { $ne: userId },
       $or: [
@@ -326,15 +335,6 @@ exports.search = async (req, res) => {
       .select("profilePicture username artistName numberOfFollowers") // Also fetch the followers field
       .skip(start)  // Skip the documents
       .limit(per_page);  // Limit the number of documents
-
-    const totalCount = await User.countDocuments({
-      _id: { $ne: userId },
-      $or: [
-        { username: { $regex: searchText, $options: "i" } },
-        { artistName: { $regex: searchText, $options: "i" } },
-        { bio: { $regex: searchText, $options: "i" } },
-      ]
-    });
 
     // Add a "followed" boolean to each user based on whether the current user follows them
     const usersWithFollowStatus = users.map(user => {
