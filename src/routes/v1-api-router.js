@@ -5,6 +5,6 @@ const { searchDancers } = require('../controllers/userController');
 
 // App Backend Router
 router.post("/discover/blocked-contents", discoverBlockedContents);
-router.post('/search/:searchText', searchDancers);
+router.get('/search', searchDancers);
 
 module.exports = router;

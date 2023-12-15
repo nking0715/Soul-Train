@@ -305,30 +305,25 @@ exports.logout = async (req, res) => {
   }
 };
 
-exports.searchDancers = async (req, res) => {
-  const { page, per_page } = req.body;
-  if (isEmpty(page) || isEmpty(per_page)) {
-    return res.status(400).json({ success: false, message: "Invalid Request!" });
-  }
-  const start = (page - 1) * per_page; // Calculate the skip value
-
-  const { searchText } = req.params;
-  const userId = req.user.id;
-
-  if (isEmpty(searchText)) {
-    return res.status(400).json({ success: false, message: "Invalid Request" });
-  }
-
+exports.search = async (req, res) => {
   try {
+    const { page, per_page, searchText, category } = req.query;
+
+    if (isEmpty(page) || isEmpty(per_page) || isEmpty(searchText) || isEmpty(category)) {
+      return res.status(400).json({ success: false, message: "Invalid Request!" });
+    }
+
+    const start = (page - 1) * per_page; // Calculate the skip value
+    const userId = req.user.id;
+
     const users = await User.find({
       _id: { $ne: userId },
       $or: [
         { username: { $regex: searchText, $options: "i" } },
         { artistName: { $regex: searchText, $options: "i" } },
-        { bio: { $regex: searchText, $options: "i" } },
       ]
     })
-      .select("profilePicture username artistName follower") // Also fetch the followers field
+      .select("profilePicture username artistName numberOfFollowers") // Also fetch the followers field
       .skip(start)  // Skip the documents
       .limit(per_page);  // Limit the number of documents
 
