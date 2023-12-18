@@ -156,7 +156,7 @@ class SocketHandler {
         const resourceId = this.channelInfoList[channelName].resourceId;
         const sid = this.channelInfoList[channelName].sid;
 
-        getRecordingStatus(resourceId, sid, 'individual').then(res => {
+        getRecordingStatus(resourceId, sid, 'mix').then(res => {
           console.log("recording status is ", res.serverResponse);
         }).catch(err => {
           console.log("recording status is err", err);
@@ -193,7 +193,7 @@ class SocketHandler {
             sid: res.sid,
           };
 
-          getRecordingStatus(res.resourceId, res.sid, 'individual').then(res => {
+          getRecordingStatus(res.resourceId, res.sid, 'mix').then(res => {
             console.log("recording status is ", res);
           }).catch(err => {
             console.log("recording status is err", err);
