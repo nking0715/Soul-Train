@@ -12,6 +12,7 @@ class SocketHandler {
     this.lobbyUserList = [];
     this.channelInfoList = {};
     this.channelList = [];
+    this.channelSaveList = [];
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
@@ -142,6 +143,13 @@ class SocketHandler {
       const { channelName } = data;
       console.log('saveRecording api', channelName);
       let recordingDefaultUID = 9999;
+      if (!this.channelSaveList.includes(String(channelName))) {
+        this.channelSaveList.push(String(channelName));
+      } else {
+        console.log('channel is already saved the recording', channelName);
+        return;
+      }
+
       if (
         this.channelInfoList[channelName]
       ) {
