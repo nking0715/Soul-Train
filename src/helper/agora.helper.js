@@ -86,20 +86,29 @@ exports.getRecordingStatus = (resourceid, sid, mode) => {
 
 exports.startRecording = (resourceId, channelName, uid, token) => {
     return new Promise(async (resolve, reject) => {
-        const mode = 'individual'; // Or 'composite' as needed
-        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/${mode}/start`;
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/mix/start`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {
             "cname": channelName,
             "uid": uid.toString(),
             "clientRequest": {
-                "token": token,
+                "token": token,        
                 "recordingConfig": {
                     "maxIdleTime": 30,
                     "streamTypes": 2,
+                    "audioProfile": 1,
                     "channelType": 0,
                     "videoStreamType": 0,
+                    "transcodingConfig": {
+                        "height": 640,
+                        "width": 360,
+                        "bitrate": 500,
+                        "fps": 15,
+                        "mixedVideoLayout": 1,
+                        "backgroundColor": "#FF0000"
+                    },
+
                     "subscribeVideoUids": [
                         "1", "2"
                     ],
@@ -144,8 +153,7 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
 
 exports.saveRecording = (resourceId, channelName, sid, uid) => {
     return new Promise(async (resolve, reject) => {
-        const mode = 'individual'; // Or 'composite' as needed
-        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/${mode}/stop`;
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/stop`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {

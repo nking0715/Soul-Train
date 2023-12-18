@@ -180,8 +180,6 @@ class SocketHandler {
       let recordingToken = generateAccessToken(String(channelName), RtcRole.SUBSCRIBER, recordingDefaultUID);
       getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
-          console.log("start recording data is ", res);
-
           this.channelInfoList[channelName] = {
             resourceId: res.resourceId,
             sid: res.sid,
