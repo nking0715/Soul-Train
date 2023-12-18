@@ -1,6 +1,7 @@
 const musicList = [
-    'https://soul-train-bucket.s3.amazonaws.com/Music/Avion_02.wav',
-    'https://soul-train-bucket.s3.amazonaws.com/Music/Dj_Arabinho_BOOM_BAP-02.wav',
+    'https://soul-train-bucket.s3.amazonaws.com/Music/Dj_Arabinho_BOOM_BAP-02_2.wav',
+    'https://soul-train-bucket.s3.amazonaws.com/Music/DJ_FLEG_Dimension_Five-02-2.wav',
+    'https://soul-train-bucket.s3.amazonaws.com/Music/Falcons_Breaks_Drumline-02-2.wav',
     'https://soul-train-bucket.s3.amazonaws.com/Music/Oriental-02.wav',
 ];
 
