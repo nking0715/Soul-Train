@@ -4,42 +4,42 @@ const isEmpty = require('../utils/isEmpty');
 
 exports.search = async (req, res) => {
   try {
-    const { page, per_page, search_text, category } = req.query;
+    const { page, perPage, searchText, category } = req.query;
 
-    if (isEmpty(page) || isEmpty(per_page) || isEmpty(search_text) || isEmpty(category)) {
+    if (isEmpty(page) || isEmpty(perPage) || isEmpty(searchText) || isEmpty(category)) {
       return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
 
     const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+    const perPageConverted = parseInt(perPage, 10);
+    const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     const userId = req.user.id;
 
     const numberOfAccounts = await User.countDocuments({
       _id: { $ne: userId },
       $or: [
-        { username: { $regex: search_text, $options: "i" } },
-        { artistName: { $regex: search_text, $options: "i" } },
+        { username: { $regex: searchText, $options: "i" } },
+        { artistName: { $regex: searchText, $options: "i" } },
       ]
     });
 
     const numberOfPostsForTag = await Post.countDocuments({
       _id: { $ne: userId },
-      tags: { $elemMatch: { $regex: search_text, $options: "i" } }
+      tags: { $elemMatch: { $regex: searchText, $options: "i" } }
     })
 
     if (category == 'accounts') {
       const users = await User.find({
         _id: { $ne: userId },
         $or: [
-          { username: { $regex: search_text, $options: "i" } },
-          { artistName: { $regex: search_text, $options: "i" } },
+          { username: { $regex: searchText, $options: "i" } },
+          { artistName: { $regex: searchText, $options: "i" } },
         ]
       })
         .select("profilePicture username artistName numberOfFollowers follower") // Also fetch the followers field
         .skip(start)  // Skip the documents
-        .limit(per_pageConverted);  // Limit the number of documents
+        .limit(perPageConverted);  // Limit the number of documents
 
       // Add a "followed" boolean to each user based on whether the current user follows them
       const usersWithFollowStatus = users.map(user => {
@@ -62,12 +62,12 @@ exports.search = async (req, res) => {
           $match:
           {
             _id: { $ne: userId },
-            tags: { $elemMatch: { $regex: search_text, $options: "i" } }
+            tags: { $elemMatch: { $regex: searchText, $options: "i" } }
           }
         },
         { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
         { $skip: start }, // Skip the specified number of documents
-        { $limit: per_pageConverted }, // Limit the number of documents
+        { $limit: perPageConverted }, // Limit the number of documents
         {
           $lookup: {
             from: "users", // Name of the user collection
@@ -140,13 +140,13 @@ exports.search = async (req, res) => {
       const users = await User.find({
         _id: { $ne: userId },
         $or: [
-          { username: { $regex: search_text, $options: "i" } },
-          { artistName: { $regex: search_text, $options: "i" } },
+          { username: { $regex: searchText, $options: "i" } },
+          { artistName: { $regex: searchText, $options: "i" } },
         ]
       })
         .select("profilePicture username artistName numberOfFollowers follower") // Also fetch the followers field
         .skip(start)  // Skip the documents
-        .limit(per_pageConverted);  // Limit the number of documents
+        .limit(perPageConverted);  // Limit the number of documents
 
       // Add a "followed" boolean to each user based on whether the current user follows them
       const usersWithFollowStatus = users.map(user => {
@@ -162,12 +162,12 @@ exports.search = async (req, res) => {
           $match:
           {
             _id: { $ne: userId },
-            tags: { $elemMatch: { $regex: search_text, $options: "i" } }
+            tags: { $elemMatch: { $regex: searchText, $options: "i" } }
           }
         },
         { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
         { $skip: start }, // Skip the specified number of documents
-        { $limit: per_pageConverted }, // Limit the number of documents
+        { $limit: perPageConverted }, // Limit the number of documents
         {
           $lookup: {
             from: "users", // Name of the user collection

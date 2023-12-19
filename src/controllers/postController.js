@@ -172,14 +172,14 @@ exports.createPost = async (req, res) => {
 
 exports.getPost = async (req, res) => {
     try {
-        const { page, per_page, userId } = req.query;
+        const { page, perPage, userId } = req.query;
         const userToSearch = userId || req.user.id;
-        if (isEmpty(page) || isEmpty(per_page)) {
+        if (isEmpty(page) || isEmpty(perPage)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
         const pageConverted = parseInt(page, 10);
-        const per_pageConverted = parseInt(per_page, 10);
-        const skip = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+        const perPageConverted = parseInt(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
         const conditions = [{ $eq: [{ $toString: "$author" }, userToSearch] }];
         if (userToSearch !== req.user.id) {
@@ -196,7 +196,7 @@ exports.getPost = async (req, res) => {
             },
             { $sort: { createdAt: -1 } },
             { $skip: skip },
-            { $limit: per_pageConverted },
+            { $limit: perPageConverted },
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -330,11 +330,11 @@ exports.commentPost = async (req, res) => {
 
 exports.getComment = async (req, res) => {
     try {
-        const { postId, page, per_page } = req.query;
-        const skip = (page - 1) * per_page;
+        const { postId, page, perPage } = req.query;
+        const skip = (page - 1) * perPage;
         const comments = await Comment.find({ post: postId })
             .skip(skip)
-            .limit(per_page)
+            .limit(perPage)
             .populate('author', 'username profilePicture')
             .sort({ createdAt: -1 });
         return res.status(200).json({
@@ -455,13 +455,13 @@ exports.savePost = async (req, res) => {
 exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { page, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
+        const { page, perPage } = req.query;
+        if (isEmpty(page) || isEmpty(perPage)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
         const pageConverted = parseInt(page, 10);
-        const per_pageConverted = parseInt(per_page, 10);
-        const skip = (pageConverted - 1) * per_pageConverted;
+        const perPageConverted = parseInt(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted;
         const result = await Post.aggregate([
             {
                 $match:
@@ -476,7 +476,7 @@ exports.getSavedPost = async (req, res) => {
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: skip }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            { $limit: perPageConverted }, // Limit the number of documents
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -586,14 +586,14 @@ exports.reportContent = async (req, res) => {
 }
 
 exports.discoverPosts = async (req, res) => {
-    const { page, per_page } = req.query;
+    const { page, perPage } = req.query;
     const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(per_page)) {
+    if (isEmpty(page) || isEmpty(perPage)) {
         return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
     const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+    const perPageConverted = parseInt(perPage, 10);
+    const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     try {
         // Get the users that the requesting user follows
@@ -618,7 +618,7 @@ exports.discoverPosts = async (req, res) => {
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            { $limit: perPageConverted }, // Limit the number of documents
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -716,14 +716,14 @@ exports.discoverPosts = async (req, res) => {
 };
 
 exports.homeFeed = async (req, res) => {
-    const { page, per_page } = req.query;
+    const { page, perPage } = req.query;
     const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(per_page)) {
+    if (isEmpty(page) || isEmpty(perPage)) {
         return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
     const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+    const perPageConverted = parseInt(perPage, 10);
+    const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     try {
         // Get the users that the requesting user follows
@@ -734,7 +734,7 @@ exports.homeFeed = async (req, res) => {
             { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            { $limit: perPageConverted }, // Limit the number of documents
             {
                 $lookup: {
                     from: "users", // Name of the user collection
