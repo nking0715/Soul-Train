@@ -107,6 +107,7 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
         Key: s3Url
     }).promise();
     const resizedBuffer = await sharp(objectData.Body)
+        .rotate()
         .resize(null, 180)
         .toBuffer();
     const promise = s3.upload({
