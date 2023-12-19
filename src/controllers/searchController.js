@@ -52,7 +52,7 @@ exports.search = async (req, res) => {
       });
       return res.status(200).json({
         success: true,
-        searchResult: usersWithFollowStatus,
+        searchResult: { accounts: usersWithFollowStatus },
         numberOfAccounts,
         numberOfPostsForTag
       });
@@ -132,7 +132,7 @@ exports.search = async (req, res) => {
       ]);
       return res.status(200).json({
         success: true,
-        searchResult: posts,
+        searchResult: { hashtags: posts },
         numberOfAccounts,
         numberOfPostsForTag
       });
