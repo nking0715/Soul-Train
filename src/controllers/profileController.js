@@ -67,17 +67,17 @@ exports.getProfile = async (req, res) => {
 
 exports.getFollowerList = async (req, res) => {
     try {
-        const { page, userId, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
+        const { page, userId, perPage } = req.query;
+        if (isEmpty(page) || isEmpty(perPage)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
-        const skip = (page - 1) * per_page; // Calculate the skip value
+        const skip = (page - 1) * perPage; // Calculate the skip value
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findOne({ _id: userId || req.user.id })
             .select('follower');
         const followersList = await User.find({ _id: { $in: user.follower } })
-            .limit(per_page)
+            .limit(perPage)
             .skip(skip)
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
@@ -93,18 +93,18 @@ exports.getFollowerList = async (req, res) => {
 
 exports.getFollowingList = async (req, res) => {
     try {
-        const { page, userId, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
+        const { page, userId, perPage } = req.query;
+        if (isEmpty(page) || isEmpty(perPage)) {
             return res.status(400).json({ success: false, message: "Invalid Request!" });
         }
-        const skip = (page - 1) * per_page; // Calculate the skip value
+        const skip = (page - 1) * perPage; // Calculate the skip value
         const userToSearch = userId || req.user.id;
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findById(userToSearch)
             .select('following');
         const followingsList = await User.find({ _id: { $in: user.following } })
-            .limit(per_page)
+            .limit(perPage)
             .skip(skip)
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {

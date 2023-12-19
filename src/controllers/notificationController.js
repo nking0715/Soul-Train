@@ -82,13 +82,13 @@ exports.getBadgeStatus = async (req, res) => {
 exports.getListOfNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page, per_page } = req.query
-    if (isEmpty(page) || isEmpty(per_page)) {
+    const { page, perPage } = req.query
+    if (isEmpty(page) || isEmpty(perPage)) {
       return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
     const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const skip = (pageConverted - 1) * per_pageConverted;
+    const perPageConverted = parseInt(perPage, 10);
+    const skip = (pageConverted - 1) * perPageConverted;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
       .populate({
@@ -99,7 +99,7 @@ exports.getListOfNotifications = async (req, res) => {
       .select('data notification usersAlreadyRead createdAt')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(per_pageConverted);
+      .limit(perPageConverted);
 
     // Add isUnread boolean to each notification
     const modifiedNotifications = notifications.map(notification => {
