@@ -4,9 +4,9 @@ const isEmpty = require('../utils/isEmpty');
 
 exports.search = async (req, res) => {
   try {
-    const { page, per_page, searchText, category } = req.query;
+    const { page, per_page, search_text, category } = req.query;
 
-    if (isEmpty(page) || isEmpty(per_page) || isEmpty(searchText) || isEmpty(category)) {
+    if (isEmpty(page) || isEmpty(per_page) || isEmpty(search_text) || isEmpty(category)) {
       return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
 
@@ -19,22 +19,22 @@ exports.search = async (req, res) => {
     const numberOfAccounts = await User.countDocuments({
       _id: { $ne: userId },
       $or: [
-        { username: { $regex: searchText, $options: "i" } },
-        { artistName: { $regex: searchText, $options: "i" } },
+        { username: { $regex: search_text, $options: "i" } },
+        { artistName: { $regex: search_text, $options: "i" } },
       ]
     });
 
     const numberOfPostsForTag = await Post.countDocuments({
       _id: { $ne: userId },
-      tags: { $elemMatch: { $regex: searchText, $options: "i" } }
+      tags: { $elemMatch: { $regex: search_text, $options: "i" } }
     })
 
     if (category == 'accounts') {
       const users = await User.find({
         _id: { $ne: userId },
         $or: [
-          { username: { $regex: searchText, $options: "i" } },
-          { artistName: { $regex: searchText, $options: "i" } },
+          { username: { $regex: search_text, $options: "i" } },
+          { artistName: { $regex: search_text, $options: "i" } },
         ]
       })
         .select("profilePicture username artistName numberOfFollowers follower") // Also fetch the followers field
@@ -62,7 +62,7 @@ exports.search = async (req, res) => {
           $match:
           {
             _id: { $ne: userId },
-            tags: { $elemMatch: { $regex: searchText, $options: "i" } }
+            tags: { $elemMatch: { $regex: search_text, $options: "i" } }
           }
         },
         { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
@@ -140,8 +140,8 @@ exports.search = async (req, res) => {
       const users = await User.find({
         _id: { $ne: userId },
         $or: [
-          { username: { $regex: searchText, $options: "i" } },
-          { artistName: { $regex: searchText, $options: "i" } },
+          { username: { $regex: search_text, $options: "i" } },
+          { artistName: { $regex: search_text, $options: "i" } },
         ]
       })
         .select("profilePicture username artistName numberOfFollowers follower") // Also fetch the followers field
@@ -162,7 +162,7 @@ exports.search = async (req, res) => {
           $match:
           {
             _id: { $ne: userId },
-            tags: { $elemMatch: { $regex: searchText, $options: "i" } }
+            tags: { $elemMatch: { $regex: search_text, $options: "i" } }
           }
         },
         { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
