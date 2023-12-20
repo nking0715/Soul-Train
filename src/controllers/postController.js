@@ -855,7 +855,7 @@ exports.homeFeed = async (req, res) => {
         const user = await User.findById(userId);
         const followedUserIds = user.following;
 
-        const result = await Post.aggregate([
+        const results = await Post.aggregate([
             { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
@@ -937,7 +937,7 @@ exports.homeFeed = async (req, res) => {
             }
         ]);
 
-        return res.status(200).json({ success: true, result });
+        return res.status(200).json({ success: true, results });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
