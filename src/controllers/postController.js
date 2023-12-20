@@ -586,132 +586,257 @@ exports.reportContent = async (req, res) => {
 }
 
 exports.discoverPosts = async (req, res) => {
-    const { page, perPage } = req.query;
-    const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(perPage)) {
-        return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const pageConverted = parseInt(page, 10);
-    const perPageConverted = parseInt(perPage, 10);
-    const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
-
     try {
+        const { page = 1, perPage = 10, categorisedByTag = "false" } = req.query;
+        const userId = req.user.id;
+
+        const pageConverted = parseInt(page, 10);
+        const perPageConverted = parseInt(perPage, 10);
+        if (isNaN(pageConverted) || isNaN(perPageConverted)) {
+            return res.status(400).json({ success: false, message: "Page and perPage must be valid numbers" });
+        }
+        const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
+
         // Get the users that the requesting user follows
-        const user = await User.findById(userId);
+        const user = await User.findById(userId, 'following');
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
         const followedUserIds = user.following;
 
-        const result = await Post.aggregate([
-            {
-                $lookup: {
-                    from: "assets", // Join with the assets collection first to filter posts with video assets
-                    localField: "assets",
-                    foreignField: "_id",
-                    as: "assetDetails"
-                }
-            },
-            {
-                $match: {
-                    'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
-                    author: { $nin: followedUserIds }, // Original author filtering logic         
-                    blocked: { $ne: true }
-                }
-            },
-            { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
-            { $skip: start }, // Skip the specified number of documents
-            { $limit: perPageConverted }, // Limit the number of documents
-            {
-                $lookup: {
-                    from: "users", // Name of the user collection
-                    localField: "author",
-                    foreignField: "_id",
-                    as: "userDetails"
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    thumbnail: 1,
-                    assets: {
-                        $map: {
-                            input: {
-                                $filter: {
-                                    input: "$assetDetails",
-                                    as: "asset",
-                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+        if (categorisedByTag == "true") {
+            const compareDate = new Date();
+            compareDate.setDate(compareDate.getDate() - 30);
+            const result = await Post.aggregate([
+                // Join with assets collection
+                {
+                    $lookup: {
+                        from: "assets",
+                        localField: "assets",
+                        foreignField: "_id",
+                        as: "assetDetails"
+                    }
+                },
+                // Filtering and sorting
+                {
+                    $match: {
+                        'assetDetails.contentType': 'video',
+                        author: { $nin: followedUserIds },
+                        blocked: { $ne: true },
+                        createdAt: { $gte: compareDate }
+                    }
+                },
+                // Join with users collection
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "_id",
+                        as: "userDetails"
+                    }
+                },
+                // Project necessary fields
+                {
+                    $project: {
+                        _id: 1,
+                        thumbnail: 1,
+                        assets: {
+                            $map: {
+                                input: "$assetDetails",
+                                as: "asset",
+                                in: {
+                                    url: "$$asset.url",
+                                    thumbnail: "$$asset.thumbnail"
                                 }
-                            },
-                            as: "asset",
-                            in: {
-                                url: "$$asset.url",
-                                thumbnail: "$$asset.thumbnail"
                             }
-                        }
-                    },
-                    numberOfViews: 1,
-                    numberOfLikes: 1,
-                    numberOfComments: 1,
-                    tags: 1,
-                    caption: 1,
-                    createdAt: 1,
-                    likeList: 1,
-                    saveList: 1,
-                    likedByUser: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $isArray: "$likeList" },
-                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
-                                ]
-                            },
-                            true,
-                            false
-                        ]
-                    },
-                    savedByUser: {
-                        $cond: [
-                            {
-                                $and: [
-                                    { $isArray: "$saveList" },
-                                    { $in: [{ $toObjectId: userId }, "$saveList"] }
-                                ]
-                            },
-                            true,
-                            false
-                        ]
-                    },
-                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
-                    username: { $arrayElemAt: ["$userDetails.username", 0] },
-                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
-                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                    assets: {
-                        $map: {
-                            input: {
-                                $filter: {
-                                    input: "$assetDetails",
-                                    as: "asset",
-                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
+                        },
+                        numberOfViews: 1,
+                        numberOfLikes: 1,
+                        numberOfComments: 1,
+                        tags: 1,
+                        caption: 1,
+                        createdAt: 1,
+                        likeList: 1,
+                        saveList: 1,
+                        likedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$likeList" },
+                                        { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        savedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$saveList" },
+                                        { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        user_id: { $arrayElemAt: ["$userDetails._id", 0] },
+                        username: { $arrayElemAt: ["$userDetails.username", 0] },
+                        artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                        profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    }
+                },
+                {
+                    $project: {
+                        likeList: 0,
+                        saveList: 0
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                // Unwind the tags array to treat each tag separately
+                {
+                    $unwind: "$tags"
+                },
+                // Group by tags
+                {
+                    $group: {
+                        _id: "$tags",
+                        posts: { $push: "$$ROOT" }
+                    }
+                },
+                // Count the number of posts per tag and sort
+                {
+                    $project: {
+                        tag: "$_id",
+                        numberOfPosts: { $size: "$posts" },
+                        posts: 1
+                    }
+                },
+                {
+                    $sort: { numberOfPosts: -1 }
+                },
+                { $skip: start },
+                { $limit: perPageConverted },
+                // Limit the number of posts per tag (if needed)
+                {
+                    $project: {
+                        tag: 1,
+                        posts: { $slice: ["$posts", 6] } // Adjust the number as per requirement
+                    }
+                },
+                // Project into the final structure
+                {
+                    $group: {
+                        _id: null,
+                        tags: { $push: { k: "$tag", v: "$posts" } }
+                    }
+                },
+                {
+                    $replaceRoot: {
+                        newRoot: { $arrayToObject: "$tags" }
+                    }
+                },
+            ]);
+            return res.status(200).json({ success: true, result });
+        } else {
+            const result = await Post.aggregate([
+                // Join with assets collection
+                {
+                    $lookup: {
+                        from: "assets",
+                        localField: "assets",
+                        foreignField: "_id",
+                        as: "assetDetails"
+                    }
+                },
+                // Filtering and sorting
+                {
+                    $match: {
+                        'assetDetails.contentType': 'video',
+                        author: { $nin: followedUserIds },
+                        blocked: { $ne: true }
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                { $skip: start },
+                { $limit: perPageConverted },
+                // Join with users collection
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "_id",
+                        as: "userDetails"
+                    }
+                },
+                // Project necessary fields
+                {
+                    $project: {
+                        _id: 1,
+                        thumbnail: 1,
+                        assets: {
+                            $map: {
+                                input: "$assetDetails",
+                                as: "asset",
+                                in: {
+                                    url: "$$asset.url",
+                                    thumbnail: "$$asset.thumbnail"
                                 }
-                            },
-                            as: "asset",
-                            in: {
-                                url: "$$asset.url",
-                                thumbnail: "$$asset.thumbnail"
                             }
-                        }
-                    },
+                        },
+                        numberOfViews: 1,
+                        numberOfLikes: 1,
+                        numberOfComments: 1,
+                        tags: 1,
+                        caption: 1,
+                        createdAt: 1,
+                        likeList: 1,
+                        saveList: 1,
+                        likedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$likeList" },
+                                        { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        savedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$saveList" },
+                                        { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        user_id: { $arrayElemAt: ["$userDetails._id", 0] },
+                        username: { $arrayElemAt: ["$userDetails.username", 0] },
+                        artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                        profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    }
+                },
+                {
+                    $project: {
+                        likeList: 0,
+                        saveList: 0
+                    }
                 }
-            },
-            {
-                $project: {
-                    likeList: 0,
-                    saveList: 0
-                }
-            }
-        ]);
+            ]);
 
-        return res.status(200).json({ success: true, results: result });
+            return res.status(200).json({ success: true, results: result });
+        }
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.log("Error in discoverPosts: ", error.message, error.stack)
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 };
 
@@ -812,7 +937,7 @@ exports.homeFeed = async (req, res) => {
             }
         ]);
 
-        return res.status(200).json({ success: true, results: result });
+        return res.status(200).json({ success: true, result });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
