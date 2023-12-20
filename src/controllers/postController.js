@@ -607,7 +607,7 @@ exports.discoverPosts = async (req, res) => {
         if (categorisedByTag == "true") {
             const compareDate = new Date();
             compareDate.setDate(compareDate.getDate() - 30);
-            const result = await Post.aggregate([
+            const results = await Post.aggregate([
                 // Join with assets collection
                 {
                     $lookup: {
@@ -739,9 +739,9 @@ exports.discoverPosts = async (req, res) => {
                     }
                 },
             ]);
-            return res.status(200).json({ success: true, result });
+            return res.status(200).json({ success: true, results });
         } else {
-            const result = await Post.aggregate([
+            const results = await Post.aggregate([
                 // Join with assets collection
                 {
                     $lookup: {
@@ -832,7 +832,7 @@ exports.discoverPosts = async (req, res) => {
                 }
             ]);
 
-            return res.status(200).json({ success: true, results: result });
+            return res.status(200).json({ success: true, results });
         }
     } catch (error) {
         console.log("Error in discoverPosts: ", error.message, error.stack)
