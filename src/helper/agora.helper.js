@@ -86,6 +86,7 @@ exports.getRecordingStatus = (resourceid, sid, mode) => {
 
 exports.startRecording = (resourceId, channelName, uid, token) => {
     return new Promise(async (resolve, reject) => {
+        console.log("start recording sid is ", sid);
         const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/mix/start`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
@@ -100,39 +101,38 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     "audioProfile": 1,
                     "channelType": 0,
                     "videoStreamType": 0,
-                    "transcodingConfig": {
-                        "height": 640,
-                        "width": 360,
-                        "bitrate": 500,
-                        "fps": 15,
-                        "mixedVideoLayout": 0,
-                        "backgroundColor": "#000000"
-                    },
-
                     // "transcodingConfig": {
-                    //     "mixedVideoLayout": 3,
-                    //     "backgroudColor": "#000000",
-                    //     "layoutConfig": [
-                    //         {
-                    //             "uid": "1",
-                    //             "x_axis": 0.0,
-                    //             "y_axis": 0.0,
-                    //             "width": 1.0,
-                    //             "height": 1.0,
-                    //             "alpha": 1.0,
-                    //             "render_mode": 1
-                    //         },
-                    //         {
-                    //             "uid": "2",
-                    //             "x_axis": 0.75,
-                    //             "y_axis": 0.0,
-                    //             "width": 0.25,
-                    //             "height": 0.25,
-                    //             "alpha": 1.0,
-                    //             "render_mode": 1
-                    //         },
-                    //     ]
+                    //     "height": 640,
+                    //     "width": 360,
+                    //     "bitrate": 500,
+                    //     "fps": 15,
+                    //     "mixedVideoLayout": 0,
+                    //     "backgroundColor": "#000000"
                     // },
+                    "transcodingConfig": {
+                        "mixedVideoLayout": 3,
+                        "backgroudColor": "#000000",
+                        "layoutConfig": [
+                            {
+                                "uid": "1",
+                                "x_axis": 0.0,
+                                "y_axis": 0.0,
+                                "width": 1.0,
+                                "height": 1.0,
+                                "alpha": 1.0,
+                                "render_mode": 1
+                            },
+                            {
+                                "uid": "2",
+                                "x_axis": 0.75,
+                                "y_axis": 0.0,
+                                "width": 0.2,
+                                "height": 0.25,
+                                "alpha": 1.0,
+                                "render_mode": 1
+                            },
+                        ]
+                    },
 
                     "subscribeVideoUids": [
                         "1", "2"
