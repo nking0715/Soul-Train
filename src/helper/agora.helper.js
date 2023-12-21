@@ -117,6 +117,9 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     ],
                     "subscribeUidGroup": 0
                 },
+                "recordingFileConfig": {
+                    "avFileType": ["hls", "mp4"] 
+                },
                 "storageConfig": {
                     "accessKey": AWS_ACCESS_KEY_ID,
                     "region": 0,
