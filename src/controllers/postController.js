@@ -175,7 +175,7 @@ exports.getPost = async (req, res) => {
     try {
         const { page = 1, perPage = 10, userId } = req.query;
         const userToSearch = userId || req.user.id;
-        
+
         const pageConverted = parseQueryParam(page, 1);
         const perPageConverted = parseQueryParam(perPage, 10);
         const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
@@ -280,17 +280,41 @@ exports.getPost = async (req, res) => {
     }
 };
 
+exports.editPost = async (req, res) => {
+    try {
+        const { tags, caption, postId } = req.body;
+        const userId = req.user.id;
+        const user = await User.findOne({ _id: userId });
+        if (isEmpty(user)) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+        const post = await Post.findById(postId)
+            .select("author tags caption");
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: "Post not found." });
+        }
+        if (userId !== post.author.toString()) {
+            return res.status(403).json({ success: false, message: "The user can't edit a post created by another user." });
+        }
+        await Post.findByIdAndUpdate(postId, { tags: tags, caption: caption });
+        
+        return res.status(200).json({ success: true, message: "Post successfully edited." });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 exports.deletePost = async (req, res) => {
     try {
         const postId = req.query.postId;
         const userId = req.user.id;
         const post = await Post.findById(postId)
             .select("author");
-        if (userId !== post.author.toString()) {
-            return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
-        }
         if (isEmpty(post)) {
             return res.status(400).json({ success: false, message: "Post not found." });
+        }
+        if (userId !== post.author.toString()) {
+            return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
         }
         await Post.findByIdAndRemove(postId);
         return res.status(200).json({ success: true, message: "Post successfully removed." });
