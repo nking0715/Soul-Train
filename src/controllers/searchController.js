@@ -4,14 +4,14 @@ const isEmpty = require('../utils/isEmpty');
 
 exports.search = async (req, res) => {
   try {
-    const { page, perPage, searchText, category } = req.query;
+    const { page = 1, perPage = 10, searchText, category } = req.query;
 
-    if (isEmpty(page) || isEmpty(perPage) || isEmpty(searchText) || isEmpty(category)) {
+    if (isEmpty(searchText) || isEmpty(category)) {
       return res.status(400).json({ success: false, message: "Invalid Request!" });
     }
 
-    const pageConverted = parseInt(page, 10);
-    const perPageConverted = parseInt(perPage, 10);
+    const pageConverted = parseQueryParam(page, 1);
+    const perPageConverted = parseQueryParam(perPage, 10);
     const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     const userId = req.user.id;

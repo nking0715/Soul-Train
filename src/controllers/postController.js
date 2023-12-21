@@ -6,6 +6,7 @@ const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
+const { parseQueryParam } = require('../utils/queryUtils');
 const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
@@ -172,13 +173,11 @@ exports.createPost = async (req, res) => {
 
 exports.getPost = async (req, res) => {
     try {
-        const { page, perPage, userId } = req.query;
+        const { page = 1, perPage = 10, userId } = req.query;
         const userToSearch = userId || req.user.id;
-        if (isEmpty(page) || isEmpty(perPage)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const pageConverted = parseInt(page, 10);
-        const perPageConverted = parseInt(perPage, 10);
+        
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
         const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
         const conditions = [{ $eq: [{ $toString: "$author" }, userToSearch] }];
@@ -330,11 +329,14 @@ exports.commentPost = async (req, res) => {
 
 exports.getComment = async (req, res) => {
     try {
-        const { postId, page, perPage } = req.query;
-        const skip = (page - 1) * perPage;
+        const { postId, page = 1, perPage = 10 } = req.query;
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted;
         const comments = await Comment.find({ post: postId })
             .skip(skip)
-            .limit(perPage)
+            .limit(perPageConverted)
             .populate('author', 'username profilePicture')
             .sort({ createdAt: -1 });
         return res.status(200).json({
@@ -455,12 +457,9 @@ exports.savePost = async (req, res) => {
 exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { page, perPage } = req.query;
-        if (isEmpty(page) || isEmpty(perPage)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const pageConverted = parseInt(page, 10);
-        const perPageConverted = parseInt(perPage, 10);
+        const { page = 1, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
         const skip = (pageConverted - 1) * perPageConverted;
         const result = await Post.aggregate([
             {
@@ -590,12 +589,9 @@ exports.discoverPosts = async (req, res) => {
         const { page = 1, perPage = 10, categorisedByTag = "false" } = req.query;
         const userId = req.user.id;
 
-        const pageConverted = parseInt(page, 10);
-        const perPageConverted = parseInt(perPage, 10);
-        if (isNaN(pageConverted) || isNaN(perPageConverted)) {
-            return res.status(400).json({ success: false, message: "Page and perPage must be valid numbers" });
-        }
-        const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const start = (pageConverted - 1) * perPageConverted;
 
         // Get the users that the requesting user follows
         const user = await User.findById(userId, 'following');
@@ -835,19 +831,17 @@ exports.discoverPosts = async (req, res) => {
             return res.status(200).json({ success: true, results });
         }
     } catch (error) {
-        console.log("Error in discoverPosts: ", error.message, error.stack)
+        console.log("Error in discoverPosts: ", error.message)
         return res.status(500).json({ success: false, message: "Server Error" });
     }
 };
 
 exports.homeFeed = async (req, res) => {
-    const { page, perPage } = req.query;
+    const { page = 1, perPage = 10 } = req.query;
     const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(perPage)) {
-        return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const pageConverted = parseInt(page, 10);
-    const perPageConverted = parseInt(perPage, 10);
+
+    const pageConverted = parseQueryParam(page, 1);
+    const perPageConverted = parseQueryParam(perPage, 10);
     const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     try {
