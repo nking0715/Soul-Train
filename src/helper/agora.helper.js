@@ -95,7 +95,7 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
             "clientRequest": {
                 "token": token,        
                 "recordingConfig": {
-                    "maxIdleTime": 30,
+                    "maxIdleTime": 90,
                     "streamTypes": 2,
                     "audioProfile": 1,
                     "channelType": 0,
