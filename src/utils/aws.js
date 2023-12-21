@@ -63,8 +63,6 @@ exports.uploadFileToS3Multipart = async (file, newFileName) => {
             MultipartUpload: { Parts: uploadedParts }
         }).promise();
 
-        console.log('completeUploadResponse: ', completeUploadResponse);
-
         return { location: completeUploadResponse.Location, newFileName };
     } catch (error) {
         // Step 4: Abort multipart upload on failure

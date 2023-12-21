@@ -84,7 +84,17 @@ exports.createPost = async (req, res) => {
         console.time('processDuration');
         const userId = req.user.id;
         const { tags, caption, location } = req.body;
-        const parsedLocation = JSON.parse(location);
+        let parsedLocation;
+        if (location && location.trim() !== "") {
+            try {
+                parsedLocation = JSON.parse(location);
+            } catch (error) {
+                console.log("Error in JSON parse in createPost: ", error);
+                parsedLocation = "";
+            }
+        } else {
+            parsedLocation = "";
+        }
         const files = req.files;
 
         const user = await User.findOne({ _id: userId });
