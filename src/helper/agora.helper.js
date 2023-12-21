@@ -230,10 +230,10 @@ exports.updateLayout = (resourceId, channelName, sid, uid) => {
                         "render_mode": 1
                     },
                     {
-                        "x_axis": 0.75,
+                        "x_axis": 0.8,
                         "y_axis": 0.0,
                         "width": 0.2,
-                        "height": 0.25,
+                        "height": 0.2,
                         "alpha": 1.0,
                         "render_mode": 1
                     }
