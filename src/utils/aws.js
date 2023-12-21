@@ -179,3 +179,30 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         return "s3://soul-train-bucket/Post/chess.png";
     }
 };
+
+exports.deleteAssetsFromS3 = async (assets) => {
+    const deletePromises = assets.flatMap(asset => {
+        return [asset.url, asset.thumbnail].map(url => {
+            const key = getKeyFromUrl(url);
+            if (!key) {
+                // Handle the case where the key could not be extracted
+                console.error('Invalid URL for asset:', url);
+                return Promise.resolve();
+            }
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: key
+            };
+            return s3.deleteObject(params).promise();
+        });
+    });
+
+    await Promise.all(deletePromises);
+}
+
+const getKeyFromUrl = (url) => {
+    const urlObject = new URL(url);
+    // Decode the pathname to handle URL encoding and remove the leading '/'
+    const key = decodeURIComponent(urlObject.pathname).substring(1);
+    return key;
+};
