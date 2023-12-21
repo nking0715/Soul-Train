@@ -150,20 +150,24 @@ exports.createPost = async (req, res) => {
                 postId: newPost._id.toString(),
                 publisher: userId.toString()
             }
-            const notification = {
-                title: 'The post was flagged as inappropriate.',
-                body: `Your post was rejected due to inappropriate content.`
+            const pushNotification = {
+                title: 'Inappropriate content in a post.',
+                body: 'Your post was rejected due to inappropriate content.'
+            }
+            const appNotification = {
+                title: `${user.artistName}`,
+                body: 'Your post was rejected due to inappropriate content.'
             }
             const newNotification = new Notification({
                 usersToRead: [userId],
                 data: data,
-                notification: notification
+                notification: appNotification
             });
             data.notificationId = newNotification._id.toString();
             await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: userId });
             if (!isEmpty(fcmToken)) {
-                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, pushNotification);
                 if (!sendNotificationResult) {
                     return res.status(500).json({ success: false, message: 'Notification was not sent.' });
                 }

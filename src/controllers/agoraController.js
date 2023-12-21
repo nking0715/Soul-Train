@@ -50,14 +50,18 @@ exports.createChannel = async (req, res) => {
             channelId: newChannel._id.toString(),
             channelName: newChannel.channelName
         }
-        const notification = {
+        const pushNotification = {
             title: 'Live Stream Started!',
             body: `${user.artistName} is starting a live stream, check it out!`
+        }
+        const appNotification = {
+            title: `${user.artistName}`,
+            body: `is live now.`
         }
         const newNotification = new Notification({
             usersToRead: followers,
             data: data,
-            notification: notification
+            notification: appNotification
         });
         data.notificationId = newNotification._id.toString();
         await newNotification.save();
@@ -67,7 +71,7 @@ exports.createChannel = async (req, res) => {
             fcmTokenList.map((fcmToken) => {
                 fcmTokens.push(fcmToken.token);
             });
-            const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
+            const sendNotificationResult = await sendPushNotification(fcmTokens, data, pushNotification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
             }            
