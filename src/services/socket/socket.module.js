@@ -1,4 +1,4 @@
-const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus, saveRecording } = require('../../helper/agora.helper');
+const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus, saveRecording, updateLayout } = require('../../helper/agora.helper');
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
@@ -186,7 +186,11 @@ class SocketHandler {
             resourceId: res.resourceId,
             sid: res.sid,
           };
-
+          updateLayout(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
+            console.log("eupdate laypoput is ", res);
+          }).catch(err => {
+            console.log("error updateLayout data is ", err);
+          })
         }).catch(err => {
           console.log("error start recording data is ", err);
         });

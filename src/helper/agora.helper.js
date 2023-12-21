@@ -100,38 +100,36 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     "audioProfile": 1,
                     "channelType": 0,
                     "videoStreamType": 0,
-                    // "transcodingConfig": {
-                    //     "height": 640,
-                    //     "width": 360,
-                    //     "bitrate": 500,
-                    //     "fps": 15,
-                    //     "mixedVideoLayout": 0,
-                    //     "backgroundColor": "#000000"
-                    // },
                     "transcodingConfig": {
-                        "mixedVideoLayout": 3,
-                        "backgroudColor": "#000000",
-                        "layoutConfig": [
-                            {
-                                "uid": "1",
-                                "x_axis": 0.0,
-                                "y_axis": 0.0,
-                                "width": 1.0,
-                                "height": 1.0,
-                                "alpha": 1.0,
-                                "render_mode": 1
-                            },
-                            {
-                                "uid": "2",
-                                "x_axis": 0.75,
-                                "y_axis": 0.0,
-                                "width": 0.2,
-                                "height": 0.25,
-                                "alpha": 1.0,
-                                "render_mode": 1
-                            },
-                        ]
+                        "height": 640,
+                        "width": 360,
+                        "bitrate": 500,
+                        "fps": 15,
+                        "mixedVideoLayout": 0,
+                        "backgroundColor": "#000000"
                     },
+                    // "transcodingConfig": {
+                    //     "mixedVideoLayout": 3,
+                    //     "backgroudColor": "#000000",
+                    //     "layoutConfig": [
+                    //         {
+                    //             "x_axis": 0.0,
+                    //             "y_axis": 0.0,
+                    //             "width": 1.0,
+                    //             "height": 1.0,
+                    //             "alpha": 1.0,
+                    //             "render_mode": 1
+                    //         },
+                    //         {
+                    //             "x_axis": 0.75,
+                    //             "y_axis": 0.0,
+                    //             "width": 0.2,
+                    //             "height": 0.25,
+                    //             "alpha": 1.0,
+                    //             "render_mode": 1
+                    //         },
+                    //     ]
+                    // },
 
                     "subscribeVideoUids": [
                         "1", "2"
@@ -203,6 +201,59 @@ exports.saveRecording = (resourceId, channelName, sid, uid) => {
                 resolve(response.data); // Resolve with response data
             } else {
                 reject(`Failed to start recording. Status code: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+            reject(error.message);
+        }
+    });
+};
+
+exports.updateLayout = (resourceId, channelName, sid, uid) => {
+    return new Promise(async (resolve, reject) => {
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/updateLayout`;
+        const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
+
+        const requestData = {
+            "uid": uid.toString(),
+            "cname": (channelName).toString(),
+            "clientRequest": {
+                "mixedVideoLayout": 3,
+                "backgroundColor": "#FF0000",
+                "layoutConfig": [
+                    {
+                        "x_axis": 0.0,
+                        "y_axis": 0.0,
+                        "width": 1.0,
+                        "height": 1.0,
+                        "alpha": 1.0,
+                        "render_mode": 1
+                    },
+                    {
+                        "x_axis": 0.75,
+                        "y_axis": 0.0,
+                        "width": 0.2,
+                        "height": 0.25,
+                        "alpha": 1.0,
+                        "render_mode": 1
+                    }
+                ]
+            }
+
+        };
+
+        try {
+            const response = await axios.post(apiEndpoint, requestData, {
+                headers: {
+                    'Authorization': authorization,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.status === 200) {
+                resolve(response.data); // Resolve with response data
+            } else {
+                reject(`Failed to updateLayout recording. Status code: ${response.status}`);
             }
         } catch (error) {
             console.error('Error:', error.message);
