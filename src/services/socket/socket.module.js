@@ -155,7 +155,7 @@ class SocketHandler {
       ) {
         const resourceId = this.channelInfoList[channelName].resourceId;
         const sid = this.channelInfoList[channelName].sid;
-
+        console.log("save sid is ", sid);
         saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
           console.log("save recording data is ", res);
         }).catch(err => {
