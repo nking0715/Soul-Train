@@ -25,6 +25,7 @@ const postSchema = new mongoose.Schema({
         trim: true,
         default: ""
     },
+    location: mongoose.Schema.Types.Mixed,
     numberOfViews: {
         type: Number,
         default: 0

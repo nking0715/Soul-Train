@@ -77,7 +77,8 @@ exports.createPost = async (req, res) => {
     try {
         console.time('processDuration');
         const userId = req.user.id;
-        const { tags, caption } = req.body;
+        const { tags, caption, location } = req.body;
+        const parsedLocation = JSON.parse(location);
         const files = req.files;
 
         const user = await User.findOne({ _id: userId });
@@ -116,7 +117,8 @@ exports.createPost = async (req, res) => {
             } */
         }
 
-        const newPost = new Post({ author: userId, assets, tags, caption, });
+        const newPost = new Post({ author: userId, assets, tags, caption, location: parsedLocation });
+        console.log(newPost.location);
         await newPost.save();
 
         res.status(200).json({ success: true, newPost });
@@ -166,8 +168,8 @@ exports.createPost = async (req, res) => {
         }
 
     } catch (error) {
-        console.log("upload content Error ", error)
-        return res.status(500).json({ success: false, message: error.message });
+        console.log("Error in createPost: ", error.message)
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
 
@@ -232,6 +234,7 @@ exports.getPost = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,
@@ -282,22 +285,23 @@ exports.getPost = async (req, res) => {
 
 exports.editPost = async (req, res) => {
     try {
-        const { tags, caption, postId } = req.body;
+        const { tags, caption, location, postId } = req.body;
+        const parsedLocation = JSON.parse(location);
         const userId = req.user.id;
         const user = await User.findOne({ _id: userId });
         if (isEmpty(user)) {
             return res.status(400).json({ message: 'User not found' });
         }
         const post = await Post.findById(postId)
-            .select("author tags caption");
+            .select("author");
         if (isEmpty(post)) {
             return res.status(400).json({ success: false, message: "Post not found." });
         }
         if (userId !== post.author.toString()) {
             return res.status(403).json({ success: false, message: "The user can't edit a post created by another user." });
         }
-        await Post.findByIdAndUpdate(postId, { tags: tags, caption: caption });
-        
+        await Post.findByIdAndUpdate(postId, { tags: tags, caption: caption, location: parsedLocation });
+
         return res.status(200).json({ success: true, message: "Post successfully edited." });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -536,6 +540,7 @@ exports.getSavedPost = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     likedByUser: {
@@ -675,6 +680,7 @@ exports.discoverPosts = async (req, res) => {
                         numberOfComments: 1,
                         tags: 1,
                         caption: 1,
+                        location: 1,
                         createdAt: 1,
                         likeList: 1,
                         saveList: 1,
@@ -811,6 +817,7 @@ exports.discoverPosts = async (req, res) => {
                         numberOfComments: 1,
                         tags: 1,
                         caption: 1,
+                        location: 1,
                         createdAt: 1,
                         likeList: 1,
                         saveList: 1,
@@ -914,6 +921,7 @@ exports.homeFeed = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,

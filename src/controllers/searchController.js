@@ -105,6 +105,7 @@ exports.search = async (req, res) => {
             numberOfComments: 1,
             tags: 1,
             caption: 1,
+            location: 1,
             createdAt: 1,
             likeList: 1,
             likedByUser: {
