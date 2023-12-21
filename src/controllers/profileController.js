@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const Asset = require('../models/asset');
+const Post = require('../models/post');
 const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const { validationResult } = require('express-validator');
@@ -67,17 +68,16 @@ exports.getProfile = async (req, res) => {
 
 exports.getFollowerList = async (req, res) => {
     try {
-        const { page, userId, perPage } = req.query;
-        if (isEmpty(page) || isEmpty(perPage)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const skip = (page - 1) * perPage; // Calculate the skip value
+        const { page = 1, userId, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findOne({ _id: userId || req.user.id })
             .select('follower');
         const followersList = await User.find({ _id: { $in: user.follower } })
-            .limit(perPage)
+            .limit(perPageConverted)
             .skip(skip)
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
@@ -93,18 +93,17 @@ exports.getFollowerList = async (req, res) => {
 
 exports.getFollowingList = async (req, res) => {
     try {
-        const { page, userId, perPage } = req.query;
-        if (isEmpty(page) || isEmpty(perPage)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const skip = (page - 1) * perPage; // Calculate the skip value
+        const { page = 1, userId, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
         const userToSearch = userId || req.user.id;
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findById(userToSearch)
             .select('following');
         const followingsList = await User.find({ _id: { $in: user.following } })
-            .limit(perPage)
+            .limit(perPageConverted)
             .skip(skip)
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {
