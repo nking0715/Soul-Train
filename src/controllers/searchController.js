@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const Post = require('../models/post');
 const isEmpty = require('../utils/isEmpty');
+const { parseQueryParam } = require('../utils/queryUtils');
 
 exports.search = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ const Notification = require('../models/notification');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
+const { parseQueryParam } = require('../utils/queryUtils');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
