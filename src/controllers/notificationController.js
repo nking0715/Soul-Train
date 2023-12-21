@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
+const { parseQueryParam } = require('../utils/queryUtils');
 
 exports.registerToken = async (req, res) => {
   try {
@@ -82,12 +83,9 @@ exports.getBadgeStatus = async (req, res) => {
 exports.getListOfNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { page, perPage } = req.query
-    if (isEmpty(page) || isEmpty(perPage)) {
-      return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const pageConverted = parseInt(page, 10);
-    const perPageConverted = parseInt(perPage, 10);
+    const { page = 1, perPage = 10 } = req.query
+    const pageConverted = parseQueryParam(page, 1);
+    const perPageConverted = parseQueryParam(perPage, 10);
     const skip = (pageConverted - 1) * perPageConverted;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
