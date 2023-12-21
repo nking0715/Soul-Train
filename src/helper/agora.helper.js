@@ -86,7 +86,6 @@ exports.getRecordingStatus = (resourceid, sid, mode) => {
 
 exports.startRecording = (resourceId, channelName, uid, token) => {
     return new Promise(async (resolve, reject) => {
-        console.log("start recording sid is ", sid);
         const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/mix/start`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
