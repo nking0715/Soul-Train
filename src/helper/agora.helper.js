@@ -105,8 +105,8 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                         "width": 360,
                         "bitrate": 500,
                         "fps": 15,
-                        "mixedVideoLayout": 1,
-                        "backgroundColor": "#FF0000"
+                        "mixedVideoLayout": 0,
+                        "backgroundColor": "#000000"
                     },
 
                     "subscribeVideoUids": [
