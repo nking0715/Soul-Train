@@ -194,7 +194,7 @@ class SocketHandler {
           };
 
           updateLayout(resourceId, String(channelName), res.sid, recordingDefaultUID, 1, 2).then(res => {
-            console.log("update laypoput success");
+            console.log("start update layout success");
           }).catch(err => {
             console.log("error updateLayout data is ", err);
           })
@@ -219,16 +219,16 @@ class SocketHandler {
       let userList = this.lobbyUserList;
       // console.log("this.lobbyUserList is ", this.lobbyUserList);
       const currentTime = Math.floor(Date.now());
-      const thresholdTime = currentTime + 35 * 1000;
-      const minTime = currentTime + 28 * 1000;
       let recordingDefaultUID = 9999;
-
+      
       for (var i = 0; i < this.channelList.length; i++) {
         let channelName = this.channelList[i];
         let channelInfo = this.channelInfoList[channelName];
-        if (channelInfo.startTime <= thresholdTime && channelInfo.startTime >= minTime) {
+        const timeDifferenceInSeconds = Math.floor((currentTime - channelInfo.startTime) / 1000);
+
+        if (timeDifferenceInSeconds == 30) {
           updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
-            console.log("update laypoput success");
+            console.log("middle update laypoput success");
           }).catch(err => {
             console.log("error updateLayout data is ", err);
           })
