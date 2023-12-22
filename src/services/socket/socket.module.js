@@ -221,7 +221,7 @@ class SocketHandler {
       if (!this.channelMiddleLayoutList.includes(String(channelName))) {
         this.channelMiddleLayoutList.push(String(channelName));
       } else {
-        console.log('channel is already started the recording', channelName);
+        console.log('channel is already handleUpdateLayout', channelName);
         return;
       }
       let recordingDefaultUID = 9999;
