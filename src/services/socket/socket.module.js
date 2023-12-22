@@ -186,7 +186,7 @@ class SocketHandler {
             resourceId: res.resourceId,
             sid: res.sid,
           };
-          updateLayout(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
+          updateLayout(resourceId, String(channelName), res.sid, recordingDefaultUID).then(res => {
             console.log("eupdate laypoput is ", res);
           }).catch(err => {
             console.log("error updateLayout data is ", err);

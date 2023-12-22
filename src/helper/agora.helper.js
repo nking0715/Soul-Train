@@ -215,8 +215,8 @@ exports.updateLayout = (resourceId, channelName, sid, uid) => {
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {
-            "uid": uid.toString(),
             "cname": (channelName).toString(),
+            "uid": uid.toString(),
             "clientRequest": {
                 "mixedVideoLayout": 3,
                 "backgroundColor": "#FF0000",
@@ -238,8 +238,7 @@ exports.updateLayout = (resourceId, channelName, sid, uid) => {
                         "render_mode": 1
                     }
                 ]
-            }
-
+            }        
         };
 
         try {
