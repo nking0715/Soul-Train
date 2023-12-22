@@ -199,7 +199,7 @@ exports.updateLayout = (resourceId, channelName, sid, uid, bigUid, smallUid) => 
                 "backgroundColor": "#FF0000",
                 "layoutConfig": [
                     {
-                        "uid": bigUid,
+                        "uid": (bigUid).toString(),
                         "x_axis": 0.0,
                         "y_axis": 0.0,
                         "width": 1.0,
@@ -208,7 +208,7 @@ exports.updateLayout = (resourceId, channelName, sid, uid, bigUid, smallUid) => 
                         "render_mode": 1
                     },
                     {
-                        "uid": smallUid,
+                        "uid": (smallUid).toString(),
                         "x_axis": 0.7,
                         "y_axis": 0.05,
                         "width": 0.25,
