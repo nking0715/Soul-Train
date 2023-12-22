@@ -108,29 +108,6 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                         "mixedVideoLayout": 0,
                         "backgroundColor": "#000000"
                     },
-                    // "transcodingConfig": {
-                    //     "mixedVideoLayout": 3,
-                    //     "backgroudColor": "#000000",
-                    //     "layoutConfig": [
-                    //         {
-                    //             "x_axis": 0.0,
-                    //             "y_axis": 0.0,
-                    //             "width": 1.0,
-                    //             "height": 1.0,
-                    //             "alpha": 1.0,
-                    //             "render_mode": 1
-                    //         },
-                    //         {
-                    //             "x_axis": 0.75,
-                    //             "y_axis": 0.0,
-                    //             "width": 0.2,
-                    //             "height": 0.25,
-                    //             "alpha": 1.0,
-                    //             "render_mode": 1
-                    //         },
-                    //     ]
-                    // },
-
                     "subscribeVideoUids": [
                         "1", "2"
                     ],
@@ -209,7 +186,7 @@ exports.saveRecording = (resourceId, channelName, sid, uid) => {
     });
 };
 
-exports.updateLayout = (resourceId, channelName, sid, uid) => {
+exports.updateLayout = (resourceId, channelName, sid, uid, bigUid, smallUid) => {
     return new Promise(async (resolve, reject) => {
         const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/updateLayout`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
@@ -222,6 +199,7 @@ exports.updateLayout = (resourceId, channelName, sid, uid) => {
                 "backgroundColor": "#FF0000",
                 "layoutConfig": [
                     {
+                        "uid": bigUid,
                         "x_axis": 0.0,
                         "y_axis": 0.0,
                         "width": 1.0,
@@ -230,15 +208,16 @@ exports.updateLayout = (resourceId, channelName, sid, uid) => {
                         "render_mode": 1
                     },
                     {
-                        "x_axis": 0.8,
-                        "y_axis": 0.0,
-                        "width": 0.2,
+                        "uid": smallUid,
+                        "x_axis": 0.7,
+                        "y_axis": 0.05,
+                        "width": 0.25,
                         "height": 0.2,
                         "alpha": 1.0,
                         "render_mode": 1
                     }
                 ]
-            }        
+            }
         };
 
         try {

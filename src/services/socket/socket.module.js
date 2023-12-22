@@ -141,8 +141,11 @@ class SocketHandler {
   handleSaveRecording(socket, data) {
     try {
       const { channelName } = data;
-      console.log('saveRecording api', channelName);
+      // console.log('saveRecording api', channelName);
       let recordingDefaultUID = 9999;
+      // remove the channelName from startlist
+      this.channelList = this.channelList.filter(item => item !== channelName);
+
       if (!this.channelSaveList.includes(String(channelName))) {
         this.channelSaveList.push(String(channelName));
       } else {
@@ -155,9 +158,9 @@ class SocketHandler {
       ) {
         const resourceId = this.channelInfoList[channelName].resourceId;
         const sid = this.channelInfoList[channelName].sid;
-        console.log("save sid is ", sid);
+        // console.log("save sid is ", sid);
         saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
-          console.log("save recording data is ", res);
+          console.log("save recording data success");
         }).catch(err => {
           console.log("error save recording data is ", err);
         });
@@ -182,12 +185,16 @@ class SocketHandler {
       let recordingToken = generateAccessToken(String(channelName), RtcRole.SUBSCRIBER, recordingDefaultUID);
       getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
+          const currentTime = Math.floor(Date.now());
+
           this.channelInfoList[channelName] = {
             resourceId: res.resourceId,
             sid: res.sid,
+            startTime: currentTime
           };
-          updateLayout(resourceId, String(channelName), res.sid, recordingDefaultUID).then(res => {
-            console.log("eupdate laypoput is ", res);
+
+          updateLayout(resourceId, String(channelName), res.sid, recordingDefaultUID, 1, 2).then(res => {
+            console.log("update laypoput success");
           }).catch(err => {
             console.log("error updateLayout data is ", err);
           })
@@ -211,6 +218,20 @@ class SocketHandler {
 
       let userList = this.lobbyUserList;
       // console.log("this.lobbyUserList is ", this.lobbyUserList);
+      const currentTime = Math.floor(Date.now());
+      const thresholdTime = currentTime + 35 * 1000;
+      let recordingDefaultUID = 9999;
+
+      for (var i = 0; i < this.channelList.length; i++) {
+        let channelInfo = this.channelInfoList[i];
+        if (channelInfo.startTime <= thresholdTime) {
+          updateLayout(channelInfo.resourceId, String(this.channelList[i]), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
+            console.log("update laypoput success");
+          }).catch(err => {
+            console.log("error updateLayout data is ", err);
+          })
+        }
+      }
 
       while (this.lobbyUserList.length >= 2) {
         let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
