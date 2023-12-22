@@ -61,7 +61,7 @@ const processUploadedContent = async (uploadedContent, userId) => {
 
     let fileOnS3;
     if (uploadedContent.size <= MULTIPART_ENABLE_SIZE) {
-        fileOnS3 = await uploadFileToS3(uploadedContent, newFileName);
+        fileOnS3 = await uploadFileToS3(uploadedContent, `${keyPrefix}${fileExtension}`, BUCKET_PATH);
     } else {
         fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
     }
