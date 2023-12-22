@@ -12,6 +12,7 @@ class SocketHandler {
     this.lobbyUserList = [];
     this.channelInfoList = {};
     this.channelList = [];
+    this.channelMiddleLayoutList = [];
     this.channelSaveList = [];
     this.users = {};
     this.roomId = 0;
@@ -51,6 +52,10 @@ class SocketHandler {
 
     socket.on(SOCKET_IDS.SAVE_RECORDING, data => {
       this.handleSaveRecording(socket, data);
+    });
+
+    socket.on(SOCKET_IDS.UPDATE_LAYOUT, data => {
+      this.handleUpdateLayout(socket, data);
     });
 
     // user leave event 
@@ -206,6 +211,29 @@ class SocketHandler {
       });
     } catch (e) {
       console.log('handleCreateRooms error is ', e);
+    }
+  }
+
+  handleUpdateLayout(socket, data) {
+    try {
+      const { channelName } = data;
+      console.log('handleUpdateLayout api', channelName);
+      if (!this.channelMiddleLayoutList.includes(String(channelName))) {
+        this.channelMiddleLayoutList.push(String(channelName));
+      } else {
+        console.log('channel is already started the recording', channelName);
+        return;
+      }
+      let recordingDefaultUID = 9999;
+      let channelInfo = this.channelInfoList[channelName];
+
+      updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
+        console.log("middle update layout success");
+      }).catch(err => {
+        console.log("error updateLayout data is ", err);
+      })
+    } catch (e) {
+      console.log('handleUpdateLayout error is ', e);
     }
   }
 
