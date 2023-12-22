@@ -223,9 +223,10 @@ class SocketHandler {
       let recordingDefaultUID = 9999;
 
       for (var i = 0; i < this.channelList.length; i++) {
-        let channelInfo = this.channelInfoList[i];
+        let channelName = this.channelList[i];
+        let channelInfo = this.channelInfoList[channelName];
         if (channelInfo.startTime <= thresholdTime) {
-          updateLayout(channelInfo.resourceId, String(this.channelList[i]), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
+          updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
             console.log("update laypoput success");
           }).catch(err => {
             console.log("error updateLayout data is ", err);
