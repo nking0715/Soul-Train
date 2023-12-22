@@ -387,20 +387,24 @@ exports.followManage = async (req, res) => {
                 followerId: userId.toString(),
                 publisher: userId.toString(),
             }
-            const notification = {
+            const pushNotification = {
                 title: 'A user followed you.',
                 body: `${user.artistName} started to follow you.`
+            }
+            const appNotification = {
+                title: `${user.artistName}`,
+                body: `started following you.`
             }
             const newNotification = new Notification({
                 usersToRead: [dancerId],
                 data: data,
-                notification: notification
+                notification: appNotification
             });
             data.notificationId = newNotification._id.toString();
             await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: dancerId });
             if (!isEmpty(fcmToken)) {
-                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, notification);
+                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, pushNotification);
                 if (!sendNotificationResult) {
                     console.log('Notification for follow user was not sent.');
                 }

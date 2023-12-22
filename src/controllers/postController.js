@@ -7,7 +7,7 @@ const Notification = require('../models/notification');
 const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
 const { parseQueryParam } = require('../utils/queryUtils');
-const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
+const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3, deleteAssetsFromS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
 const { sendPushNotification } = require('../utils/notification');
@@ -33,6 +33,7 @@ const imageMimeToExt = {
 
 const MAX_IMAGE_SIZE = 10000000; // 10MB
 const MAX_VIDEO_SIZE = 200000000; // 200MB
+const MULTIPART_ENABLE_SIZE = 5000000;
 let BUCKET_PATH;
 if (process.env.NODE_ENV == "live") {
     BUCKET_PATH = process.env.LIVE_BUCKET_PATH
@@ -58,7 +59,12 @@ const processUploadedContent = async (uploadedContent, userId) => {
     const keyPrefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
     const newFileName = `${BUCKET_PATH}/${keyPrefix}${fileExtension}`;
 
-    const fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+    let fileOnS3;
+    if (uploadedContent.size <= MULTIPART_ENABLE_SIZE) {
+        fileOnS3 = await uploadFileToS3(uploadedContent, newFileName);
+    } else {
+        fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+    }
     const thumbnailUrl = await uploadThumbnailToS3(newFileName, keyPrefix, contentType);
 
     return { fileOnS3, thumbnailUrl, newFileName, contentType };
@@ -78,7 +84,17 @@ exports.createPost = async (req, res) => {
         console.time('processDuration');
         const userId = req.user.id;
         const { tags, caption, location } = req.body;
-        const parsedLocation = JSON.parse(location);
+        let parsedLocation;
+        if (location && location.trim() !== "") {
+            try {
+                parsedLocation = JSON.parse(location);
+            } catch (error) {
+                console.log("Error in JSON parse in createPost: ", error);
+                parsedLocation = "";
+            }
+        } else {
+            parsedLocation = "";
+        }
         const files = req.files;
 
         const user = await User.findOne({ _id: userId });
@@ -118,7 +134,6 @@ exports.createPost = async (req, res) => {
         }
 
         const newPost = new Post({ author: userId, assets, tags, caption, location: parsedLocation });
-        console.log(newPost.location);
         await newPost.save();
 
         res.status(200).json({ success: true, newPost });
@@ -145,20 +160,24 @@ exports.createPost = async (req, res) => {
                 postId: newPost._id.toString(),
                 publisher: userId.toString()
             }
-            const notification = {
-                title: 'The post was flagged as inappropriate.',
-                body: `Your post was rejected due to inappropriate content.`
+            const pushNotification = {
+                title: 'Inappropriate content in a post.',
+                body: 'Your post was rejected due to inappropriate content.'
+            }
+            const appNotification = {
+                title: `${user.artistName}`,
+                body: 'Your post was rejected due to inappropriate content.'
             }
             const newNotification = new Notification({
                 usersToRead: [userId],
                 data: data,
-                notification: notification
+                notification: appNotification
             });
             data.notificationId = newNotification._id.toString();
             await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: userId });
             if (!isEmpty(fcmToken)) {
-                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, pushNotification);
                 if (!sendNotificationResult) {
                     return res.status(500).json({ success: false, message: 'Notification was not sent.' });
                 }
@@ -168,7 +187,7 @@ exports.createPost = async (req, res) => {
         }
 
     } catch (error) {
-        console.log("Error in createPost: ", error.message)
+        console.log("Error in createPost: ", error);
         return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
@@ -312,18 +331,25 @@ exports.deletePost = async (req, res) => {
     try {
         const postId = req.query.postId;
         const userId = req.user.id;
-        const post = await Post.findById(postId)
-            .select("author");
-        if (isEmpty(post)) {
+        const postToRemove = await Post.findById(postId)
+            .select("author assets")
+            .populate('assets');
+        if (isEmpty(postToRemove)) {
             return res.status(400).json({ success: false, message: "Post not found." });
         }
-        if (userId !== post.author.toString()) {
+        if (userId !== postToRemove.author.toString()) {
             return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
         }
+        const assetsToRemove = postToRemove.assets;
         await Post.findByIdAndRemove(postId);
-        return res.status(200).json({ success: true, message: "Post successfully removed." });
+        res.status(200).json({ success: true, message: "Post successfully removed." });
+        await deleteAssetsFromS3(assetsToRemove);
+        const assetIdsToRemove = assetsToRemove.map(asset => asset._id);
+        await Asset.deleteMany({ _id: { $in: assetIdsToRemove } });
+
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        console.log("Error in deletePost: ", error);
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
 
