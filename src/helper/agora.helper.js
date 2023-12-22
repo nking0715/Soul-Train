@@ -209,9 +209,9 @@ exports.updateLayout = (resourceId, channelName, sid, uid, bigUid, smallUid) => 
                     },
                     {
                         "uid": (smallUid).toString(),
-                        "x_axis": 0.74,
+                        "x_axis": 0.69,
                         "y_axis": 0.01,
-                        "width": 0.25,
+                        "width": 0.3,
                         "height": 0.2,
                         "alpha": 1.0,
                         "render_mode": 1
