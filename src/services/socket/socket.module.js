@@ -220,12 +220,13 @@ class SocketHandler {
       // console.log("this.lobbyUserList is ", this.lobbyUserList);
       const currentTime = Math.floor(Date.now());
       const thresholdTime = currentTime + 35 * 1000;
+      const minTime = currentTime + 28 * 1000;
       let recordingDefaultUID = 9999;
 
       for (var i = 0; i < this.channelList.length; i++) {
         let channelName = this.channelList[i];
         let channelInfo = this.channelInfoList[channelName];
-        if (channelInfo.startTime <= thresholdTime) {
+        if (channelInfo.startTime <= thresholdTime && channelInfo.startTime >= minTime) {
           updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
             console.log("update laypoput success");
           }).catch(err => {
