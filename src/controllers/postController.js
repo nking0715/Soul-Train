@@ -305,7 +305,17 @@ exports.getPost = async (req, res) => {
 exports.editPost = async (req, res) => {
     try {
         const { tags, caption, location, postId } = req.body;
-        const parsedLocation = JSON.parse(location);
+        let parsedLocation;
+        if (location && location.trim() !== "") {
+            try {
+                parsedLocation = JSON.parse(location);
+            } catch (error) {
+                console.log("Error in JSON parse in createPost: ", error);
+                parsedLocation = "";
+            }
+        } else {
+            parsedLocation = "";
+        }
         const userId = req.user.id;
         const user = await User.findOne({ _id: userId });
         if (isEmpty(user)) {
