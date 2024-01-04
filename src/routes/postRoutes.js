@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { createPost, getPost, editPost, deletePost, commentPost, editComment, deleteComment, getComment, likeComment,savePost, getSavedPost, reportContent, discoverPosts, homeFeed, likePost } = require('../controllers/postController');
+const { createPost, getPost, editPost, deletePost, commentPost, editComment, deleteComment, getComment, likeComment,savePost, getSavedPost, reportContent, discoverPosts, discoverByTag, homeFeed, likePost } = require('../controllers/postController');
 
 router.post('/', createPost);
 router.get('/', getPost);
@@ -17,6 +17,7 @@ router.post('/savePost', savePost);
 router.get('/getSavedPost', getSavedPost);
 router.post('/report', reportContent);
 router.get("/discover", discoverPosts);
+router.get("/discoverByTag", discoverByTag);
 router.get("/homeFeed", homeFeed);
 router.put('/like', likePost);
 
