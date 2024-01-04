@@ -893,6 +893,121 @@ exports.discoverPosts = async (req, res) => {
     }
 };
 
+exports.discoverByTag = async (req, res) => {
+    try {
+        const { page = 1, perPage = 10, tag } = req.query;
+        const userId = req.user.id;
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const start = (pageConverted - 1) * perPageConverted;
+
+        // Get the users that the requesting user follows
+        const user = await User.findById(userId, 'following');
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const followedUserIds = user.following;
+
+        const results = await Post.aggregate([
+            // Join with assets collection
+            {
+                $lookup: {
+                    from: "assets",
+                    localField: "assets",
+                    foreignField: "_id",
+                    as: "assetDetails"
+                }
+            },
+            // Filtering and sorting
+            {
+                $match: {
+                    'assetDetails.contentType': 'video',
+                    author: { $nin: followedUserIds },
+                    blocked: { $ne: true },
+                    tags: { $in: [tag] },
+                }
+            },
+            // Join with users collection
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "userDetails"
+                }
+            },
+            { $sort: { createdAt: -1 } },
+            { $skip: start },
+            { $limit: perPageConverted },
+            // Project necessary fields
+            {
+                $project: {
+                    _id: 1,
+                    thumbnail: 1,
+                    assets: {
+                        $map: {
+                            input: "$assetDetails",
+                            as: "asset",
+                            in: {
+                                url: "$$asset.url",
+                                thumbnail: "$$asset.thumbnail"
+                            }
+                        }
+                    },
+                    numberOfViews: 1,
+                    numberOfLikes: 1,
+                    numberOfComments: 1,
+                    tags: 1,
+                    caption: 1,
+                    location: 1,
+                    createdAt: 1,
+                    likeList: 1,
+                    saveList: 1,
+                    likedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$likeList" },
+                                    { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    savedByUser: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $isArray: "$saveList" },
+                                    { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                ]
+                            },
+                            true,
+                            false
+                        ]
+                    },
+                    user_id: { $arrayElemAt: ["$userDetails._id", 0] },
+                    username: { $arrayElemAt: ["$userDetails.username", 0] },
+                    artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                    profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                }
+            },
+            {
+                $project: {
+                    likeList: 0,
+                    saveList: 0
+                }
+            },
+        ]);
+        return res.status(200).json({ success: true, results });
+    } catch (error) {
+        console.log("Error in discoverPosts: ", error.message)
+        return res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
 exports.homeFeed = async (req, res) => {
     const { page = 1, perPage = 10 } = req.query;
     const userId = req.user.id;
