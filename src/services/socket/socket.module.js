@@ -170,12 +170,12 @@ class SocketHandler {
           console.log("save recording data success", res);
           const roomInfo = this.rooms[this.roomIdListByChannelName[channelName]];
           const videoInfo = res['serverResponse']['fileList']; 
-          console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
+          // console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
           const match = new Match({
             playerA: roomInfo.playerA,
             playerB: roomInfo.playerB,
             startTime: Date.now(),
-            videoUrl: videoInfo[1]['fileName']
+            videoUrl: 'https://soul-train-bucket.s3.amazonaws.com/' + videoInfo[0]['fileName']
           });
           match.save();
         }).catch(err => {
