@@ -3,6 +3,7 @@ const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.hel
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
 const { RtcRole } = require('agora-token');
+const Match = require('../../models/match')
 
 class SocketHandler {
   constructor(io) {
@@ -10,6 +11,7 @@ class SocketHandler {
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
     this.rooms = {};
     this.lobbyUserList = [];
+    this.roomIdListByChannelName = {};
     this.channelInfoList = {};
     this.channelList = [];
     this.channelMiddleLayoutList = [];
@@ -166,6 +168,16 @@ class SocketHandler {
         // console.log("save sid is ", sid);
         saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
           console.log("save recording data success", res);
+          const roomInfo = this.rooms[this.roomIdListByChannelName[channelName]];
+          const videoInfo = res['serverResponse']['fileList']; 
+          console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
+          const match = new Match({
+            playerA: roomInfo.playerA,
+            playerB: roomInfo.playerB,
+            startTime: Date.now(),
+            videoUrl: videoInfo[0]['fileName']
+          });
+          match.save();
         }).catch(err => {
           console.log("error save recording data is ", err);
         });
@@ -248,7 +260,7 @@ class SocketHandler {
       // console.log("this.lobbyUserList is ", this.lobbyUserList);
       const currentTime = Math.floor(Date.now());
       let recordingDefaultUID = 9999;
-      
+
       for (var i = 0; i < this.channelList.length; i++) {
         let channelName = this.channelList[i];
         let channelInfo = this.channelInfoList[channelName];
@@ -320,6 +332,10 @@ class SocketHandler {
           opponentArtistName: this.users[playerA].userArtistName,
           opponentProfileURL: this.users[playerA].userProfileURL
         });
+
+        this.roomIdListByChannelName[channelName] = {
+          roomId: room.roomId
+        };
 
         this.users[playerA].roomId = room.roomId;
         this.users[playerB].roomId = room.roomId;
