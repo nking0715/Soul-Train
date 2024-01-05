@@ -306,11 +306,12 @@ exports.editPost = async (req, res) => {
     try {
         const { tags, caption, location, postId } = req.body;
         let parsedLocation;
-        if (location && location.trim() !== "") {
-            try {
-                parsedLocation = JSON.parse(location);
-            } catch (error) {
-                console.log("Error in JSON parse in createPost: ", error);
+        if (location) {
+            if (typeof location === 'string') {
+                parsedLocation = location.trim() !== "" ? JSON.parse(location) : "";
+            } else if (typeof location === 'object') {
+                parsedLocation = location;
+            } else {
                 parsedLocation = "";
             }
         } else {
