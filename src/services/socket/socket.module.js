@@ -171,9 +171,11 @@ class SocketHandler {
           const roomInfo = this.rooms[this.roomIdListByChannelName[channelName].roomId];
           const videoInfo = res['serverResponse']['fileList']; 
           // console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
+          const starter = roomInfo.starter == roomInfo.playerA ? roomInfo.playerA : roomInfo.playerB;
+          const opponent = starter == roomInfo.playerA ? roomInfo.playerB : roomInfo.playerA;
           const match = new Match({
-            playerA: roomInfo.playerA,
-            playerB: roomInfo.playerB,
+            playerA: starter,
+            playerB: opponent,
             startTime: Date.now(),
             videoUrl: 'https://soul-train-bucket.s3.amazonaws.com/' + videoInfo[0]['fileName']
           });
