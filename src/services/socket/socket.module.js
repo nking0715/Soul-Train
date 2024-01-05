@@ -175,7 +175,7 @@ class SocketHandler {
             playerA: roomInfo.playerA,
             playerB: roomInfo.playerB,
             startTime: Date.now(),
-            videoUrl: videoInfo[0]['fileName']
+            videoUrl: videoInfo[1]['fileName']
           });
           match.save();
         }).catch(err => {
