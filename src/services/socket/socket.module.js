@@ -168,7 +168,7 @@ class SocketHandler {
         // console.log("save sid is ", sid);
         saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
           console.log("save recording data success", res);
-          const roomInfo = this.rooms[this.roomIdListByChannelName[channelName]];
+          const roomInfo = this.rooms[this.roomIdListByChannelName[channelName].roomId];
           const videoInfo = res['serverResponse']['fileList']; 
           // console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
           const match = new Match({
