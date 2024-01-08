@@ -1,3 +1,6 @@
+const dateFormat = require('date-and-time');
+const bcrypt = require('bcryptjs');
+
 const User = require('../models/user');
 const Asset = require('../models/asset');
 const Post = require('../models/post');
@@ -9,7 +12,6 @@ const { uploadFileToS3 } = require('../utils/aws');
 const { parseQueryParam } = require('../utils/queryUtils');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
-const dateFormat = require('date-and-time');
 const { sendPushNotification } = require('../utils/notification');
 
 const videoMimeToExt = {
@@ -159,7 +161,25 @@ exports.updateProfile = async (req, res) => {
         // Generate a JWT token
         const token = authService.generateToken(profile);
 
-        return res.status(200).json({ success: true, message: "success", token });
+        return res.status(200).json({ success: true, token });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findOne({ _id: req.user.id });
+        if (!user) return res.status(400).json({ success: false, message: "User doesn't exist!" });
+
+        const validPassword = await bcrypt.compare(currentPassword, user.password ? user.password : "");
+        if (!validPassword) return res.status(400).json({ success: false, message: "Wrong password" });
+
+        user.password = newPassword;
+        await user.save();
+
+        return res.status(200).json({ success: true, message: "Successfully updated the password" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
