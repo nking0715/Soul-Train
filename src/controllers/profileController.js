@@ -388,6 +388,8 @@ exports.followManage = async (req, res) => {
 
         const userId = req.user.id;
 
+        if (dancerId == userId) return res.status(400).json({ success: false, message: 'User cannot follow or unfollow himself/herself.' })
+
         const dancer = await User.findOne({ _id: dancerId });
         const user = await User.findOne({ _id: userId })
 
