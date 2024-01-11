@@ -683,7 +683,10 @@ exports.discoverPosts = async (req, res) => {
                 {
                     $match: {
                         'assetDetails.contentType': 'video',
-                        author: { $nin: followedUserIds },
+                        author: {
+                            $nin: followedUserIds,
+                            $ne: userId
+                        },
                         blocked: { $ne: true },
                         createdAt: { $gte: compareDate }
                     }
@@ -818,7 +821,10 @@ exports.discoverPosts = async (req, res) => {
                 {
                     $match: {
                         'assetDetails.contentType': 'video',
-                        author: { $nin: followedUserIds },
+                        author: {
+                            $nin: followedUserIds,
+                            $ne: userId
+                        },
                         blocked: { $ne: true }
                     }
                 },
@@ -934,7 +940,10 @@ exports.discoverByTag = async (req, res) => {
             {
                 $match: {
                     'assetDetails.contentType': 'video',
-                    author: { $nin: followedUserIds },
+                    author: {
+                        $nin: followedUserIds,
+                        $ne: userId
+                    },
                     blocked: { $ne: true },
                     tags: { $in: [tag] },
                 }
@@ -1033,7 +1042,13 @@ exports.homeFeed = async (req, res) => {
         const followedUserIds = user.following;
 
         const results = await Post.aggregate([
-            { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
+            {
+                $match: {
+                    author: {
+                        $in: followedUserIds
+                    }, blocked: { $ne: true }
+                }
+            },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
             { $limit: perPageConverted }, // Limit the number of documents
