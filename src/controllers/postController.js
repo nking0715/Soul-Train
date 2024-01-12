@@ -684,12 +684,12 @@ exports.discoverPosts = async (req, res) => {
                     $match: {
                         'assetDetails.contentType': 'video',
                         author: {
-                            $nin: followedUserIds,
-                            $ne: userId
+                            $nin: followedUserIds
                         },
                         blocked: { $ne: true },
-                        createdAt: { $gte: compareDate }
-                    }
+                        createdAt: { $gte: compareDate },
+                        $eq: [{ $toString: "$author" }, userToSearch]
+                    },
                 },
                 // Join with users collection
                 {
@@ -822,10 +822,10 @@ exports.discoverPosts = async (req, res) => {
                     $match: {
                         'assetDetails.contentType': 'video',
                         author: {
-                            $nin: followedUserIds,
-                            $ne: userId
+                            $nin: followedUserIds
                         },
-                        blocked: { $ne: true }
+                        blocked: { $ne: true },
+                        $eq: [{ $toString: "$author" }, userToSearch]
                     }
                 },
                 { $sort: { createdAt: -1 } },
@@ -941,11 +941,11 @@ exports.discoverByTag = async (req, res) => {
                 $match: {
                     'assetDetails.contentType': 'video',
                     author: {
-                        $nin: followedUserIds,
-                        $ne: userId
+                        $nin: followedUserIds
                     },
                     blocked: { $ne: true },
                     tags: { $in: [tag] },
+                    $eq: [{ $toString: "$author" }, userToSearch]
                 }
             },
             // Join with users collection
