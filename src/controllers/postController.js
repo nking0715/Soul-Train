@@ -688,7 +688,9 @@ exports.discoverPosts = async (req, res) => {
                         },
                         blocked: { $ne: true },
                         createdAt: { $gte: compareDate },
-                        $eq: [{ $toString: "$author" }, userId]
+                        $expr: {
+                            $eq: [{ $toString: "$author" }, userId.toString()]
+                        }
                     },
                 },
                 // Join with users collection
@@ -825,7 +827,9 @@ exports.discoverPosts = async (req, res) => {
                             $nin: followedUserIds
                         },
                         blocked: { $ne: true },
-                        $eq: [{ $toString: "$author" }, userId]
+                        $expr: {
+                            $eq: [{ $toString: "$author" }, userId.toString()]
+                        }
                     }
                 },
                 { $sort: { createdAt: -1 } },
@@ -945,7 +949,9 @@ exports.discoverByTag = async (req, res) => {
                     },
                     blocked: { $ne: true },
                     tags: { $in: [tag] },
-                    $eq: [{ $toString: "$author" }, userId]
+                    $expr: {
+                        $eq: [{ $toString: "$author" }, userId.toString()]
+                    }
                 }
             },
             // Join with users collection
