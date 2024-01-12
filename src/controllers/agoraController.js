@@ -166,6 +166,7 @@ exports.deleteChannel = async (req, res) => {
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
     try {
+        console.log('Inappropriate content was detected.');
         /* const fcmToken = await FcmToken.findOne({ userId: userId });
         if (!isEmpty(fcmToken)) {
             const data = {
