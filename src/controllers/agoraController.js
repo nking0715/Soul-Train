@@ -45,7 +45,7 @@ exports.createChannel = async (req, res) => {
         const followers = user.follower;
 
         const data = {
-            type: 'Live Streaming',            
+            type: 'Live Streaming',
             publisher: userId.toString(),
             channelId: newChannel._id.toString(),
             channelName: newChannel.channelName
@@ -74,7 +74,7 @@ exports.createChannel = async (req, res) => {
             const sendNotificationResult = await sendPushNotification(fcmTokens, data, pushNotification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
-            }            
+            }
         }
         await newChannel.save();
         return res.status(200).json({ success: true, token: token, channelName: channelName });
@@ -166,7 +166,7 @@ exports.deleteChannel = async (req, res) => {
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
     try {
-        console.log('Inappropriate content was detected.');
+        console.log(req.body);
         /* const fcmToken = await FcmToken.findOne({ userId: userId });
         if (!isEmpty(fcmToken)) {
             const data = {
