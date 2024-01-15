@@ -1,9 +1,8 @@
 const express = require('express');
 const matchController = require('../controllers/matchController');
-const verifyWebhookKey = require('../middlewares/verifyWebhookKey');
 
 const router = express.Router();
 
-router.post('/getMatchList', matchController.getMatchList);
+router.get('/:userId', matchController.getMatchListByUserId);
 
 module.exports = router;
