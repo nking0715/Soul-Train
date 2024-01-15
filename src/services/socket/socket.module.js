@@ -176,6 +176,7 @@ class SocketHandler {
           const match = new Match({
             playerA: starter,
             playerB: opponent,
+            users: [starter, opponent],
             startTime: Date.now(),
             videoUrl: 'https://soul-train-bucket.s3.amazonaws.com/' + videoInfo[0]['fileName']
           });
@@ -351,7 +352,6 @@ class SocketHandler {
     } catch (e) {
       console.log('handleCreateRooms error is ', e);
     }
-
   }
 
   handleEnterLobby(socket, data) {
