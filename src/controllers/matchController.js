@@ -4,7 +4,6 @@ require('dotenv').config();
 exports.getMatchListByUserId = async (req, res) => {
     try {
         let { userId } = req.query;
-        console.log("match userId is ", userId);
         const matchs = await Match.find({ users: { $in: [userId] } });
         return res.status(200).json({
             success: true,
