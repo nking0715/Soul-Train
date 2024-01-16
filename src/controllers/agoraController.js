@@ -43,32 +43,38 @@ exports.createChannel = async (req, res) => {
 
         const user = await User.findOne({ _id: userId }).select('follower artistName');
         const followers = user.follower;
+
+        const data = {
+            type: 'Live Streaming',
+            publisher: userId.toString(),
+            channelId: newChannel._id.toString(),
+            channelName: newChannel.channelName
+        }
+        const pushNotification = {
+            title: 'Live Stream Started!',
+            body: `${user.artistName} is starting a live stream, check it out!`
+        }
+        const appNotification = {
+            title: `${user.artistName}`,
+            body: `is live now.`
+        }
+        const newNotification = new Notification({
+            usersToRead: followers,
+            data: data,
+            notification: appNotification
+        });
+        data.notificationId = newNotification._id.toString();
+        await newNotification.save();
         const fcmTokenList = await FcmToken.find({ userId: { $in: followers || [] } });
         if (!isEmpty(fcmTokenList)) {
             const fcmTokens = [];
             fcmTokenList.map((fcmToken) => {
                 fcmTokens.push(fcmToken.token);
             });
-            const data = {
-                type: 'Live Streaming',
-                channelId: newChannel._id.toString(),
-                channelName: newChannel.channelName
-            }
-            const notification = {
-                title: 'Live Stream Started!',
-                body: `${user.artistName} is starting a live stream, check it out!`
-            }
-            const newNotification = new Notification({
-                usersToRead: followers,
-                data: data,
-                notification: notification
-            });
-            data.notificationId = newNotification._id.toString();
-            const sendNotificationResult = await sendPushNotification(fcmTokens, data, notification);
+            const sendNotificationResult = await sendPushNotification(fcmTokens, data, pushNotification);
             if (!sendNotificationResult) {
                 return res.status(500).json({ success: false, message: 'Notification was not sent.' });
             }
-            await newNotification.save();
         }
         await newChannel.save();
         return res.status(200).json({ success: true, token: token, channelName: channelName });
@@ -160,6 +166,7 @@ exports.deleteChannel = async (req, res) => {
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
     try {
+        console.log(req.body);
         /* const fcmToken = await FcmToken.findOne({ userId: userId });
         if (!isEmpty(fcmToken)) {
             const data = {

@@ -6,7 +6,8 @@ const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const Report = require('../models/report');
 const isEmpty = require('../utils/isEmpty');
-const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3 } = require('../utils/aws');
+const { parseQueryParam } = require('../utils/queryUtils');
+const { uploadFileToS3, uploadFileToS3Multipart, uploadImageThumbnailToS3, uploadVideoThumbnailToS3, deleteAssetsFromS3 } = require('../utils/aws');
 const { moderateContent } = require('../helper/moderation.helper')
 const dateFormat = require('date-and-time');
 const { sendPushNotification } = require('../utils/notification');
@@ -32,6 +33,7 @@ const imageMimeToExt = {
 
 const MAX_IMAGE_SIZE = 10000000; // 10MB
 const MAX_VIDEO_SIZE = 200000000; // 200MB
+const MULTIPART_ENABLE_SIZE = 5000000;
 let BUCKET_PATH;
 if (process.env.NODE_ENV == "live") {
     BUCKET_PATH = process.env.LIVE_BUCKET_PATH
@@ -57,7 +59,12 @@ const processUploadedContent = async (uploadedContent, userId) => {
     const keyPrefix = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
     const newFileName = `${BUCKET_PATH}/${keyPrefix}${fileExtension}`;
 
-    const fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+    let fileOnS3;
+    if (uploadedContent.size <= MULTIPART_ENABLE_SIZE) {
+        fileOnS3 = await uploadFileToS3(uploadedContent, `${keyPrefix}${fileExtension}`, BUCKET_PATH);
+    } else {
+        fileOnS3 = await uploadFileToS3Multipart(uploadedContent, newFileName);
+    }
     const thumbnailUrl = await uploadThumbnailToS3(newFileName, keyPrefix, contentType);
 
     return { fileOnS3, thumbnailUrl, newFileName, contentType };
@@ -76,7 +83,18 @@ exports.createPost = async (req, res) => {
     try {
         console.time('processDuration');
         const userId = req.user.id;
-        const { tags, caption } = req.body;
+        const { tags, caption, location } = req.body;
+        let parsedLocation;
+        if (location && location.trim() !== "") {
+            try {
+                parsedLocation = JSON.parse(location);
+            } catch (error) {
+                console.log("Error in JSON parse in createPost: ", error);
+                parsedLocation = "";
+            }
+        } else {
+            parsedLocation = "";
+        }
         const files = req.files;
 
         const user = await User.findOne({ _id: userId });
@@ -115,7 +133,7 @@ exports.createPost = async (req, res) => {
             } */
         }
 
-        const newPost = new Post({ author: userId, assets, tags, caption, });
+        const newPost = new Post({ author: userId, assets, tags, caption, location: parsedLocation });
         await newPost.save();
 
         res.status(200).json({ success: true, newPost });
@@ -137,48 +155,51 @@ exports.createPost = async (req, res) => {
         if (postBlocked) {
             // Update the post's blocked status if any moderation failed
             await Post.findByIdAndUpdate(newPost._id, { blocked: true });
+            const data = {
+                type: 'Post Flagged',
+                postId: newPost._id.toString(),
+                publisher: userId.toString()
+            }
+            const pushNotification = {
+                title: 'Inappropriate content in a post.',
+                body: 'Your post was rejected due to inappropriate content.'
+            }
+            const appNotification = {
+                title: `${user.artistName}`,
+                body: 'Your post was rejected due to inappropriate content.'
+            }
+            const newNotification = new Notification({
+                usersToRead: [userId],
+                data: data,
+                notification: appNotification
+            });
+            data.notificationId = newNotification._id.toString();
+            await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: userId });
             if (!isEmpty(fcmToken)) {
-                const data = {
-                    type: 'Post Flagged',
-                    postId: newPost._id.toString()
-                }
-                const notification = {
-                    title: 'The post was flagged as inappropriate.',
-                    body: `Your post was rejected due to inappropriate content.`
-                }
-                const newNotification = new Notification({
-                    usersToRead: [userId],
-                    data: data,
-                    notification: notification
-                });
-                data.notificationId = newNotification._id.toString();
-                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, notification);
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, pushNotification);
                 if (!sendNotificationResult) {
                     return res.status(500).json({ success: false, message: 'Notification was not sent.' });
                 }
-                await newNotification.save();
             }
         } else {
             await Post.findByIdAndUpdate(newPost._id, { blocked: false });
         }
 
     } catch (error) {
-        console.log("upload content Error ", error)
-        return res.status(500).json({ success: false, message: error.message });
+        console.log("Error in createPost: ", error);
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
 
 exports.getPost = async (req, res) => {
     try {
-        const { page, per_page, userId } = req.query;
+        const { page = 1, perPage = 10, userId } = req.query;
         const userToSearch = userId || req.user.id;
-        if (isEmpty(page) || isEmpty(per_page)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const pageConverted = parseInt(page, 10);
-        const per_pageConverted = parseInt(per_page, 10);
-        const skip = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
         const conditions = [{ $eq: [{ $toString: "$author" }, userToSearch] }];
         if (userToSearch !== req.user.id) {
@@ -195,7 +216,7 @@ exports.getPost = async (req, res) => {
             },
             { $sort: { createdAt: -1 } },
             { $skip: skip },
-            { $limit: per_pageConverted },
+            { $limit: perPageConverted },
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -232,6 +253,7 @@ exports.getPost = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,
@@ -280,22 +302,65 @@ exports.getPost = async (req, res) => {
     }
 };
 
+exports.editPost = async (req, res) => {
+    try {
+        const { tags, caption, location, postId } = req.body;
+        let parsedLocation;
+        if (location) {
+            if (typeof location === 'string') {
+                parsedLocation = location.trim() !== "" ? JSON.parse(location) : "";
+            } else if (typeof location === 'object') {
+                parsedLocation = location;
+            } else {
+                parsedLocation = "";
+            }
+        } else {
+            parsedLocation = "";
+        }
+        const userId = req.user.id;
+        const user = await User.findOne({ _id: userId });
+        if (isEmpty(user)) {
+            return res.status(400).json({ message: 'User not found' });
+        }
+        const post = await Post.findById(postId)
+            .select("author");
+        if (isEmpty(post)) {
+            return res.status(400).json({ success: false, message: "Post not found." });
+        }
+        if (userId !== post.author.toString()) {
+            return res.status(403).json({ success: false, message: "The user can't edit a post created by another user." });
+        }
+        await Post.findByIdAndUpdate(postId, { tags: tags, caption: caption, location: parsedLocation });
+
+        return res.status(200).json({ success: true, message: "Post successfully edited." });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
 exports.deletePost = async (req, res) => {
     try {
         const postId = req.query.postId;
         const userId = req.user.id;
-        const post = await Post.findById(postId)
-            .select("author");
-        if (userId !== post.author.toString()) {
-            return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
-        }
-        if (isEmpty(post)) {
+        const postToRemove = await Post.findById(postId)
+            .select("author assets")
+            .populate('assets');
+        if (isEmpty(postToRemove)) {
             return res.status(400).json({ success: false, message: "Post not found." });
         }
+        if (userId !== postToRemove.author.toString()) {
+            return res.status(403).json({ success: false, message: "The user can't delete a post created by another user." });
+        }
+        const assetsToRemove = postToRemove.assets;
         await Post.findByIdAndRemove(postId);
-        return res.status(200).json({ success: true, message: "Post successfully removed." });
+        res.status(200).json({ success: true, message: "Post successfully removed." });
+        await deleteAssetsFromS3(assetsToRemove);
+        const assetIdsToRemove = assetsToRemove.map(asset => asset._id);
+        await Asset.deleteMany({ _id: { $in: assetIdsToRemove } });
+
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        console.log("Error in deletePost: ", error);
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 }
 
@@ -329,11 +394,14 @@ exports.commentPost = async (req, res) => {
 
 exports.getComment = async (req, res) => {
     try {
-        const { postId, page, per_page } = req.query;
-        const skip = (page - 1) * per_page;
+        const { postId, page = 1, perPage = 10 } = req.query;
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted;
         const comments = await Comment.find({ post: postId })
             .skip(skip)
-            .limit(per_page)
+            .limit(perPageConverted)
             .populate('author', 'username profilePicture')
             .sort({ createdAt: -1 });
         return res.status(200).json({
@@ -454,13 +522,10 @@ exports.savePost = async (req, res) => {
 exports.getSavedPost = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { page, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const pageConverted = parseInt(page, 10);
-        const per_pageConverted = parseInt(per_page, 10);
-        const skip = (pageConverted - 1) * per_pageConverted;
+        const { page = 1, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted;
         const result = await Post.aggregate([
             {
                 $match:
@@ -475,7 +540,7 @@ exports.getSavedPost = async (req, res) => {
             },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: skip }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            { $limit: perPageConverted }, // Limit the number of documents
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -512,6 +577,7 @@ exports.getSavedPost = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     likedByUser: {
@@ -585,60 +651,329 @@ exports.reportContent = async (req, res) => {
 }
 
 exports.discoverPosts = async (req, res) => {
-    const { page, per_page } = req.query;
-    const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(per_page)) {
-        return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
-
     try {
+        const { page = 1, perPage = 10, categorisedByTag = "false" } = req.query;
+        const userId = req.user.id;
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const start = (pageConverted - 1) * perPageConverted;
+
         // Get the users that the requesting user follows
-        const user = await User.findById(userId);
+        const user = await User.findById(userId, 'following');
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
         const followedUserIds = user.following;
 
-        const result = await Post.aggregate([
+        if (categorisedByTag == "true") {
+            const compareDate = new Date();
+            compareDate.setDate(compareDate.getDate() - 30);
+            const results = await Post.aggregate([
+                // Join with assets collection
+                {
+                    $lookup: {
+                        from: "assets",
+                        localField: "assets",
+                        foreignField: "_id",
+                        as: "assetDetails"
+                    }
+                },
+                // Filtering and sorting
+                {
+                    $match: {
+                        'assetDetails.contentType': 'video',
+                        author: {
+                            $nin: followedUserIds
+                        },
+                        blocked: { $ne: true },
+                        createdAt: { $gte: compareDate },
+                        $expr: {
+                            $ne: [{ $toString: "$author" }, userId.toString()]
+                        }
+                    },
+                },
+                // Join with users collection
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "_id",
+                        as: "userDetails"
+                    }
+                },
+                // Project necessary fields
+                {
+                    $project: {
+                        _id: 1,
+                        thumbnail: 1,
+                        assets: {
+                            $map: {
+                                input: "$assetDetails",
+                                as: "asset",
+                                in: {
+                                    url: "$$asset.url",
+                                    thumbnail: "$$asset.thumbnail"
+                                }
+                            }
+                        },
+                        numberOfViews: 1,
+                        numberOfLikes: 1,
+                        numberOfComments: 1,
+                        tags: 1,
+                        caption: 1,
+                        location: 1,
+                        createdAt: 1,
+                        likeList: 1,
+                        saveList: 1,
+                        likedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$likeList" },
+                                        { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        savedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$saveList" },
+                                        { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        user_id: { $arrayElemAt: ["$userDetails._id", 0] },
+                        username: { $arrayElemAt: ["$userDetails.username", 0] },
+                        artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                        profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    }
+                },
+                {
+                    $project: {
+                        likeList: 0,
+                        saveList: 0
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                // Unwind the tags array to treat each tag separately
+                {
+                    $unwind: "$tags"
+                },
+                // Group by tags
+                {
+                    $group: {
+                        _id: "$tags",
+                        posts: { $push: "$$ROOT" }
+                    }
+                },
+                // Count the number of posts per tag and sort
+                {
+                    $project: {
+                        tag: "$_id",
+                        numberOfPosts: { $size: "$posts" },
+                        posts: 1
+                    }
+                },
+                {
+                    $sort: { numberOfPosts: -1 }
+                },
+                { $skip: start },
+                { $limit: perPageConverted },
+                // Limit the number of posts per tag (if needed)
+                {
+                    $project: {
+                        tag: 1,
+                        posts: { $slice: ["$posts", 6] } // Adjust the number as per requirement
+                    }
+                },
+                // Project into the final structure
+                {
+                    $group: {
+                        _id: null,
+                        tags: { $push: { k: "$tag", v: "$posts" } }
+                    }
+                },
+                {
+                    $replaceRoot: {
+                        newRoot: { $arrayToObject: "$tags" }
+                    }
+                },
+            ]);
+            return res.status(200).json({ success: true, results });
+        } else {
+            const results = await Post.aggregate([
+                // Join with assets collection
+                {
+                    $lookup: {
+                        from: "assets",
+                        localField: "assets",
+                        foreignField: "_id",
+                        as: "assetDetails"
+                    }
+                },
+                // Filtering and sorting
+                {
+                    $match: {
+                        'assetDetails.contentType': 'video',
+                        author: {
+                            $nin: followedUserIds
+                        },
+                        blocked: { $ne: true },
+                        $expr: {
+                            $ne: [{ $toString: "$author" }, userId.toString()]
+                        }
+                    }
+                },
+                { $sort: { createdAt: -1 } },
+                { $skip: start },
+                { $limit: perPageConverted },
+                // Join with users collection
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "_id",
+                        as: "userDetails"
+                    }
+                },
+                // Project necessary fields
+                {
+                    $project: {
+                        _id: 1,
+                        thumbnail: 1,
+                        assets: {
+                            $map: {
+                                input: "$assetDetails",
+                                as: "asset",
+                                in: {
+                                    url: "$$asset.url",
+                                    thumbnail: "$$asset.thumbnail"
+                                }
+                            }
+                        },
+                        numberOfViews: 1,
+                        numberOfLikes: 1,
+                        numberOfComments: 1,
+                        tags: 1,
+                        caption: 1,
+                        location: 1,
+                        createdAt: 1,
+                        likeList: 1,
+                        saveList: 1,
+                        likedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$likeList" },
+                                        { $in: [{ $toObjectId: userId }, "$likeList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        savedByUser: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $isArray: "$saveList" },
+                                        { $in: [{ $toObjectId: userId }, "$saveList"] }
+                                    ]
+                                },
+                                true,
+                                false
+                            ]
+                        },
+                        user_id: { $arrayElemAt: ["$userDetails._id", 0] },
+                        username: { $arrayElemAt: ["$userDetails.username", 0] },
+                        artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
+                        profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
+                    }
+                },
+                {
+                    $project: {
+                        likeList: 0,
+                        saveList: 0
+                    }
+                }
+            ]);
+
+            return res.status(200).json({ success: true, results });
+        }
+    } catch (error) {
+        console.log("Error in discoverPosts: ", error.message)
+        return res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+exports.discoverByTag = async (req, res) => {
+    try {
+        const { page = 1, perPage = 10, tag } = req.query;
+        const userId = req.user.id;
+
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const start = (pageConverted - 1) * perPageConverted;
+
+        // Get the users that the requesting user follows
+        const user = await User.findById(userId, 'following');
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        const followedUserIds = user.following;
+
+        const results = await Post.aggregate([
+            // Join with assets collection
             {
                 $lookup: {
-                    from: "assets", // Join with the assets collection first to filter posts with video assets
+                    from: "assets",
                     localField: "assets",
                     foreignField: "_id",
                     as: "assetDetails"
                 }
             },
+            // Filtering and sorting
             {
                 $match: {
-                    'assetDetails.contentType': 'video', // Match posts with at least one asset of type video
-                    author: { $nin: followedUserIds }, // Original author filtering logic         
-                    blocked: { $ne: true }
+                    'assetDetails.contentType': 'video',
+                    author: {
+                        $nin: followedUserIds
+                    },
+                    blocked: { $ne: true },
+                    tags: { $in: [tag] },
+                    $expr: {
+                        $ne: [{ $toString: "$author" }, userId.toString()]
+                    }
                 }
             },
-            { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
-            { $skip: start }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            // Join with users collection
             {
                 $lookup: {
-                    from: "users", // Name of the user collection
+                    from: "users",
                     localField: "author",
                     foreignField: "_id",
                     as: "userDetails"
                 }
             },
+            { $sort: { createdAt: -1 } },
+            { $skip: start },
+            { $limit: perPageConverted },
+            // Project necessary fields
             {
                 $project: {
                     _id: 1,
                     thumbnail: 1,
                     assets: {
                         $map: {
-                            input: {
-                                $filter: {
-                                    input: "$assetDetails",
-                                    as: "asset",
-                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
-                                }
-                            },
+                            input: "$assetDetails",
                             as: "asset",
                             in: {
                                 url: "$$asset.url",
@@ -651,6 +986,7 @@ exports.discoverPosts = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,
@@ -682,22 +1018,6 @@ exports.discoverPosts = async (req, res) => {
                     username: { $arrayElemAt: ["$userDetails.username", 0] },
                     artistName: { $arrayElemAt: ["$userDetails.artistName", 0] },
                     profilePicture: { $arrayElemAt: ["$userDetails.profilePicture", 0] },
-                    assets: {
-                        $map: {
-                            input: {
-                                $filter: {
-                                    input: "$assetDetails",
-                                    as: "asset",
-                                    cond: { $eq: ["$$asset.contentType", "video"] } // Again, ensure we're only mapping video assets
-                                }
-                            },
-                            as: "asset",
-                            in: {
-                                url: "$$asset.url",
-                                thumbnail: "$$asset.thumbnail"
-                            }
-                        }
-                    },
                 }
             },
             {
@@ -705,35 +1025,39 @@ exports.discoverPosts = async (req, res) => {
                     likeList: 0,
                     saveList: 0
                 }
-            }
+            },
         ]);
-
-        return res.status(200).json({ success: true, results: result });
+        return res.status(200).json({ success: true, results });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.log("Error in discoverPosts: ", error.message)
+        return res.status(500).json({ success: false, message: "Server Error" });
     }
 };
 
 exports.homeFeed = async (req, res) => {
-    const { page, per_page } = req.query;
+    const { page = 1, perPage = 10 } = req.query;
     const userId = req.user.id;
-    if (isEmpty(page) || isEmpty(per_page)) {
-        return res.status(400).json({ success: false, message: "Invalid Request!" });
-    }
-    const pageConverted = parseInt(page, 10);
-    const per_pageConverted = parseInt(per_page, 10);
-    const start = (pageConverted - 1) * per_pageConverted; // Calculate the skip value
+
+    const pageConverted = parseQueryParam(page, 1);
+    const perPageConverted = parseQueryParam(perPage, 10);
+    const start = (pageConverted - 1) * perPageConverted; // Calculate the skip value
 
     try {
         // Get the users that the requesting user follows
         const user = await User.findById(userId);
         const followedUserIds = user.following;
 
-        const result = await Post.aggregate([
-            { $match: { author: { $in: followedUserIds }, blocked: { $ne: true } } },
+        const results = await Post.aggregate([
+            {
+                $match: {
+                    author: {
+                        $in: followedUserIds
+                    }, blocked: { $ne: true }
+                }
+            },
             { $sort: { createdAt: -1 } }, // Sort assets by uploadedTime in ascending order
             { $skip: start }, // Skip the specified number of documents
-            { $limit: per_pageConverted }, // Limit the number of documents
+            { $limit: perPageConverted }, // Limit the number of documents
             {
                 $lookup: {
                     from: "users", // Name of the user collection
@@ -770,6 +1094,7 @@ exports.homeFeed = async (req, res) => {
                     numberOfComments: 1,
                     tags: 1,
                     caption: 1,
+                    location: 1,
                     createdAt: 1,
                     likeList: 1,
                     saveList: 1,
@@ -811,7 +1136,7 @@ exports.homeFeed = async (req, res) => {
             }
         ]);
 
-        return res.status(200).json({ success: true, results: result });
+        return res.status(200).json({ success: true, results });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

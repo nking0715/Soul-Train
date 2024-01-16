@@ -11,6 +11,10 @@ const matchSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    users: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    }],
     startTime: {
         type: Date
     },
@@ -18,10 +22,12 @@ const matchSchema = new mongoose.Schema({
         type: Date
     },
     scoreA: {
-        type: Number
+        type: Number,
+        default: 0
     },
     scoreB: {
-        type: Number
+        type: Number,
+        default: 0
     },
     winner: {
         type: String

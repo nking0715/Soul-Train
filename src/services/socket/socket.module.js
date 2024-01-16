@@ -1,8 +1,9 @@
-const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus, saveRecording } = require('../../helper/agora.helper');
+const { generateRandomChannelName, generateAccessToken, getRequireResourceId, startRecording, getRecordingStatus, saveRecording, updateLayout } = require('../../helper/agora.helper');
 const { selectRandomUser, selectRandomMusic } = require('../../helper/socket.helper');
 const isEmpty = require('../../utils/isEmpty');
 const SOCKET_IDS = require('./sockProc');
 const { RtcRole } = require('agora-token');
+const Match = require('../../models/match')
 
 class SocketHandler {
   constructor(io) {
@@ -10,8 +11,11 @@ class SocketHandler {
     this.sockets = {}; // Initialize sockets, rooms, and this.users as class properties.
     this.rooms = {};
     this.lobbyUserList = [];
+    this.roomIdListByChannelName = {};
     this.channelInfoList = {};
     this.channelList = [];
+    this.channelMiddleLayoutList = [];
+    this.channelSaveList = [];
     this.users = {};
     this.roomId = 0;
     this.timeoutId = null;
@@ -50,6 +54,10 @@ class SocketHandler {
 
     socket.on(SOCKET_IDS.SAVE_RECORDING, data => {
       this.handleSaveRecording(socket, data);
+    });
+
+    socket.on(SOCKET_IDS.UPDATE_LAYOUT, data => {
+      this.handleUpdateLayout(socket, data);
     });
 
     // user leave event 
@@ -140,22 +148,39 @@ class SocketHandler {
   handleSaveRecording(socket, data) {
     try {
       const { channelName } = data;
-      console.log('saveRecording api', channelName);
+      // console.log('saveRecording api', channelName);
       let recordingDefaultUID = 9999;
+      // remove the channelName from startlist
+      this.channelList = this.channelList.filter(item => item !== channelName);
+
+      if (!this.channelSaveList.includes(String(channelName))) {
+        this.channelSaveList.push(String(channelName));
+      } else {
+        console.log('channel is already saved the recording', channelName);
+        return;
+      }
+
       if (
         this.channelInfoList[channelName]
       ) {
         const resourceId = this.channelInfoList[channelName].resourceId;
         const sid = this.channelInfoList[channelName].sid;
-
-        getRecordingStatus(resourceId, sid, 'individual').then(res => {
-          console.log("recording status is ", res.serverResponse);
-        }).catch(err => {
-          console.log("recording status is err", err);
-        });
-
+        // console.log("save sid is ", sid);
         saveRecording(resourceId, String(channelName), sid, recordingDefaultUID).then(res => {
-          console.log("save recording data is ", res);
+          console.log("save recording data success", res);
+          const roomInfo = this.rooms[this.roomIdListByChannelName[channelName].roomId];
+          const videoInfo = res['serverResponse']['fileList']; 
+          // console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
+          const starter = roomInfo.starter == roomInfo.playerA ? roomInfo.playerA : roomInfo.playerB;
+          const opponent = starter == roomInfo.playerA ? roomInfo.playerB : roomInfo.playerA;
+          const match = new Match({
+            playerA: starter,
+            playerB: opponent,
+            users: [starter, opponent],
+            startTime: Date.now(),
+            videoUrl: 'https://soul-train-bucket.s3.amazonaws.com/' + videoInfo[0]['fileName']
+          });
+          match.save();
         }).catch(err => {
           console.log("error save recording data is ", err);
         });
@@ -180,18 +205,19 @@ class SocketHandler {
       let recordingToken = generateAccessToken(String(channelName), RtcRole.SUBSCRIBER, recordingDefaultUID);
       getRequireResourceId(String(channelName), recordingDefaultUID).then(resourceId => {
         startRecording(resourceId, String(channelName), recordingDefaultUID, recordingToken).then(res => {
-          console.log("start recording data is ", res);
+          const currentTime = Math.floor(Date.now());
 
           this.channelInfoList[channelName] = {
             resourceId: res.resourceId,
             sid: res.sid,
+            startTime: currentTime
           };
 
-          getRecordingStatus(res.resourceId, res.sid, 'individual').then(res => {
-            console.log("recording status is ", res);
+          updateLayout(resourceId, String(channelName), res.sid, recordingDefaultUID, 1, 2).then(res => {
+            console.log("start update layout success");
           }).catch(err => {
-            console.log("recording status is err", err);
-          });
+            console.log("error updateLayout data is ", err);
+          })
         }).catch(err => {
           console.log("error start recording data is ", err);
         });
@@ -203,6 +229,29 @@ class SocketHandler {
     }
   }
 
+  handleUpdateLayout(socket, data) {
+    try {
+      const { channelName } = data;
+      console.log('handleUpdateLayout api', channelName);
+      if (!this.channelMiddleLayoutList.includes(String(channelName))) {
+        this.channelMiddleLayoutList.push(String(channelName));
+      } else {
+        console.log('channel is already handleUpdateLayout', channelName);
+        return;
+      }
+      let recordingDefaultUID = 9999;
+      let channelInfo = this.channelInfoList[channelName];
+
+      updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
+        console.log("middle update layout success");
+      }).catch(err => {
+        console.log("error updateLayout data is ", err);
+      })
+    } catch (e) {
+      console.log('handleUpdateLayout error is ', e);
+    }
+  }
+
   handleCreateRooms() {
     try {
       // clean lobbyUserList before create rooms.
@@ -211,24 +260,23 @@ class SocketHandler {
       let opponentDefaultUID = 2;
 
       let userList = this.lobbyUserList;
-      console.log("this.lobbyUserList is ", this.lobbyUserList);
-      // recording feature
-      // let recordingToken = generateAccessToken('channelName', RtcRole.SUBSCRIBER, 2);
-      // getRequireResourceId('channelName', 2).then(resourceId => {
-      //   startRecording(resourceId, 'channelName', 2, recordingToken).then(res => {
-      //     console.log("start recording data is ", res);
-      //   }).catch(err => {
-      //     console.log("error start recording data is ", err);
-      //   });
-      // }).catch(err => {
-      //   console.log('require resource id error', err);
-      // });
-      // getRecordingStatus('Pv_epo7FN23IAYYuRwAp99OC-YwM_YeyvEBSDQAhatPOl91vYiLcVN2y9zK0VAQSlnqdYrpq7mK_s7l5Pp3IUB13kIBA3OdUmqstoH8aLjW3OYcnIbOH28SDLtAHgqHtWxJdU-aymjluitycwZG85U2IWwtKLKnPlAdrJ_5cLFu7IMvN6e4257MaVgkhzES-ZFXaF849G8Pxcq6oPG-FWOiEBjcizMmBN9Na_bs-oNw',
-      //   '3b61e637774c703da5d3af999b007a72', 'individual').then(res => {
-      //     console.log('res is ', res);
-      //   }).catch(err => {
-      //     console.log('err is ', err);
-      //   });
+      // console.log("this.lobbyUserList is ", this.lobbyUserList);
+      const currentTime = Math.floor(Date.now());
+      let recordingDefaultUID = 9999;
+
+      for (var i = 0; i < this.channelList.length; i++) {
+        let channelName = this.channelList[i];
+        let channelInfo = this.channelInfoList[channelName];
+        const timeDifferenceInSeconds = Math.floor((currentTime - channelInfo.startTime) / 1000);
+
+        if (timeDifferenceInSeconds == 30) {
+          updateLayout(channelInfo.resourceId, String(channelName), channelInfo.sid, recordingDefaultUID, 2, 1).then(res => {
+            console.log("middle update laypoput success");
+          }).catch(err => {
+            console.log("error updateLayout data is ", err);
+          })
+        }
+      }
 
       while (this.lobbyUserList.length >= 2) {
         let randomIndexA = Math.floor(Math.random() * 100) % userList.length;
@@ -237,7 +285,6 @@ class SocketHandler {
         let randomIndexB = Math.floor(Math.random() * 100) % userList.length;
         let playerB = userList[randomIndexB];
         userList.splice(randomIndexB, 1);
-        console.log("update lobbyUserList", userList);
         this.lobbyUserList = userList;
 
         let starter = selectRandomUser(playerA, playerB);
@@ -248,7 +295,6 @@ class SocketHandler {
         let role = RtcRole.PUBLISHER;
         let tokenA = generateAccessToken(channelName, role, starterDefaultUID);
         let tokenB = generateAccessToken(channelName, role, opponentDefaultUID);
-        console.log('channelName is ', channelName);
         let musicURL = selectRandomMusic();
         let room = {
           roomId: this.roomId,
@@ -270,7 +316,7 @@ class SocketHandler {
 
         console.log("GET_INFO: current userInfo", playerA, this.users[playerA].userName);
         console.log("GET_INFO: opponent userInfo", this.users[playerB].userId, this.users[playerB].userName);
-        console.log("");
+        console.log("music is ", musicURL);
         console.log("GET_INFO: current userInfo", playerB, this.users[playerB].userName);
         console.log("GET_INFO: opponent userInfo", this.users[playerA].userId, this.users[playerA].userName);
 
@@ -290,7 +336,9 @@ class SocketHandler {
           opponentProfileURL: this.users[playerA].userProfileURL
         });
 
-
+        this.roomIdListByChannelName[channelName] = {
+          roomId: room.roomId
+        };
 
         this.users[playerA].roomId = room.roomId;
         this.users[playerB].roomId = room.roomId;
@@ -304,7 +352,6 @@ class SocketHandler {
     } catch (e) {
       console.log('handleCreateRooms error is ', e);
     }
-
   }
 
   handleEnterLobby(socket, data) {
@@ -321,7 +368,6 @@ class SocketHandler {
         console.log('USER is already in the lobby now', userId);
       }
       console.log('next.lobbyUserList ', this.lobbyUserList, userId);
-
       // init data
       this.users[userId] = { socket, roomId: null, isStarted: false, isOnline: true, userId, userName, userProfileURL, userArtistName, enterLobbyTime };
       // set userId of this socket

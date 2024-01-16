@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
+const { parseQueryParam } = require('../utils/queryUtils');
 
 exports.registerToken = async (req, res) => {
   try {
@@ -82,17 +83,29 @@ exports.getBadgeStatus = async (req, res) => {
 exports.getListOfNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { page = 1, perPage = 10 } = req.query
+    const pageConverted = parseQueryParam(page, 1);
+    const perPageConverted = parseQueryParam(perPage, 10);
+    const skip = (pageConverted - 1) * perPageConverted;
     // Search for notifications where userId is in usersToRead
     const notifications = await Notification.find({ usersToRead: { $in: [userId] } })
-      .select('data notification usersAlreadyRead')
-      .sort({ createdAt: -1 });
+      .populate({
+        path: 'data.publisher',
+        model: 'User',
+        select: 'profilePicture'
+      })
+      .select('data notification usersAlreadyRead createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPageConverted);
 
     // Add isUnread boolean to each notification
     const modifiedNotifications = notifications.map(notification => {
       const isUnread = !notification.usersAlreadyRead.includes(userId);
+      const { usersAlreadyRead, ...rest } = notification.toObject();
       return {
-        ...notification.toObject(), // Convert document to a plain object
-        isUnread // Add the new property
+        ...rest, // Convert document to a plain object
+        isUnread,
       };
     });
 

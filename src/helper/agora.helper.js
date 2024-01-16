@@ -86,8 +86,7 @@ exports.getRecordingStatus = (resourceid, sid, mode) => {
 
 exports.startRecording = (resourceId, channelName, uid, token) => {
     return new Promise(async (resolve, reject) => {
-        const mode = 'individual'; // Or 'composite' as needed
-        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/${mode}/start`;
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/mode/mix/start`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {
@@ -96,10 +95,19 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
             "clientRequest": {
                 "token": token,
                 "recordingConfig": {
-                    "maxIdleTime": 30,
+                    "maxIdleTime": 90,
                     "streamTypes": 2,
+                    "audioProfile": 1,
                     "channelType": 0,
                     "videoStreamType": 0,
+                    "transcodingConfig": {
+                        "height": 640,
+                        "width": 360,
+                        "bitrate": 500,
+                        "fps": 15,
+                        "mixedVideoLayout": 0,
+                        "backgroundColor": "#000000"
+                    },
                     "subscribeVideoUids": [
                         "1", "2"
                     ],
@@ -108,11 +116,14 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     ],
                     "subscribeUidGroup": 0
                 },
+                "recordingFileConfig": {
+                    "avFileType": ["hls", "mp4"]
+                },
                 "storageConfig": {
-                    "accessKey": AWS_SECRET_ACCESS_KEY,
+                    "accessKey": AWS_ACCESS_KEY_ID,
                     "region": 0,
                     "bucket": AWS_BUCKET_NAME,
-                    "secretKey": AWS_ACCESS_KEY_ID,
+                    "secretKey": AWS_SECRET_ACCESS_KEY,
                     "vendor": 1,
                     "fileNamePrefix": [
                         "matchmaking"
@@ -144,8 +155,7 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
 
 exports.saveRecording = (resourceId, channelName, sid, uid) => {
     return new Promise(async (resolve, reject) => {
-        const mode = 'individual'; // Or 'composite' as needed
-        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/${mode}/stop`;
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/stop`;
         const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
 
         const requestData = {
@@ -168,6 +178,60 @@ exports.saveRecording = (resourceId, channelName, sid, uid) => {
                 resolve(response.data); // Resolve with response data
             } else {
                 reject(`Failed to start recording. Status code: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error:', error.message);
+            reject(error.message);
+        }
+    });
+};
+
+exports.updateLayout = (resourceId, channelName, sid, uid, bigUid, smallUid) => {
+    return new Promise(async (resolve, reject) => {
+        const apiEndpoint = `https://api.agora.io/v1/apps/${APP_ID}/cloud_recording/resourceid/${resourceId}/sid/${sid}/mode/mix/updateLayout`;
+        const authorization = `Basic ${Buffer.from(CUSTONER_KEY + ":" + CUSTONER_SECRET).toString('base64')}`;
+
+        const requestData = {
+            "cname": (channelName).toString(),
+            "uid": uid.toString(),
+            "clientRequest": {
+                "mixedVideoLayout": 3,
+                "backgroundColor": "#FF0000",
+                "layoutConfig": [
+                    {
+                        "uid": (bigUid).toString(),
+                        "x_axis": 0.0,
+                        "y_axis": 0.0,
+                        "width": 1.0,
+                        "height": 1.0,
+                        "alpha": 1.0,
+                        "render_mode": 1
+                    },
+                    {
+                        "uid": (smallUid).toString(),
+                        "x_axis": 0.74,
+                        "y_axis": 0.01,
+                        "width": 0.25,
+                        "height": 0.2,
+                        "alpha": 1.0,
+                        "render_mode": 1
+                    }
+                ]
+            }
+        };
+
+        try {
+            const response = await axios.post(apiEndpoint, requestData, {
+                headers: {
+                    'Authorization': authorization,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.status === 200) {
+                resolve(response.data); // Resolve with response data
+            } else {
+                reject(`Failed to updateLayout recording. Status code: ${response.status}`);
             }
         } catch (error) {
             console.error('Error:', error.message);

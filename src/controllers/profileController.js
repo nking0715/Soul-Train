@@ -1,13 +1,17 @@
+const dateFormat = require('date-and-time');
+const bcrypt = require('bcryptjs');
+
 const User = require('../models/user');
 const Asset = require('../models/asset');
+const Post = require('../models/post');
 const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
 const { uploadFileToS3 } = require('../utils/aws');
+const { parseQueryParam } = require('../utils/queryUtils');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
-const dateFormat = require('date-and-time');
 const { sendPushNotification } = require('../utils/notification');
 
 const videoMimeToExt = {
@@ -67,17 +71,16 @@ exports.getProfile = async (req, res) => {
 
 exports.getFollowerList = async (req, res) => {
     try {
-        const { page, userId, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const skip = (page - 1) * per_page; // Calculate the skip value
+        const { page = 1, userId, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findOne({ _id: userId || req.user.id })
             .select('follower');
         const followersList = await User.find({ _id: { $in: user.follower } })
-            .limit(per_page)
+            .limit(perPageConverted)
             .skip(skip)
             .select('username artistName profilePicture');
         const followers = followersList.map(follower => {
@@ -93,18 +96,17 @@ exports.getFollowerList = async (req, res) => {
 
 exports.getFollowingList = async (req, res) => {
     try {
-        const { page, userId, per_page } = req.query;
-        if (isEmpty(page) || isEmpty(per_page)) {
-            return res.status(400).json({ success: false, message: "Invalid Request!" });
-        }
-        const skip = (page - 1) * per_page; // Calculate the skip value
+        const { page = 1, userId, perPage = 10 } = req.query;
+        const pageConverted = parseQueryParam(page, 1);
+        const perPageConverted = parseQueryParam(perPage, 10);
+        const skip = (pageConverted - 1) * perPageConverted; // Calculate the skip value
         const userToSearch = userId || req.user.id;
         const currentUser = await User.findOne({ _id: req.user.id })
             .select('following');
         const user = await User.findById(userToSearch)
             .select('following');
         const followingsList = await User.find({ _id: { $in: user.following } })
-            .limit(per_page)
+            .limit(perPageConverted)
             .skip(skip)
             .select('username artistName profilePicture');
         const followings = followingsList.map(following => {
@@ -159,7 +161,25 @@ exports.updateProfile = async (req, res) => {
         // Generate a JWT token
         const token = authService.generateToken(profile);
 
-        return res.status(200).json({ success: true, message: "success", token });
+        return res.status(200).json({ success: true, token });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findOne({ _id: req.user.id });
+        if (!user) return res.status(400).json({ success: false, message: "User doesn't exist!" });
+
+        const validPassword = await bcrypt.compare(currentPassword, user.password ? user.password : "");
+        if (!validPassword) return res.status(400).json({ success: false, message: "Wrong password" });
+
+        user.password = newPassword;
+        await user.save();
+
+        return res.status(200).json({ success: true, message: "Successfully updated the password" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -368,6 +388,8 @@ exports.followManage = async (req, res) => {
 
         const userId = req.user.id;
 
+        if (dancerId == userId) return res.status(400).json({ success: false, message: 'User cannot follow or unfollow himself/herself.' })
+
         const dancer = await User.findOne({ _id: dancerId });
         const user = await User.findOne({ _id: userId })
 
@@ -382,27 +404,32 @@ exports.followManage = async (req, res) => {
         } else {
             user.following.push(dancerId);
             dancer.follower.push(userId);
+            const data = {
+                type: 'Follow User',
+                followerId: userId.toString(),
+                publisher: userId.toString(),
+            }
+            const pushNotification = {
+                title: 'A user followed you.',
+                body: `${user.artistName} started to follow you.`
+            }
+            const appNotification = {
+                title: `${user.artistName}`,
+                body: `started following you.`
+            }
+            const newNotification = new Notification({
+                usersToRead: [dancerId],
+                data: data,
+                notification: appNotification
+            });
+            data.notificationId = newNotification._id.toString();
+            await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: dancerId });
             if (!isEmpty(fcmToken)) {
-                const data = {
-                    type: 'Follow User',
-                    followerId: userId.toString()
-                }
-                const notification = {
-                    title: 'A user followed you.',
-                    body: `${user.artistName} started to follow you.`
-                }
-                const newNotification = new Notification({
-                    usersToRead: [dancerId],
-                    data: data,
-                    notification: notification
-                });
-                data.notificationId = newNotification._id.toString();
-                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, notification);
+                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, pushNotification);
                 if (!sendNotificationResult) {
                     console.log('Notification for follow user was not sent.');
                 }
-                await newNotification.save();
             }
         }
         await user.save();

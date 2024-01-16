@@ -63,8 +63,6 @@ exports.uploadFileToS3Multipart = async (file, newFileName) => {
             MultipartUpload: { Parts: uploadedParts }
         }).promise();
 
-        console.log('completeUploadResponse: ', completeUploadResponse);
-
         return { location: completeUploadResponse.Location, newFileName };
     } catch (error) {
         // Step 4: Abort multipart upload on failure
@@ -107,6 +105,7 @@ exports.uploadImageThumbnailToS3 = async (s3Url, keyPrefix) => {
         Key: s3Url
     }).promise();
     const resizedBuffer = await sharp(objectData.Body)
+        .rotate()
         .resize(null, 180)
         .toBuffer();
     const promise = s3.upload({
@@ -177,4 +176,31 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
         console.error('Error in uploadVideoThumbnailToS3:', err);
         return "s3://soul-train-bucket/Post/chess.png";
     }
+};
+
+exports.deleteAssetsFromS3 = async (assets) => {
+    const deletePromises = assets.flatMap(asset => {
+        return [asset.url, asset.thumbnail].map(url => {
+            const key = getKeyFromUrl(url);
+            if (!key) {
+                // Handle the case where the key could not be extracted
+                console.error('Invalid URL for asset:', url);
+                return Promise.resolve();
+            }
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: key
+            };
+            return s3.deleteObject(params).promise();
+        });
+    });
+
+    await Promise.all(deletePromises);
+}
+
+const getKeyFromUrl = (url) => {
+    const urlObject = new URL(url);
+    // Decode the pathname to handle URL encoding and remove the leading '/'
+    const key = decodeURIComponent(urlObject.pathname).substring(1);
+    return key;
 };
