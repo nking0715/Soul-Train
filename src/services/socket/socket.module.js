@@ -173,11 +173,13 @@ class SocketHandler {
           // console.log("video link is ", videoInfo[0]['fileName'], videoInfo[1]['fileName']);
           const starter = roomInfo.starter == roomInfo.playerA ? roomInfo.playerA : roomInfo.playerB;
           const opponent = starter == roomInfo.playerA ? roomInfo.playerB : roomInfo.playerA;
+          const musicUrl = roomInfo.musicURL;
           const match = new Match({
             playerA: starter,
-            playerB: opponent,
+            playerB: opponent,            
             users: [starter, opponent],
             startTime: Date.now(),
+            musicUrl,
             videoUrl: 'https://soul-train-bucket.s3.amazonaws.com/' + videoInfo[0]['fileName']
           });
           match.save();
