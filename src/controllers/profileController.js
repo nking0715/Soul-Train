@@ -56,7 +56,6 @@ exports.getProfile = async (req, res) => {
             const user = await User.findOne({ _id: req.query.userId })
                 .select('follower')
             const follower = user.follower;
-            console.log(follower);
             if (!isEmpty(follower) && follower.includes(req.user.id)) {
                 profile.isFollowed = true;
             } else {
@@ -116,7 +115,6 @@ exports.getFollowingList = async (req, res) => {
         return res.status(200).json({ success: true, followings });
     } catch (error) {
         console.log(error.message);
-        console.log("ddd");
         return res.status(500).json({ success: false, message: error.message });
     }
 }
