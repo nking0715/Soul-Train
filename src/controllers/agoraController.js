@@ -3,6 +3,7 @@ const Channel = require('../models/channel');
 const User = require('../models/user');
 const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
+const KickedChannel = require('../models/kickedchannel');
 const socketManager = require('../utils/socket');
 const { sendPushNotification } = require('../utils/notification');
 const { parseQueryParam } = require('../utils/queryUtils');
@@ -178,6 +179,16 @@ exports.contentModerationWebhook = async (req, res) => {
             time_in_seconds: 10,
             privileges: ["join_channel"]
         };
+        const kickedChannel = new KickedChannel({
+            contentUrl,
+            status,
+            userId,
+            addedAt,
+            contentId,
+            reason,
+            channelName
+        });
+        await kickedChannel.save();
         const response = await axios.post(url, postData, {
             headers: {
                 // Set necessary headers here
