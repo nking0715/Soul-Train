@@ -168,6 +168,7 @@ exports.deleteChannel = async (req, res) => {
 
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
+    console.log(req.body);
     try {
         const parsedmetaData = parseQueryParam(metaData, {});
         const channelName = parsedmetaData.cname;
