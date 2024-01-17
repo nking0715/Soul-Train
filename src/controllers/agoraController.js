@@ -5,6 +5,8 @@ const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const socketManager = require('../utils/socket');
 const { sendPushNotification } = require('../utils/notification');
+const { parseQueryParam } = require('../utils/queryUtils');
+const axios = require('axios');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
@@ -166,7 +168,24 @@ exports.deleteChannel = async (req, res) => {
 exports.contentModerationWebhook = async (req, res) => {
     const { contentUrl, status, userId, addedAt, contentId, reason, metaData } = req.body;
     try {
-        console.log(req.body);
+        const parsedmetaData = parseQueryParam(metaData, {});
+        const channelName = parsedmetaData.cname;
+        const url = "https://api.agora.io/dev/v1/kicking-rule";
+        const postData = {
+            // Include the necessary fields here
+            appid: APP_ID,
+            cname: channelName,
+            time_in_seconds: 10,
+            privileges: ["join_channel"]
+        };
+        const response = await axios.post(url, postData, {
+            headers: {
+                // Set necessary headers here
+                'Content-Type': 'application/json',
+                // 'Authorization': 'Bearer YOUR_TOKEN', // if authorization is needed
+            }
+        });
+
         /* const fcmToken = await FcmToken.findOne({ userId: userId });
         if (!isEmpty(fcmToken)) {
             const data = {
