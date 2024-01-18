@@ -124,7 +124,7 @@ exports.createPost = async (req, res) => {
                 // blocked: rekognitionResult.success ? false : true
             })
             await newAsset.save();
-            assets.push(newAsset._id);
+            assets.push(newAsset);
             fileNames.push(newFileName);
 
             /* if (rekognitionResult.success == false) {
@@ -136,7 +136,7 @@ exports.createPost = async (req, res) => {
         const newPost = new Post({ author: userId, assets, tags, caption, location: parsedLocation });
         await newPost.save();
 
-        await Asset.updateMany({ _id: { $in: assets } }, { postId: newPost._id });
+        await Asset.updateMany({ _id: { $in: newPost.assets } }, { postId: newPost._id });
 
         res.status(200).json({ success: true, newPost });
         console.timeEnd('processDuration');
