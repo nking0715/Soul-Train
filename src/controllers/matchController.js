@@ -5,7 +5,8 @@ require('dotenv').config();
 exports.getMatchListByUserId = async (req, res) => {
     try {
         let { userId } = req.query;
-        const matchs = await Match.find({ users: { $in: [userId] } });
+        const matchs = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName'); // Only include username and artistName
+
         return res.status(200).json({
             success: true,
             matchs,
@@ -17,7 +18,8 @@ exports.getMatchListByUserId = async (req, res) => {
 
 exports.getMatchListWithFriends = async (req, res) => {
     try {
-        let { userId, perPage = 5, page = 1 } = req.query;
+        let { userId , perPage = 5, page = 1 } = req.query;
+
         // Calculate the number of results to skip (for pagination)
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
@@ -40,7 +42,7 @@ exports.getMatchListWithFriends = async (req, res) => {
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
         .skip(skip)              // Skip the previous pages' results
         .limit(perPage)          // Limit the number of results
-        .populate('users'); // Optionally populate 'users' for detailed info
+        .populate('users', 'username artistName'); // Only include username and artistName
 
         // Check if matches were found
         if (matches.length > 0) {
@@ -70,7 +72,7 @@ exports.getMatchListByDiscovery = async (req, res) => {
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
         .skip(skip)              // Skip the previous pages' results
         .limit(perPage)          // Limit the number of results
-        .populate('users'); // Optionally populate 'users' for detailed info
+        .populate('users', 'username artistName'); // Only include username and artistName
         return res.status(200).json({
             success: true,
             matches,
