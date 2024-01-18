@@ -3,6 +3,6 @@ const matchController = require('../controllers/matchController');
 
 const router = express.Router();
 
-router.get('/myProfile', matchController.getMatchListByUserId);
+router.get('/', matchController.getMatchListByUserId);
 
 module.exports = router;

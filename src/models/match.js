@@ -32,6 +32,9 @@ const matchSchema = new mongoose.Schema({
     winner: {
         type: String
     },
+    musicUrl: {
+        type: String
+    },
     videoUrl: {
         type: String
     }
