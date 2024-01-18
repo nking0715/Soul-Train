@@ -62,11 +62,18 @@ exports.getMatchListWithFriends = async (req, res) => {
 
 exports.getMatchListByDiscovery = async (req, res) => {
     try {
-        let { userId, perPage, page } = req.query;
-        const matchs = await Match.find({ users: { $in: [userId] } });
+        let { userId, perPage = 5, page = 1 } = req.query;
+        const skip = (page - 1) * perPage;
+        const matches = await Match.find({ 
+            users: { $in: [userId] },
+            createdAt: { $gte: date48HoursAgo } // Filter to include only matches created within the last 48 hours
+        }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
+        .skip(skip)              // Skip the previous pages' results
+        .limit(perPage)          // Limit the number of results
+        .populate('users'); // Optionally populate 'users' for detailed info
         return res.status(200).json({
             success: true,
-            matchs,
+            matches,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
