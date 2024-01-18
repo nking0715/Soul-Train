@@ -57,20 +57,20 @@ app.use(fileUpload());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Session setup
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    name: 'sid',
-    secure: false,
-    maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
-  }
-}));
+// app.use(session({
+//   secret: process.env.SESSION_SECRET,
+//   resave: false,
+//   saveUninitialized: true,
+//   cookie: {
+//     name: 'sid',
+//     secure: false,
+//     maxAge: 14 * 24 * 60 * 60 * 1000 // 14 days in milliseconds
+//   }
+// }));
 
 // Custom middleware to refresh the session's last access timestamp
 app.use((req, res, next) => {
-  req.session.lastAccess = Date.now();
+  // req.session.lastAccess = Date.now();
   next();
 });
 
@@ -87,7 +87,7 @@ app.use('/users', userRoutes);
 app.use('/contentModerationWebhook', webhookRoutes);
 
 // Profile routes with authentication and authorization
-app.use(authMiddleware.authenticate);
+// app.use(authMiddleware.authenticate);
 app.use('/profile', profileRoutes);
 app.use('/post', postRoutes);
 app.use('/notification', notificationRoutes);
