@@ -8,8 +8,7 @@ const assetSchema = new mongoose.Schema({
     },
     postId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Post',
-        required: true
+        ref: 'Post'
     },
     url: {
         type: String,
