@@ -14,9 +14,15 @@ async function updateSignedURL(match) {
 }
 
 let isUserIdInArray = (userIds, checkId) => {
-    userIds.some(userId =>
-        userId.toString() === checkId.toString()
-    );
+    for (var i = 0; i < userIds?.length; i++) {
+        if (userIds[i]?.toString() == checkId?.toString()) {
+            return true;
+        }
+    }
+    return false;
+    // userIds.some(userId =>
+    //     userId.toString() == checkId.toString()
+    // );
 }
 
 async function processMatches(matches) {
@@ -53,7 +59,7 @@ exports.getMatchListByUserId = async (req, res) => {
 
 exports.getMatchListWithFriends = async (req, res) => {
     try {
-        let { userId , perPage = 5, page = 1 } = req.query;
+        let { userId, perPage = 5, page = 1 } = req.query;
         // Calculate the number of results to skip (for pagination)
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
@@ -83,13 +89,9 @@ exports.getMatchListWithFriends = async (req, res) => {
 
         matches?.map(match => {
             let newMatch = match;
-            console.log('ddddd ', isUserIdInArray(friendIds, match.playerA));
-            console.log('ddddd ', isUserIdInArray(friendIds, match.playerB));
-            if (isUserIdInArray(friendIds, match.playerA)) {
-                newMatch.follower = match.playerA;
-            }
             if (isUserIdInArray(friendIds, match.playerB)) {
-                newMatch.follower = match.playerB;
+                newMatch.users[0] = match.users[1];
+                newMatch.users[1] = match.users[0];
             }
             // newMatch.
             data.push(newMatch);
