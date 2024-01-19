@@ -40,9 +40,7 @@ exports.getMatchListByUserId = async (req, res) => {
         let { userId } = req.query;
         let match = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName'); // Only include username and artistName        
         if (match.length) {
-            let videoUrl = match[0]?.videoUrl.split('.com/')[1];
-            videoUrl = await getSignedUrl(videoUrl);
-            match[0].videoUrl = videoUrl;
+            match = await processMatches(match);
         }
         return res.status(200).json({
             success: true,
@@ -55,7 +53,7 @@ exports.getMatchListByUserId = async (req, res) => {
 
 exports.getMatchListWithFriends = async (req, res) => {
     try {
-        let { userId, perPage = 5, page = 1 } = req.query;
+        let { userId , perPage = 5, page = 1 } = req.query;
         // Calculate the number of results to skip (for pagination)
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
@@ -79,12 +77,14 @@ exports.getMatchListWithFriends = async (req, res) => {
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
             .populate('users', 'username artistName'); // Only include username and artistName
-        if(matches.length) {
+        if (matches.length) {
             matches = await processMatches(matches);
         }
 
         matches?.map(match => {
             let newMatch = match;
+            console.log('ddddd ', isUserIdInArray(friendIds, match.playerA));
+            console.log('ddddd ', isUserIdInArray(friendIds, match.playerB));
             if (isUserIdInArray(friendIds, match.playerA)) {
                 newMatch.follower = match.playerA;
             }
@@ -97,7 +97,7 @@ exports.getMatchListWithFriends = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            matches,
+            matches: data,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -117,7 +117,7 @@ exports.getMatchListByDiscovery = async (req, res) => {
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
             .populate('users', 'username artistName'); // Only include username and artistName
-        if(matches.length) {
+        if (matches.length) {
             matches = await processMatches(matches);
         }
         return res.status(200).json({
