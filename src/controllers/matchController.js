@@ -69,7 +69,7 @@ exports.getMatchListWithFriends = async (req, res) => {
         }
 
         // Extract friend IDs from the followers
-        const friendIds = user.follower.map(friend => friend._id);
+        const friendIds = user?.follower.map(friend => friend._id);
         let data = [];
         // Find matches where any of the friends are involved
         let matches = await Match.find({
