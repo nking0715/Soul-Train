@@ -79,8 +79,10 @@ exports.getMatchListWithFriends = async (req, res) => {
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
             .populate('users', 'username artistName'); // Only include username and artistName
+        if(matches.length) {
+            matches = await processMatches(matches);
+        }
 
-        matches = await processMatches(matches);
         matches?.map(match => {
             let newMatch = match;
             if (isUserIdInArray(friendIds, match.playerA)) {
@@ -92,12 +94,6 @@ exports.getMatchListWithFriends = async (req, res) => {
             // newMatch.
             data.push(newMatch);
         });
-        // Check if matches were found
-        if (matches.length > 0) {
-            // console.log('Matches found with friends:', matches);
-        } else {
-            // console.log('No matches found with friends');
-        }
 
         return res.status(200).json({
             success: true,
@@ -121,8 +117,9 @@ exports.getMatchListByDiscovery = async (req, res) => {
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
             .populate('users', 'username artistName'); // Only include username and artistName
-
-        matches = await processMatches(matches);
+        if(matches.length) {
+            matches = await processMatches(matches);
+        }
         return res.status(200).json({
             success: true,
             matches,
