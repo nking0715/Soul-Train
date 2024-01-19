@@ -413,9 +413,7 @@ exports.addAdmin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin already exists' });
     } else {
       admin = new Admin(req.body);
-
-      await sendMail(options);
-
+      
       await admin.save();
 
       return res.status(200).json({ success: true, message: 'Successfully registered.' });
