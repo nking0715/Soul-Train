@@ -65,6 +65,8 @@ exports.getMatchListWithFriends = async (req, res) => {
 exports.getMatchListByDiscovery = async (req, res) => {
     try {
         let { userId, perPage = 5, page = 1 } = req.query;
+        // Calculate the date 48 hours ago from now
+        const date48HoursAgo = new Date(new Date().getTime() - (48 * 60 * 60 * 1000));
         const skip = (page - 1) * perPage;
         const matches = await Match.find({ 
             users: { $in: [userId] },
