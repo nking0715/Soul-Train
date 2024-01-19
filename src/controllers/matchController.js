@@ -96,7 +96,7 @@ exports.getMatchListByDiscovery = async (req, res) => {
         // Calculate the date 48 hours ago from now
         const date48HoursAgo = new Date(new Date().getTime() - (48 * 60 * 60 * 1000));
         const skip = (page - 1) * perPage;
-        const matches = await Match.find({
+        let matches = await Match.find({
             users: { $in: [userId] },
             createdAt: { $gte: date48HoursAgo } // Filter to include only matches created within the last 48 hours
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
