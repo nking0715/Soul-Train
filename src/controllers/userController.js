@@ -7,6 +7,7 @@ const sendMail = require('./sendMail/gmail');
 require('events').EventEmitter.prototype._maxListeners = 0;
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
+const Admin = require('../models/admin');
 const Waitlist = require('../models/waitlist')
 const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
@@ -402,5 +403,23 @@ exports.addToWaitList = async (req, res) => {
     }
   } else {
     return res.status(400).json({ success: false, message: "Invalid Email type!" })
+  }
+}
+
+exports.addAdmin = async (req, res) => {
+  try {
+    let admin = await Admin.findOne({ email: req.body.email });
+    if (admin) {
+      return res.status(400).json({ success: false, message: 'Admin already exists' });
+    } else {
+      admin = new Admin(req.body);
+      
+      await admin.save();
+
+      return res.status(200).json({ success: true, message: 'Successfully registered.' });
+    }
+  } catch (error) {
+    console.log('Error in register: ', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 }
