@@ -44,7 +44,7 @@ async function processMatches(matches) {
 exports.getMatchListByUserId = async (req, res) => {
     try {
         let { userId } = req.query;
-        let match = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName'); // Only include username and artistName        
+        let match = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName        
         if (match.length) {
             match = await processMatches(match);
         }
@@ -82,7 +82,7 @@ exports.getMatchListWithFriends = async (req, res) => {
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
-            .populate('users', 'username artistName'); // Only include username and artistName
+            .populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName
         if (matches.length) {
             matches = await processMatches(matches);
         }
@@ -118,7 +118,7 @@ exports.getMatchListByDiscovery = async (req, res) => {
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
-            .populate('users', 'username artistName'); // Only include username and artistName
+            .populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName
         if (matches.length) {
             matches = await processMatches(matches);
         }
