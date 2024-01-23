@@ -88,11 +88,26 @@ exports.getMatchListWithFriends = async (req, res) => {
         }
 
         matches?.map(match => {
+            let newMatch = {
+                _id: match.id,
+                playerA: match.playerA,
+                playerB: match.playerB,
+                users: match.users,
+                startTime: match.startTime,
+                musicUrl: match.musicUrl,
+                videoUrl: match.videoUrl,
+                createdAt: match.createdAt,
+                updatedAt: match.updatedAt,
+                follower: {},
+                startor: match.users[0]
+            };
             if (isUserIdInArray(friendIds, match.playerB)) {
                 // Swap users
-                [match.users[0], match.users[1]] = [match.users[1], match.users[0]];
+                newMatch.follower = match.users[1];
+            } else {
+                newMatch.follower = match.users[0];
             }
-            data.push(match);
+            data.push(newMatch);
         });
 
         return res.status(200).json({
