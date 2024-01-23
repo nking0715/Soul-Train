@@ -59,7 +59,7 @@ exports.getMatchListByUserId = async (req, res) => {
 
 exports.getMatchListWithFriends = async (req, res) => {
     try {
-        let { userId = '6543828546b700cb53b48d4d', perPage = 5, page = 1 } = req.query;
+        let { userId, perPage = 5, page = 1 } = req.query;
         // Calculate the number of results to skip (for pagination)
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
