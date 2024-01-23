@@ -44,13 +44,31 @@ async function processMatches(matches) {
 exports.getMatchListByUserId = async (req, res) => {
     try {
         let { userId } = req.query;
-        let match = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName        
-        if (match.length) {
-            match = await processMatches(match);
-        }
+        let matches = await Match.find({ users: { $in: [userId] } }).populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName        
+        if (matches.length) {
+            matches = await processMatches(matches);
+        };
+        let data = [];
+        matches?.map(match => {
+            let newMatch = {
+                _id: match.id,
+                playerA: match.playerA,
+                playerB: match.playerB,
+                users: match.users,
+                startTime: match.startTime,
+                musicUrl: match.musicUrl,
+                videoUrl: match.videoUrl,
+                createdAt: match.createdAt,
+                updatedAt: match.updatedAt,
+                startor: match.users[0]
+            };
+            data.push(newMatch);
+        });
+
+
         return res.status(200).json({
             success: true,
-            match,
+            match: data,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
@@ -132,12 +150,30 @@ exports.getMatchListByDiscovery = async (req, res) => {
             .skip(skip)              // Skip the previous pages' results
             .limit(perPage)          // Limit the number of results
             .populate('users', 'username artistName profilePicture coverPicture'); // Only include username and artistName
+
         if (matches.length) {
             matches = await processMatches(matches);
         }
+        let data = [];
+        matches?.map(match => {
+            let newMatch = {
+                _id: match.id,
+                playerA: match.playerA,
+                playerB: match.playerB,
+                users: match.users,
+                startTime: match.startTime,
+                musicUrl: match.musicUrl,
+                videoUrl: match.videoUrl,
+                createdAt: match.createdAt,
+                updatedAt: match.updatedAt,
+                startor: match.users[0]
+            };
+            data.push(newMatch);
+        });
+
         return res.status(200).json({
             success: true,
-            matches,
+            matches: data,
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message });
