@@ -59,7 +59,7 @@ exports.getMatchListByUserId = async (req, res) => {
 
 exports.getMatchListWithFriends = async (req, res) => {
     try {
-        let { userId, perPage = 5, page = 1 } = req.query;
+        let { userId = '6543828546b700cb53b48d4d', perPage = 5, page = 1 } = req.query;
         // Calculate the number of results to skip (for pagination)
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
@@ -88,13 +88,11 @@ exports.getMatchListWithFriends = async (req, res) => {
         }
 
         matches?.map(match => {
-            let newMatch = match;
             if (isUserIdInArray(friendIds, match.playerB)) {
-                newMatch.users[0] = match.users[1];
-                newMatch.users[1] = match.users[0];
+                // Swap users
+                [match.users[0], match.users[1]] = [match.users[1], match.users[0]];
             }
-            // newMatch.
-            data.push(newMatch);
+            data.push(match);
         });
 
         return res.status(200).json({
