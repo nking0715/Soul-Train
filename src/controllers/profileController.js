@@ -404,12 +404,14 @@ exports.followManage = async (req, res) => {
         if (isEmpty(dancer) || isEmpty(user)) return res.status(404).json({ success: false, message: 'User Not found' });
 
         if (user.following.includes(dancerId)) {
+            console.log('unfollow needed');
             const userIndex = user.following.indexOf(dancerId);
             user.following.splice(userIndex, 1);
 
             const dancerIndex = dancer.follower.indexOf(userId.toString())
             dancer.follower.splice(dancerIndex, 1);
         } else {
+            console.log('follow needed');
             user.following.push(dancerId);
             dancer.follower.push(userId);
             const data = {
