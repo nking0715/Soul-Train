@@ -80,6 +80,9 @@ exports.verifyValidationCode = async (req, res) => {
       // Since the token doesn't exist, save the new one
       const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
     await user.save();
     // Return the token to the client
@@ -147,6 +150,9 @@ exports.login = async (req, res) => {
       // Since the token doesn't exist, save the new one
       const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
 
     // Return the token to the client
@@ -191,6 +197,9 @@ exports.googleLogin = async (req, res) => {
         // Since the token doesn't exist, save the new one
         const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
         await newToken.save();
+      } else if (userId != existingToken.userId) {
+        existingToken.userId = userId;
+        await existingToken.save();
       }
 
       // Return the token to the client
@@ -225,6 +234,9 @@ exports.addArtistName = async (req, res) => {
       // Since the token doesn't exist, save the new one
       const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
       await newToken.save();
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
 
     await user.save();
@@ -281,6 +293,9 @@ exports.facebookLogin = async (req, res) => {
         // Since the token doesn't exist, save the new one
         const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
         await newToken.save();
+      } else if (userId != existingToken.userId) {
+        existingToken.userId = userId;
+        await existingToken.save();
       }
 
       // Return the token to the client
@@ -413,7 +428,7 @@ exports.addAdmin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Admin already exists' });
     } else {
       admin = new Admin(req.body);
-      
+
       await admin.save();
 
       return res.status(200).json({ success: true, message: 'Successfully registered.' });
