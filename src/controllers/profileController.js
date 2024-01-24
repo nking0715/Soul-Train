@@ -407,7 +407,7 @@ exports.followManage = async (req, res) => {
             const userIndex = user.following.indexOf(dancerId);
             user.following.splice(userIndex, 1);
 
-            const dancerIndex = dancer.follower.indexOf(userId)
+            const dancerIndex = dancer.follower.indexOf(userId.toString())
             dancer.follower.splice(dancerIndex, 1);
         } else {
             user.following.push(dancerId);
