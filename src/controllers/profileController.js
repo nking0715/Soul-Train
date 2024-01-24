@@ -434,7 +434,7 @@ exports.followManage = async (req, res) => {
             await newNotification.save();
             const fcmToken = await FcmToken.findOne({ userId: dancerId });
             if (!isEmpty(fcmToken)) {
-                const sendNotificationResult = await sendPushNotification(fcmToken.token, data, pushNotification);
+                const sendNotificationResult = await sendPushNotification([fcmToken.token], data, pushNotification);
                 if (!sendNotificationResult) {
                     console.log('Notification for follow user was not sent.');
                 }
