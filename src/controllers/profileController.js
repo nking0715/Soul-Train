@@ -8,7 +8,7 @@ const FcmToken = require('../models/fcmToken');
 const Notification = require('../models/notification');
 const { validationResult } = require('express-validator');
 const isEmpty = require('../utils/isEmpty')
-const { uploadFileToS3 } = require('../utils/aws');
+const { uploadFileToS3, deleteAssetsFromS3 } = require('../utils/aws');
 const { parseQueryParam } = require('../utils/queryUtils');
 const authService = require('../services/authService');
 const { moderateContent } = require('../helper/moderation.helper')
@@ -227,6 +227,11 @@ exports.uploadProfilePicture = async (req, res) => {
             if (rekognitionResult.success == false) {
                 return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
             }
+            if (user.profilePicture) {
+                const existingAsset = await Asset.find({ url: user.profilePicture });
+                deleteAssetsFromS3([existingAsset]);
+                await Asset.findByIdAndRemove(existingAsset._id);
+            }
             user.profilePicture = newAsset.url;
             await user.save();
             return res.status(200).json({ success: true, url: user.profilePicture });
@@ -282,6 +287,11 @@ exports.uploadCoverPicture = async (req, res) => {
 
             if (rekognitionResult.success == false) {
                 return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
+            }
+            if (user.profilePicture) {
+                const existingAsset = await Asset.find({ url: user.profilePicture });
+                deleteAssetsFromS3([existingAsset]);
+                await Asset.findByIdAndRemove(existingAsset._id);
             }
             user.coverPicture = newAsset.url;
             await user.save();
