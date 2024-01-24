@@ -82,9 +82,9 @@ exports.getMatchListWithFriends = async (req, res) => {
         const skip = (page - 1) * perPage;
         // Calculate the date 48 hours ago from now
         const date48HoursAgo = new Date(new Date().getTime() - (48 * 60 * 60 * 1000));
-
+        
         // Retrieve the user and their friends list
-        const user = await User.findById(userId).populate('follower');
+        const user = await User.findById(userId).populate('following');
         if (!user) {
             // console.log('User not found');
             return;
