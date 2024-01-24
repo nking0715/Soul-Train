@@ -8,6 +8,7 @@ const socketManager = require('../utils/socket');
 const { sendPushNotification } = require('../utils/notification');
 const { parseQueryParam } = require('../utils/queryUtils');
 const axios = require('axios');
+const dateFormat = require('date-and-time');
 require('dotenv').config();
 
 const APP_ID = process.env.APP_ID;
@@ -243,7 +244,7 @@ const checkUIDForChannelName = async (targetChannelName, targetUID) => {
 
 const generateRandomChannelName = (length = 12) => {
     const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
+    let result = dateFormat.format(new Date(), "YYYYMMDDHHmmss");
     for (let i = 0; i < length; i++) {
         const randomIndex = Math.floor(Math.random() * charset.length);
         result += charset.charAt(randomIndex);
