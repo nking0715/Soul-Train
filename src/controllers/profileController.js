@@ -229,8 +229,8 @@ exports.uploadProfilePicture = async (req, res) => {
             }
             if (user.profilePicture) {
                 const existingAsset = await Asset.find({ url: user.profilePicture });
-                await deleteAssetsFromS3([existingAsset]);
-                await Asset.findByIdAndRemove(existingAsset._id);
+                await deleteAssetsFromS3(existingAsset);
+                await Asset.findByIdAndRemove(existingAsset[0]._id);
             }
             user.profilePicture = newAsset.url;
             await user.save();
@@ -290,8 +290,8 @@ exports.uploadCoverPicture = async (req, res) => {
             }
             if (user.coverPicture) {
                 const existingAsset = await Asset.find({ url: user.coverPicture });
-                deleteAssetsFromS3([existingAsset]);
-                await Asset.findByIdAndRemove(existingAsset._id);
+                await deleteAssetsFromS3(existingAsset);
+                await Asset.findByIdAndRemove(existingAsset[0]._id);
             }
             user.coverPicture = newAsset.url;
             await user.save();
