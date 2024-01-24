@@ -141,12 +141,24 @@ exports.getMatchListWithFriends = async (req, res) => {
 exports.getMatchListByDiscovery = async (req, res) => {
     try {
         let { userId, perPage = 5, page = 1 } = req.query;
+
+        
+        // Retrieve the user and their friends list
+        const user = await User.findById(userId).populate('following');
+        if (!user) {
+            // console.log('User not found');
+            return;
+        }
+
+        // Extract friend IDs from the followers
+        const friendIds = user?.following.map(friend => friend._id);
+
         // Calculate the date 48 hours ago from now
         const date48HoursAgo = new Date(new Date().getTime() - (48 * 60 * 60 * 1000));
         const skip = (page - 1) * perPage;
 
         let matches = await Match.find({
-            // users: { $in: friendIds },
+            users: { $nin: friendIds },
             createdAt: { $gte: date48HoursAgo } // Filter to include only matches created within the last 48 hours
         }).sort({ createdAt: -1 }) // Sorting by createdAt in descending order (newest first)
             .skip(skip)              // Skip the previous pages' results
