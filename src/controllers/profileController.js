@@ -229,7 +229,7 @@ exports.uploadProfilePicture = async (req, res) => {
             }
             if (user.profilePicture) {
                 const existingAsset = await Asset.find({ url: user.profilePicture });
-                deleteAssetsFromS3([existingAsset]);
+                await deleteAssetsFromS3([existingAsset]);
                 await Asset.findByIdAndRemove(existingAsset._id);
             }
             user.profilePicture = newAsset.url;
@@ -288,8 +288,8 @@ exports.uploadCoverPicture = async (req, res) => {
             if (rekognitionResult.success == false) {
                 return res.status(400).json({ success: false, message: "The uploaded image or video contains inappropriate content" });
             }
-            if (user.profilePicture) {
-                const existingAsset = await Asset.find({ url: user.profilePicture });
+            if (user.coverPicture) {
+                const existingAsset = await Asset.find({ url: user.coverPicture });
                 deleteAssetsFromS3([existingAsset]);
                 await Asset.findByIdAndRemove(existingAsset._id);
             }
