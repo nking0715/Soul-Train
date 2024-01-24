@@ -77,9 +77,15 @@ exports.verifyValidationCode = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
     } else if (userId != existingToken.userId) {
       existingToken.userId = userId;
       await existingToken.save();
@@ -147,9 +153,15 @@ exports.login = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
     } else if (userId != existingToken.userId) {
       existingToken.userId = userId;
       await existingToken.save();
@@ -194,9 +206,15 @@ exports.googleLogin = async (req, res) => {
       }
       const existingToken = await FcmToken.findOne({ token: fcmToken });
       if (!existingToken) {
-        // Since the token doesn't exist, save the new one
-        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-        await newToken.save();
+        const checkUserToken = await FcmToken.findOne({ userId: userId });
+        if (checkUserToken) {
+          checkUserToken.token = fcmToken;
+          await checkUserToken.save();
+        } else {
+          // Since the token doesn't exist, save the new one
+          const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+          await newToken.save();
+        }
       } else if (userId != existingToken.userId) {
         existingToken.userId = userId;
         await existingToken.save();
@@ -231,9 +249,15 @@ exports.addArtistName = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
     } else if (userId != existingToken.userId) {
       existingToken.userId = userId;
       await existingToken.save();
@@ -290,9 +314,15 @@ exports.facebookLogin = async (req, res) => {
       }
       const existingToken = await FcmToken.findOne({ token: fcmToken });
       if (!existingToken) {
-        // Since the token doesn't exist, save the new one
-        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-        await newToken.save();
+        const checkUserToken = await FcmToken.findOne({ userId: userId });
+        if (checkUserToken) {
+          checkUserToken.token = fcmToken;
+          await checkUserToken.save();
+        } else {
+          // Since the token doesn't exist, save the new one
+          const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+          await newToken.save();
+        }
       } else if (userId != existingToken.userId) {
         existingToken.userId = userId;
         await existingToken.save();
