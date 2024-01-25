@@ -19,13 +19,6 @@ require('dotenv').config();
 
 exports.register = async (req, res) => {
   try {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      console.log(errors.array());
-      return res.status(400).json({ success: false, message: 'Validation Error' });
-    }
-
     let user = await User.findOne({ email: req.body.email });
     if (user) {
       return res.status(400).json({ success: false, message: 'User already exists' });
