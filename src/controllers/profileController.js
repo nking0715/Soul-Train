@@ -120,11 +120,6 @@ exports.getFollowingList = async (req, res) => {
 }
 
 exports.updateProfile = async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
-    }
-
     try {
         const { username, artistName, bio, profilePicture, coverPicture, crew, email, phoneNumber, style } = req.body;
 
