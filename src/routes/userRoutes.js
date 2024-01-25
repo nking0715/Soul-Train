@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, verifyValidationCode, login, googleLogin, addArtistName, facebookLogin, logout, resendVerificationCode, resetReq, resetPassword, addToWaitList, verifyResetCode } = require('../controllers/userController');
+const { register, verifyValidationCode, login, googleLogin, addArtistName, facebookLogin, logout, resendVerificationCode, resetReq, resetPassword, addToWaitList, verifyResetCode, addAdmin } = require('../controllers/userController');
 const { check } = require('express-validator');
 
 router.post('/register', [
@@ -26,5 +26,6 @@ router.post('/reset_req', resetReq);
 router.post('/verify-reset-code', verifyResetCode);
 router.post('/reset_pass', resetPassword);
 router.post('/add_waitlist', addToWaitList);
+router.post('/add_admin', addAdmin);
 
 module.exports = router;

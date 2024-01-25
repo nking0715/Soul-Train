@@ -111,9 +111,6 @@ exports.startRecording = (resourceId, channelName, uid, token) => {
                     "subscribeVideoUids": [
                         "1", "2"
                     ],
-                    "subscribeAudioUids": [
-                        "1"
-                    ],
                     "subscribeUidGroup": 0
                 },
                 "recordingFileConfig": {

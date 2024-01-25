@@ -6,6 +6,10 @@ const assetSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    postId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post'
+    },
     url: {
         type: String,
         required: true

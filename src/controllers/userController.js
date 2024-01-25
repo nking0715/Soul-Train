@@ -7,6 +7,7 @@ const sendMail = require('./sendMail/gmail');
 require('events').EventEmitter.prototype._maxListeners = 0;
 const jwt_decode = require("jwt-decode");
 const User = require('../models/user');
+const Admin = require('../models/admin');
 const Waitlist = require('../models/waitlist')
 const authService = require('../services/authService');
 const isEmpty = require('../utils/isEmpty');
@@ -76,9 +77,18 @@ exports.verifyValidationCode = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
     await user.save();
     // Return the token to the client
@@ -143,9 +153,18 @@ exports.login = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
 
     // Return the token to the client
@@ -187,9 +206,18 @@ exports.googleLogin = async (req, res) => {
       }
       const existingToken = await FcmToken.findOne({ token: fcmToken });
       if (!existingToken) {
-        // Since the token doesn't exist, save the new one
-        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-        await newToken.save();
+        const checkUserToken = await FcmToken.findOne({ userId: userId });
+        if (checkUserToken) {
+          checkUserToken.token = fcmToken;
+          await checkUserToken.save();
+        } else {
+          // Since the token doesn't exist, save the new one
+          const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+          await newToken.save();
+        }
+      } else if (userId != existingToken.userId) {
+        existingToken.userId = userId;
+        await existingToken.save();
       }
 
       // Return the token to the client
@@ -221,9 +249,18 @@ exports.addArtistName = async (req, res) => {
     }
     const existingToken = await FcmToken.findOne({ token: fcmToken });
     if (!existingToken) {
-      // Since the token doesn't exist, save the new one
-      const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-      await newToken.save();
+      const checkUserToken = await FcmToken.findOne({ userId: userId });
+      if (checkUserToken) {
+        checkUserToken.token = fcmToken;
+        await checkUserToken.save();
+      } else {
+        // Since the token doesn't exist, save the new one
+        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+        await newToken.save();
+      }
+    } else if (userId != existingToken.userId) {
+      existingToken.userId = userId;
+      await existingToken.save();
     }
 
     await user.save();
@@ -277,9 +314,18 @@ exports.facebookLogin = async (req, res) => {
       }
       const existingToken = await FcmToken.findOne({ token: fcmToken });
       if (!existingToken) {
-        // Since the token doesn't exist, save the new one
-        const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
-        await newToken.save();
+        const checkUserToken = await FcmToken.findOne({ userId: userId });
+        if (checkUserToken) {
+          checkUserToken.token = fcmToken;
+          await checkUserToken.save();
+        } else {
+          // Since the token doesn't exist, save the new one
+          const newToken = new FcmToken({ userId, token: fcmToken, deviceInfo });
+          await newToken.save();
+        }
+      } else if (userId != existingToken.userId) {
+        existingToken.userId = userId;
+        await existingToken.save();
       }
 
       // Return the token to the client
@@ -402,5 +448,23 @@ exports.addToWaitList = async (req, res) => {
     }
   } else {
     return res.status(400).json({ success: false, message: "Invalid Email type!" })
+  }
+}
+
+exports.addAdmin = async (req, res) => {
+  try {
+    let admin = await Admin.findOne({ email: req.body.email });
+    if (admin) {
+      return res.status(400).json({ success: false, message: 'Admin already exists' });
+    } else {
+      admin = new Admin(req.body);
+
+      await admin.save();
+
+      return res.status(200).json({ success: true, message: 'Successfully registered.' });
+    }
+  } catch (error) {
+    console.log('Error in register: ', error);
+    return res.status(500).json({ success: false, message: 'Server Error' });
   }
 }

@@ -181,17 +181,19 @@ exports.uploadVideoThumbnailToS3 = async (videoPath, keyPrefix) => {
 exports.deleteAssetsFromS3 = async (assets) => {
     const deletePromises = assets.flatMap(asset => {
         return [asset.url, asset.thumbnail].map(url => {
-            const key = getKeyFromUrl(url);
-            if (!key) {
-                // Handle the case where the key could not be extracted
-                console.error('Invalid URL for asset:', url);
-                return Promise.resolve();
+            if (url) {
+                const key = getKeyFromUrl(url);
+                if (!key) {
+                    // Handle the case where the key could not be extracted
+                    console.error('Invalid URL for asset:', url);
+                    return Promise.resolve();
+                }
+                const params = {
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: key
+                };
+                return s3.deleteObject(params).promise();
             }
-            const params = {
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: key
-            };
-            return s3.deleteObject(params).promise();
         });
     });
 

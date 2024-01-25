@@ -70,7 +70,7 @@ app.use(session({
 
 // Custom middleware to refresh the session's last access timestamp
 app.use((req, res, next) => {
-  req.session.lastAccess = Date.now();
+  // req.session.lastAccess = Date.now();
   next();
 });
 

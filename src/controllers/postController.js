@@ -136,6 +136,8 @@ exports.createPost = async (req, res) => {
         const newPost = new Post({ author: userId, assets, tags, caption, location: parsedLocation });
         await newPost.save();
 
+        await Asset.updateMany({ _id: { $in: newPost.assets } }, { postId: newPost._id });
+
         res.status(200).json({ success: true, newPost });
         console.timeEnd('processDuration');
         // Start content moderation for all assets simultaneously using newFileNames
