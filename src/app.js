@@ -104,6 +104,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
+
 // httpProxy.createServer({
 //   target: 'ws://dev.soultrain.app:3000',
 //   ws: true
